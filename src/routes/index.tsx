@@ -262,11 +262,11 @@ function Index() {
                   <img
                     src={uploadedQr!}
                     onError={() => setQrImgFailed(true)}
-                    alt={home.qr_title || "二维码"}
+                    alt={home?.qr_title || "二维码"}
                     className="w-60 h-60 object-contain"
                   />
                   <p className="text-center mt-4 text-sm text-muted-foreground">
-                    {home.qr_description || (home.qr_title ? home.qr_title : (event ? `扫码登记 · ${event.name}` : ""))}
+                    {home?.qr_description || (home?.qr_title ? home.qr_title : (event ? `扫码登记 · ${event.name}` : ""))}
                   </p>
                 </>
               ) : (
