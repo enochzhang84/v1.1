@@ -27,6 +27,7 @@ function Index() {
     qr_title: string | null;
     qr_description: string | null;
     qr_image_url: string | null;
+    qr_newcomer_url?: string | null;
   } | null>(null);
 
   const VERSES = [
@@ -63,7 +64,7 @@ function Index() {
   useEffect(() => {
     (supabase as any)
       .from("home_page_settings")
-      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_image_url")
+      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_image_url, qr_newcomer_url")
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -119,7 +120,8 @@ function Index() {
     ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}`
     : `${PUBLISHED_ORIGIN}/register`;
   const [qrImgFailed, setQrImgFailed] = useState(false);
-  const showUploadedQr = !!home?.qr_image_url && !qrImgFailed;
+  const uploadedQr = home?.qr_newcomer_url || home?.qr_image_url || null;
+  const showUploadedQr = !!uploadedQr && !qrImgFailed;
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
@@ -258,7 +260,7 @@ function Index() {
               {showUploadedQr ? (
                 <>
                   <img
-                    src={home!.qr_image_url!}
+                    src={uploadedQr!}
                     onError={() => setQrImgFailed(true)}
                     alt={home.qr_title || "二维码"}
                     className="w-60 h-60 object-contain"
