@@ -79,7 +79,9 @@ export function HomePageSettingsPanel() {
   const [s, setS] = useState<Settings | null>(null);
   const { alert, confirm, dialog } = useWin98Dialog();
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  // 二维码必须指向 *发布* 站点，否则扫码会落到预览域名。
+  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
+  const origin = PUBLISHED_ORIGIN;
   const [qrType, setQrType] = useState<"newcomer" | "retreat" | "custom">("newcomer");
   const [qrCustom, setQrCustom] = useState("");
   const qrSvgRef = useRef<HTMLDivElement>(null);
