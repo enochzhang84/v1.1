@@ -498,7 +498,27 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                         <div className="flex items-center gap-2.5 min-w-[160px]">
                           <Avatar r={r} />
                           <div className="leading-tight">
-                            <div className="font-medium text-foreground">{r.name || "—"}</div>
+                            <div className="font-medium text-foreground flex items-center gap-1.5 flex-wrap">
+                              {r.name || "—"}
+                              {r.is_primary === false && r.relationship_to_primary && (
+                                <Pill cls="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                                  同行 · {r.relationship_to_primary}
+                                </Pill>
+                              )}
+                              {r.is_primary !== false &&
+                                r.visitor_group_id &&
+                                (groupSizes.get(r.visitor_group_id) ?? 1) > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDetailReg(r)}
+                                    className="inline-flex"
+                                  >
+                                    <Pill cls="bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/15 cursor-pointer">
+                                      同行 {(groupSizes.get(r.visitor_group_id) ?? 1) - 1} 人
+                                    </Pill>
+                                  </button>
+                                )}
+                            </div>
                             {r.name_en && (
                               <div className="text-[11px] text-muted-foreground">{r.name_en}</div>
                             )}
