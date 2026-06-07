@@ -1290,25 +1290,11 @@ function AdminPage() {
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e.name]));
   // Use published domain for QR codes so WeChat (and other in-app browsers)
   // don't land on a preview URL that requires the developer login.
-  const publicBase = (() => {
-    if (!origin) return "";
-    try {
-      const host = new URL(origin).host;
-      if (
-        host.startsWith("id-preview--") ||
-        host.endsWith("-dev.lovable.app") ||
-        host.endsWith(".lovableproject.com") ||
-        host === "localhost" ||
-        host.startsWith("127.0.0.1") ||
-        host.startsWith("localhost:")
-      ) {
-        return "https://hoc3newcomer.lovable.app";
-      }
-    } catch {
-      // fall through
-    }
-    return origin;
-  })();
+  // QR codes always follow the *current* site origin so scans land on the
+  // same deployment (and same database). Previewing under lovable.app will
+  // simply produce preview-domain QRs — that's expected; print only from
+  // the deployed site (hoc3.lioneapps.com / hoc3v1.lioneapps.com).
+  const publicBase = origin || "";
   const filtered = regs.filter((r) => {
     const matchesSearch =
       !search ||
