@@ -115,17 +115,8 @@ function Index() {
     }
   };
 
-  // Use the stable published URL for the QR code so that WeChat (and any
-  // external scanner) never lands on the Lovable preview host, which requires
-  // a Lovable account login. Preview hosts look like `id-preview--*.lovable.app`
-  // or `*-lovableproject.com` — replace them with the public published host.
-  const rawOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  const PUBLISHED_ORIGIN = "https://qr-newbie-flow.lovable.app";
-  const isPreviewHost =
-    /id-preview--/.test(rawOrigin) ||
-    /lovableproject\.com$/.test(rawOrigin) ||
-    /sandbox\.lovable\.dev$/.test(rawOrigin);
-  const origin = isPreviewHost || !rawOrigin ? PUBLISHED_ORIGIN : rawOrigin;
+  // Use the stable published origin (never the preview host, which requires login).
+  const origin = getPublicOrigin();
   const configuredUrl = home?.qr_newcomer_url?.trim() || "";
   const isImageUrl = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(configuredUrl) || /\/storage\/v1\/object\//i.test(configuredUrl);
   const isValidRegisterUrl = /^https?:\/\//.test(configuredUrl) && !isImageUrl;
