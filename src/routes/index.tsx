@@ -8,6 +8,7 @@ import logo from "@/assets/logo.png";
 import iconAdmin from "@/assets/icon-admin.png";
 import iconFullscreen from "@/assets/icon-fullscreen.png";
 import iconExitFullscreen from "@/assets/icon-exit-fullscreen.png";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/")({
   component: Index,
