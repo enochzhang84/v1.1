@@ -115,10 +115,12 @@ function Index() {
   };
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const registerUrl =
-    home?.qr_newcomer_url && /^https?:\/\//.test(home.qr_newcomer_url)
-      ? home.qr_newcomer_url
-      : `${origin}/register${event ? `?event=${event.qr_token}` : ""}`;
+  const configuredUrl = home?.qr_newcomer_url?.trim() || "";
+  const isImageUrl = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(configuredUrl) || /\/storage\/v1\/object\//i.test(configuredUrl);
+  const isValidRegisterUrl = /^https?:\/\//.test(configuredUrl) && !isImageUrl;
+  const registerUrl = isValidRegisterUrl
+    ? configuredUrl
+    : `${origin}/register${event ? `?event=${event.qr_token}` : ""}`;
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
