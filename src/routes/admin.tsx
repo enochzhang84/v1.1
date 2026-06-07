@@ -43,7 +43,7 @@ import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { FaithFollowupCRM as FaithFollowupSection } from "@/components/admin/FaithFollowupCRM";
 import { RegistrationListCRM } from "@/components/admin/RegistrationListCRM";
-import { DbWriteTestPanel } from "@/components/admin/DbWriteTestPanel";
+
 import { DutyCalendarSection } from "@/components/DutyCalendar";
 import MealPlanCalendar from "@/components/MealPlanCalendar";
 import EventMealNotebook from "@/components/EventMealNotebook";
@@ -2829,7 +2829,7 @@ function AdminPage() {
 
         {welcomeSubTab === "greet" && (
           <div className="space-y-8 mt-8">
-        <DbWriteTestPanel />
+        
         <RegistrationListCRM
           regs={regs as any}
           filtered={filtered as any}
