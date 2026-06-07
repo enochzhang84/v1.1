@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/display/poster/$id")({
   component: PosterDisplay,
