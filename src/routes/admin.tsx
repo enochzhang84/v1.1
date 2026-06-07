@@ -2757,6 +2757,12 @@ function AdminPage() {
               💾 备份与恢复
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setVersionOpen(true)}
+            >
+              🔄 版本更新
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
