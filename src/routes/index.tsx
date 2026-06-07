@@ -278,11 +278,24 @@ function Index() {
                 </>
               )}
             </div>
-            {event && (
-              <Link to="/register" search={{ event: event.qr_token }} className="mt-6">
-                <Button size="lg" className="rounded-full px-8">立即登记</Button>
-              </Link>
-            )}
+            {(() => {
+              const origin =
+                typeof window !== "undefined" ? window.location.origin : "";
+              const registerUrl =
+                home?.qr_newcomer_url && /^https?:\/\/.+\/register(\?|$)/.test(home.qr_newcomer_url)
+                  ? home.qr_newcomer_url
+                  : `${origin}/register${event ? `?event=${event.qr_token}` : ""}`;
+              return (
+                <a href={registerUrl} className="mt-6">
+                  <Button
+                    size="lg"
+                    className="rounded-full px-8 bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                  >
+                    立即登记 / Register Now
+                  </Button>
+                </a>
+              );
+            })()}
           </div>
         </div>
       </main>
