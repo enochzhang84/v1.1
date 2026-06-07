@@ -33,6 +33,7 @@ import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel"
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
 import { QrLibraryManager } from "@/components/admin/QrLibraryManager";
+import { RetreatQrPanel } from "@/components/admin/RetreatQrPanel";
 import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/bootstrap-admin.functions";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
@@ -4321,6 +4322,10 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                 </Button>
               </div>
             </div>
+          </div>
+          {/* 退修会二维码管理（动态 URL + 持久化） */}
+          <div className="mt-4">
+            <RetreatQrPanel />
           </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
