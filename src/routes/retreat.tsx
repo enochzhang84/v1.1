@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/retreat")({
   component: RetreatPage,
