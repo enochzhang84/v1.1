@@ -121,16 +121,46 @@ function RegisterPage() {
       toast.error("请填写中文姓名");
       return;
     }
+    // Validate companions
+    const cleanCompanions = companions
+      .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
+      .filter((c) => c.name);
+    for (const c of cleanCompanions) {
+      if (!c.relationship_to_primary) {
+        toast.error(`请选择「${c.name}」与主要登记人的关系`);
+        return;
+      }
+    }
     setSubmitting(true);
     const isBackfill =
       isAdmin && !eventToken && entryDate && entryDate !== todayStr();
-    const payload: Record<string, unknown> = {
+
+    const groupId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : undefined;
+    const primaryId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : undefined;
+
+    const createdAtOverride = isBackfill
+      ? new Date(`${entryDate}T12:00:00`).toISOString()
+      : undefined;
+
+    const primary: Record<string, unknown> = {
+      ...(primaryId ? { id: primaryId } : {}),
+      ...(groupId ? { visitor_group_id: groupId } : {}),
+      is_primary: true,
+      relationship_to_primary: null,
+      primary_registration_id: null,
       event_id: eventId,
       name: form.name.trim(),
       name_en: form.name_en.trim() || null,
       district: form.district.trim() || null,
       phone: form.phone.trim() || null,
       email: form.email.trim() || null,
+      wechat: null,
       gender: form.gender || null,
       age_group: form.age_group || null,
       address: form.address.trim() || null,
@@ -149,28 +179,38 @@ function RegisterPage() {
       wants_info: form.wants_info,
       notes: form.notes.trim() || null,
       source: eventToken ? "qr" : "manual",
+      ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
     };
-    if (isBackfill) {
-      // Store as local noon on selected date to avoid TZ rollover in date-only queries
-      payload.created_at = new Date(`${entryDate}T12:00:00`).toISOString();
-    }
-    // 诊断信息
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    console.log("[Register] Supabase URL:", supabaseUrl);
-    console.log("[Register] Target table: registrations");
-    console.log("[Register] Payload:", payload);
 
-    const insertQuery = supabase
-      .from("registrations")
-      .insert(payload as never);
+    const companionRows = cleanCompanions.map((c) => ({
+      ...(groupId ? { visitor_group_id: groupId } : {}),
+      is_primary: false,
+      relationship_to_primary: c.relationship_to_primary,
+      primary_registration_id: primaryId ?? null,
+      event_id: eventId,
+      name: c.name,
+      gender: c.gender || null,
+      age_group: c.age_group || null,
+      phone: c.phone || null,
+      wechat: c.wechat || null,
+      // Inherited fields
+      city: form.city.trim() || null,
+      zip: form.zip.trim() || null,
+      source_channel: form.source_channel || null,
+      referrer_type: form.referrer_type || null,
+      invited_by: form.referrer_type === "friend" ? form.invited_by.trim() || null : null,
+      referrer_other: form.referrer_type === "other" ? form.referrer_other.trim() || null : null,
+      source: eventToken ? "qr" : "manual",
+      ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
+    }));
 
+    const rows = [primary, ...companionRows];
+
+    const insertQuery = supabase.from("registrations").insert(rows as never);
     const { data, error } = isAdmin
       ? await insertQuery.select()
       : await insertQuery;
     setSubmitting(false);
-
-    console.log("[Register] Insert data:", data);
-    console.log("[Register] Insert error:", error);
 
     if (error) {
       const parts = [
@@ -186,9 +226,13 @@ function RegisterPage() {
       toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 12000 });
       return;
     }
-    toast.success(isAdmin && data?.[0]
-      ? `登记成功（id: ${(data[0] as { id: string }).id.slice(0, 8)}…）`
-      : "登记成功");
+    const totalCount = 1 + cleanCompanions.length;
+    toast.success(
+      cleanCompanions.length > 0
+        ? `登记成功，已记录你和 ${cleanCompanions.length} 位同行成员的信息`
+        : "登记成功",
+    );
+    console.log("[Register] inserted", totalCount, "rows, groupId:", groupId);
     setDone(true);
   }
 
