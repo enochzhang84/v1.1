@@ -65,6 +65,7 @@ export type Database = {
       app_versions: {
         Row: {
           created_at: string
+          database_version: string | null
           error_log: string | null
           id: string
           installed_at: string
@@ -72,12 +73,14 @@ export type Database = {
           is_current: boolean
           notes: string | null
           package_name: string | null
+          release_description: string | null
           released_at: string | null
           status: string
           version: string
         }
         Insert: {
           created_at?: string
+          database_version?: string | null
           error_log?: string | null
           id?: string
           installed_at?: string
@@ -85,12 +88,14 @@ export type Database = {
           is_current?: boolean
           notes?: string | null
           package_name?: string | null
+          release_description?: string | null
           released_at?: string | null
           status?: string
           version: string
         }
         Update: {
           created_at?: string
+          database_version?: string | null
           error_log?: string | null
           id?: string
           installed_at?: string
@@ -98,6 +103,7 @@ export type Database = {
           is_current?: boolean
           notes?: string | null
           package_name?: string | null
+          release_description?: string | null
           released_at?: string | null
           status?: string
           version?: string
