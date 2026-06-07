@@ -142,10 +142,13 @@ function RegisterPage() {
     console.log("[Register] Target table: registrations");
     console.log("[Register] Payload:", payload);
 
-    const { data, error } = await supabase
+    const insertQuery = supabase
       .from("registrations")
-      .insert(payload as never)
-      .select();
+      .insert(payload as never);
+
+    const { data, error } = isAdmin
+      ? await insertQuery.select()
+      : await insertQuery;
     setSubmitting(false);
 
     console.log("[Register] Insert data:", data);
@@ -161,11 +164,13 @@ function RegisterPage() {
       toast.error(`提交失败 — ${parts}`, { duration: 12000 });
       return;
     }
-    if (!data || data.length === 0) {
+    if (isAdmin && (!data || data.length === 0)) {
       toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 12000 });
       return;
     }
-    toast.success(`登记成功（id: ${(data[0] as { id: string }).id.slice(0, 8)}…）`);
+    toast.success(isAdmin && data?.[0]
+      ? `登记成功（id: ${(data[0] as { id: string }).id.slice(0, 8)}…）`
+      : "登记成功");
     setDone(true);
   }
 
