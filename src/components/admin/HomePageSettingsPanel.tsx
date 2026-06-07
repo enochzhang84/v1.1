@@ -108,7 +108,18 @@ export function HomePageSettingsPanel() {
         .limit(1)
         .maybeSingle();
       if (error) alert("加载失败", error.message, "error");
-      setS(data ?? null);
+      if (data) {
+        setS(data);
+      } else {
+        // 自动创建一条默认记录，避免后续操作提示「未找到主页设置记录」
+        const { data: created, error: insErr } = await (supabase as any)
+          .from("home_page_settings")
+          .insert({ welcome_mode: "text" })
+          .select("*")
+          .single();
+        if (insErr) alert("初始化失败", insErr.message, "error");
+        setS(created ?? null);
+      }
       setLoading(false);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
