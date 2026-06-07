@@ -28,7 +28,9 @@ function Index() {
     qr_title: string | null;
     qr_description: string | null;
     qr_newcomer_url?: string | null;
+    qr_image_url?: string | null;
   } | null>(null);
+
 
   const VERSES = [
     { text: "凡劳苦担重担的人，可以到我这里来，我就使你们得安息。", ref: "马太福音 11:28" },
