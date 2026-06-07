@@ -2760,7 +2760,7 @@ function AdminPage() {
               variant="outline"
               onClick={() => setVersionOpen(true)}
             >
-              🔄 版本更新
+              🆙 系统升级
             </Button>
             <Button
               variant="destructive"
@@ -2791,16 +2791,16 @@ function AdminPage() {
             {backupOpen && <BackupRestorePanel />}
           </DialogContent>
         </Dialog>
-        {/* 版本更新 Dialog */}
+        {/* 系统升级 Dialog */}
         <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>版本更新</DialogTitle>
+              <DialogTitle>系统升级</DialogTitle>
               <DialogDescription>
-                查看当前部署版本与 GitHub 最新提交；仅超级管理员且在 VPS 环境可执行更新。
+                查看当前版本与升级记录；导入官方升级包后，超级管理员可在生产环境一键升级。
               </DialogDescription>
             </DialogHeader>
-            {versionOpen && <VersionUpdatePanel isSuperAdmin={isSuperAdmin} />}
+            {versionOpen && <SystemUpgradePanel isSuperAdmin={isSuperAdmin} />}
           </DialogContent>
         </Dialog>
             </TabsContent>
