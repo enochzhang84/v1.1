@@ -143,8 +143,24 @@ function Index() {
     ? configuredUrl
     : `${origin}/register${event ? `?event=${event.qr_token}` : ""}`;
 
+  const siteTitle = home?.site_title || "基督之家第三家";
+  const worshipLines = (home?.worship_schedule || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const primaryBtnText = home?.primary_button_text || "立即登记 / Register Now";
+  const primaryBtnUrl = home?.primary_button_url?.trim() || registerUrl;
+  const pageBgStyle = home?.background_image_url
+    ? {
+        backgroundImage: `linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)), url(${home.background_image_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed" as const,
+      }
+    : undefined;
+
   return (
-    <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
+    <div
+      className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}
+      style={pageBgStyle}
+    >
       {isFullscreen && (
         <div className="fixed top-0 inset-x-0 z-50 bg-background border-b border-border/60 overflow-hidden">
           <div className="py-[14px] whitespace-nowrap animate-verse-marquee flex gap-16">
@@ -163,10 +179,10 @@ function Index() {
             <img
               src={home?.logo_url || logo}
               onError={(e) => ((e.currentTarget as HTMLImageElement).src = logo)}
-              alt="基督之家第三家"
+              alt={siteTitle}
               className="h-10 w-10 object-contain"
             />
-            <span className="font-serif text-xl tracking-wide text-foreground">基督之家第三家</span>
+            <span className="font-serif text-xl tracking-wide text-foreground">{siteTitle}</span>
           </a>
           {!isFullscreen ? (
             <div className="flex items-center gap-2">
@@ -219,7 +235,7 @@ function Index() {
                 <img
                   src={home?.logo_url || logo}
                   onError={(e) => ((e.currentTarget as HTMLImageElement).src = logo)}
-                  alt="基督之家第三家"
+                  alt={siteTitle}
                   className="h-14 w-14 object-contain"
                 />
                 <div className="leading-tight">
@@ -242,35 +258,49 @@ function Index() {
                 </div>
               )}
 
+              {home?.bible_verse && (
+                <div className="text-sm italic text-foreground/80 mb-4 whitespace-pre-line">
+                  「{home.bible_verse}」
+                </div>
+              )}
+
               <div className="text-sm mb-4">
                 <span className="font-bold">今年主题</span>
                 <span className="mx-2">:</span>
-                <span>信靠顺服 活出基督</span>
+                <span>{home?.theme_text || "信靠顺服 活出基督"}</span>
               </div>
 
-              <table className="text-sm border-separate [border-spacing:0_4px] mb-4">
-                <tbody>
-                  <tr><td className="font-bold pr-2 whitespace-nowrap">成人主日学</td><td className="pr-2">:</td><td className="pr-3">中文</td><td>9:30 am</td></tr>
-                  <tr><td></td><td className="pr-2">:</td><td className="pr-3">英文</td><td>9:30 am</td></tr>
-                  <tr><td className="font-bold pr-2 whitespace-nowrap">主日敬拜</td><td className="pr-2">:</td><td className="pr-3">中文</td><td>11:00 am</td></tr>
-                  <tr><td></td><td className="pr-2">:</td><td className="pr-3">英文</td><td>11:00 am</td></tr>
-                  <tr><td className="font-bold pr-2 whitespace-nowrap">儿童主日学</td><td className="pr-2">:</td><td className="pr-3"></td><td>11:00 am</td></tr>
-                </tbody>
-              </table>
+              {worshipLines.length > 0 ? (
+                <div className="text-sm mb-4 space-y-1">
+                  {worshipLines.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              ) : (
+                <table className="text-sm border-separate [border-spacing:0_4px] mb-4">
+                  <tbody>
+                    <tr><td className="font-bold pr-2 whitespace-nowrap">成人主日学</td><td className="pr-2">:</td><td className="pr-3">中文</td><td>9:30 am</td></tr>
+                    <tr><td></td><td className="pr-2">:</td><td className="pr-3">英文</td><td>9:30 am</td></tr>
+                    <tr><td className="font-bold pr-2 whitespace-nowrap">主日敬拜</td><td className="pr-2">:</td><td className="pr-3">中文</td><td>11:00 am</td></tr>
+                    <tr><td></td><td className="pr-2">:</td><td className="pr-3">英文</td><td>11:00 am</td></tr>
+                    <tr><td className="font-bold pr-2 whitespace-nowrap">儿童主日学</td><td className="pr-2">:</td><td className="pr-3"></td><td>11:00 am</td></tr>
+                  </tbody>
+                </table>
+              )}
 
               <table className="text-sm border-separate [border-spacing:0_4px] mb-4">
                 <tbody>
-                  <tr><td className="font-bold pr-2 whitespace-nowrap">教会电话</td><td className="pr-2">:</td><td>510 651-9631 / 9937</td></tr>
-                  <tr><td className="font-bold pr-2 whitespace-nowrap">电邮</td><td className="pr-2">:</td><td>contact@hoc3.org</td></tr>
-                  <tr><td className="font-bold pr-2 whitespace-nowrap">网址</td><td className="pr-2">:</td><td>hoc3.org</td></tr>
+                  <tr><td className="font-bold pr-2 whitespace-nowrap">教会电话</td><td className="pr-2">:</td><td>{home?.church_phone || "510 651-9631 / 9937"}</td></tr>
+                  <tr><td className="font-bold pr-2 whitespace-nowrap">电邮</td><td className="pr-2">:</td><td>{home?.church_email || "contact@hoc3.org"}</td></tr>
+                  <tr><td className="font-bold pr-2 whitespace-nowrap">网址</td><td className="pr-2">:</td><td>{home?.church_website || "hoc3.org"}</td></tr>
                 </tbody>
               </table>
 
               <div className="text-sm mt-6 leading-relaxed w-fit">
-                <div className="font-bold text-left">The Home of Christ Church</div>
-                <div className="font-bold w-full text-center">In Fremont</div>
-                <div className="w-full text-center">4248 Solar Way</div>
-                <div className="w-full text-center">Fremont, CA 94538</div>
+                <div className="font-bold text-left">{home?.church_name || "The Home of Christ Church In Fremont"}</div>
+                <div className="w-full text-center whitespace-pre-line">
+                  {home?.church_address_en || home?.church_address || "4248 Solar Way\nFremont, CA 94538"}
+                </div>
               </div>
             </div>
           </div>
@@ -290,18 +320,32 @@ function Index() {
                 {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
               </p>
             </div>
-            <a href={registerUrl} className="mt-6">
+            <a href={primaryBtnUrl} className="mt-6">
               <Button
                 size="lg"
                 className="rounded-full px-8 bg-green-600 hover:bg-green-700 text-white shadow-lg"
               >
-                立即登记 / Register Now
+                {primaryBtnText}
               </Button>
             </a>
+            {home?.secondary_button_text && home?.secondary_button_url && (
+              <a href={home.secondary_button_url} className="mt-3">
+                <Button size="lg" variant="outline" className="rounded-full px-8">
+                  {home.secondary_button_text}
+                </Button>
+              </a>
+            )}
           </div>
 
         </div>
       </main>
+
+      {home?.footer_text && (
+        <footer className="border-t border-border/60 py-6 text-center text-sm text-muted-foreground">
+          {home.footer_text}
+        </footer>
+      )}
     </div>
   );
 }
+
