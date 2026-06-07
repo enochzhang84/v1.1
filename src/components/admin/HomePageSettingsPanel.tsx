@@ -139,7 +139,6 @@ export function HomePageSettingsPanel() {
         welcome_content_html: s.welcome_content_html,
         qr_title: s.qr_title,
         qr_description: s.qr_description,
-        qr_image_url: s.qr_image_url,
         qr_newcomer_url: s.qr_newcomer_url,
         qr_retreat_url: s.qr_retreat_url,
       })
