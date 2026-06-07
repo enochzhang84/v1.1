@@ -67,6 +67,11 @@ export type Reg = {
   source: string;
   created_at: string;
   follow_up_person: string | null;
+  visitor_group_id: string | null;
+  is_primary: boolean | null;
+  relationship_to_primary: string | null;
+  primary_registration_id: string | null;
+  wechat: string | null;
 };
 
 function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
