@@ -857,6 +857,7 @@ export type Database = {
           church_phone: string | null
           church_website: string | null
           footer_text: string | null
+          home_qr_updated_at: string | null
           id: string
           logo_subtitle: string | null
           logo_title: string | null
@@ -892,6 +893,7 @@ export type Database = {
           church_phone?: string | null
           church_website?: string | null
           footer_text?: string | null
+          home_qr_updated_at?: string | null
           id?: string
           logo_subtitle?: string | null
           logo_title?: string | null
@@ -927,6 +929,7 @@ export type Database = {
           church_phone?: string | null
           church_website?: string | null
           footer_text?: string | null
+          home_qr_updated_at?: string | null
           id?: string
           logo_subtitle?: string | null
           logo_title?: string | null
