@@ -78,16 +78,17 @@ export function HomePageSettingsPanel() {
   const [s, setS] = useState<Settings | null>(null);
   const { alert, confirm, dialog } = useWin98Dialog();
 
-  // 二维码必须指向 *发布* 站点，否则扫码会落到预览域名。
-  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
-  const origin = PUBLISHED_ORIGIN;
+  // Use the current site origin — never hard-code a published host so the
+  // generated QR always points back to wherever the admin is running.
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
   const [qrType, setQrType] = useState<"newcomer" | "retreat" | "custom">("newcomer");
   const [qrCustom, setQrCustom] = useState("");
   const qrSvgRef = useRef<HTMLDivElement>(null);
 
   const qrValue =
     qrType === "newcomer"
-      ? `${origin}/register`
+      ? (s?.qr_newcomer_url || `${origin}/register`)
       : qrType === "retreat"
       ? `${origin}/retreat-register`
       : qrCustom || `${origin}/`;
