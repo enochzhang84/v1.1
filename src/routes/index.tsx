@@ -28,7 +28,9 @@ function Index() {
     qr_title: string | null;
     qr_description: string | null;
     qr_newcomer_url?: string | null;
+    qr_image_url?: string | null;
   } | null>(null);
+
 
   const VERSES = [
     { text: "凡劳苦担重担的人，可以到我这里来，我就使你们得安息。", ref: "马太福音 11:28" },
@@ -64,7 +66,7 @@ function Index() {
   useEffect(() => {
     (supabase as any)
       .from("home_page_settings")
-      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_newcomer_url")
+      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_newcomer_url, qr_image_url")
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -258,7 +260,15 @@ function Index() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              <QRCodeSVG value={registerUrl} size={240} level="H" />
+              {home?.qr_image_url ? (
+                <img
+                  src={home.qr_image_url}
+                  alt="主页二维码"
+                  className="w-[240px] h-[240px] object-contain bg-white"
+                />
+              ) : (
+                <QRCodeSVG value={registerUrl} size={240} level="H" />
+              )}
               <p className="text-center mt-4 text-sm text-muted-foreground">
                 {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
               </p>
@@ -272,6 +282,7 @@ function Index() {
               </Button>
             </a>
           </div>
+
         </div>
       </main>
     </div>
