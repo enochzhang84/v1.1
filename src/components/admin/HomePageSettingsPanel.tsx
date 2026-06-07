@@ -83,7 +83,7 @@ export function HomePageSettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [s, setS] = useState<Settings | null>(null);
-  const { alert, confirm, dialog } = useWin98Dialog();
+  const { alert, dialog } = useWin98Dialog();
 
   // 二维码默认跟随当前站点域名，避免硬编码到旧的 Lovable 预览地址。
   const origin =
@@ -223,13 +223,6 @@ export function HomePageSettingsPanel() {
         <script>window.onload=()=>{setTimeout(()=>window.print(),200);}</script>
       </body></html>`);
     w.document.close();
-  }
-
-  async function uploadQrAsPng(name: string): Promise<string | null> {
-    const blob = await qrSvgToPngBlob(640);
-    if (!blob) return null;
-    const file = new File([blob], `${name}.png`, { type: "image/png" });
-    return uploadFile(file, `${name}.png`);
   }
 
   function saveQrLink(scope: "newcomer" | "retreat", value: string) {
