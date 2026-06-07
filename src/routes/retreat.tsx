@@ -16,8 +16,8 @@ export const Route = createFileRoute("/retreat")({
 });
 
 function RetreatPage() {
-  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
-  const url = `${PUBLISHED_ORIGIN}/retreat-register`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const url = `${origin}/retreat-register`;
   const [qrImg, setQrImg] = useState<string | null>(null);
   const [qrFailed, setQrFailed] = useState(false);
   useEffect(() => {
