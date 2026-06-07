@@ -97,6 +97,11 @@ type Reg = {
   faith_stage: string | null;
   last_followup_at: string | null;
   next_followup_at: string | null;
+  visitor_group_id: string | null;
+  is_primary: boolean | null;
+  relationship_to_primary: string | null;
+  primary_registration_id: string | null;
+  wechat: string | null;
 };
 
 
@@ -1319,30 +1324,48 @@ function AdminPage() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function buildExcelRows(list: Reg[]) {
-    return list.map((r) => ({
-      姓名中: r.name,
-      姓名英: r.name_en ?? "",
-      跟进状态: r.district === "已联系" ? "已联系" : "未联系",
-      性别: r.gender ?? "",
-      年龄段: r.age_group ?? "",
-      电话: r.phone ?? "",
-      电邮: r.email ?? "",
-      地址: r.address ?? "",
-      城市: r.city ?? "",
-      邮编: r.zip ?? "",
-      信仰: r.faith === "christian" ? "基督徒" : r.faith === "seeker" ? "慕道友" : r.faith === "other" ? `其他:${r.faith_other ?? ""}` : "",
-      信主年数: r.faith_years ?? "",
-      婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
-      配偶: r.spouse_name ?? "",
-      介绍人: formatReferrer(r),
-      来源: formatSourceChannel(r),
-      欢迎探访: r.wants_visit ? "是" : "否",
-      需要资料: r.wants_info ? "是" : "否",
-      备注: r.notes ?? "",
-      录入方式: r.source === "qr" ? "扫码" : "手动",
-      跟进人: r.follow_up_person ?? "",
-      登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
-    }));
+    // Build primary lookup for relationship resolution
+    const primaryByGroup = new Map<string, Reg>();
+    const groupCounts = new Map<string, number>();
+    for (const r of regs) {
+      if (!r.visitor_group_id) continue;
+      groupCounts.set(r.visitor_group_id, (groupCounts.get(r.visitor_group_id) ?? 0) + 1);
+      if (r.is_primary !== false) primaryByGroup.set(r.visitor_group_id, r);
+    }
+    return list.map((r) => {
+      const primary = r.visitor_group_id ? primaryByGroup.get(r.visitor_group_id) : null;
+      const groupSize = r.visitor_group_id ? (groupCounts.get(r.visitor_group_id) ?? 1) : 1;
+      return {
+        姓名中: r.name,
+        姓名英: r.name_en ?? "",
+        是否主要登记人: r.is_primary === false ? "否" : "是",
+        主要登记人姓名: r.is_primary === false ? (primary?.name ?? "") : r.name,
+        与主要登记人关系: r.relationship_to_primary ?? "",
+        同行组ID: r.visitor_group_id ?? "",
+        同行组人数: groupSize,
+        跟进状态: r.district === "已联系" ? "已联系" : "未联系",
+        性别: r.gender ?? "",
+        年龄段: r.age_group ?? "",
+        电话: r.phone ?? "",
+        微信: r.wechat ?? "",
+        电邮: r.email ?? "",
+        地址: r.address ?? "",
+        城市: r.city ?? "",
+        邮编: r.zip ?? "",
+        信仰: r.faith === "christian" ? "基督徒" : r.faith === "seeker" ? "慕道友" : r.faith === "other" ? `其他:${r.faith_other ?? ""}` : "",
+        信主年数: r.faith_years ?? "",
+        婚姻: r.marital_status === "married" ? "已婚" : r.marital_status === "single" ? "单身" : "",
+        配偶: r.spouse_name ?? "",
+        介绍人: formatReferrer(r),
+        来源: formatSourceChannel(r),
+        欢迎探访: r.wants_visit ? "是" : "否",
+        需要资料: r.wants_info ? "是" : "否",
+        备注: r.notes ?? "",
+        录入方式: r.source === "qr" ? "扫码" : "手动",
+        跟进人: r.follow_up_person ?? "",
+        登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
+      };
+    });
   }
 
   function exportRows(list: Reg[], filenamePrefix: string) {

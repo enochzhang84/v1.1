@@ -34,6 +34,24 @@ function RegisterPage() {
   };
   const [entryDate, setEntryDate] = useState<string>(todayStr());
 
+  type Companion = {
+    name: string;
+    gender: string;
+    age_group: string;
+    phone: string;
+    wechat: string;
+    relationship_to_primary: string;
+  };
+  const emptyCompanion = (): Companion => ({
+    name: "",
+    gender: "",
+    age_group: "",
+    phone: "",
+    wechat: "",
+    relationship_to_primary: "",
+  });
+  const [companions, setCompanions] = useState<Companion[]>([]);
+
   const [form, setForm] = useState({
     name: "",
     name_en: "",
@@ -103,16 +121,46 @@ function RegisterPage() {
       toast.error("请填写中文姓名");
       return;
     }
+    // Validate companions
+    const cleanCompanions = companions
+      .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
+      .filter((c) => c.name);
+    for (const c of cleanCompanions) {
+      if (!c.relationship_to_primary) {
+        toast.error(`请选择「${c.name}」与主要登记人的关系`);
+        return;
+      }
+    }
     setSubmitting(true);
     const isBackfill =
       isAdmin && !eventToken && entryDate && entryDate !== todayStr();
-    const payload: Record<string, unknown> = {
+
+    const groupId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : undefined;
+    const primaryId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : undefined;
+
+    const createdAtOverride = isBackfill
+      ? new Date(`${entryDate}T12:00:00`).toISOString()
+      : undefined;
+
+    const primary: Record<string, unknown> = {
+      ...(primaryId ? { id: primaryId } : {}),
+      ...(groupId ? { visitor_group_id: groupId } : {}),
+      is_primary: true,
+      relationship_to_primary: null,
+      primary_registration_id: null,
       event_id: eventId,
       name: form.name.trim(),
       name_en: form.name_en.trim() || null,
       district: form.district.trim() || null,
       phone: form.phone.trim() || null,
       email: form.email.trim() || null,
+      wechat: null,
       gender: form.gender || null,
       age_group: form.age_group || null,
       address: form.address.trim() || null,
@@ -131,28 +179,38 @@ function RegisterPage() {
       wants_info: form.wants_info,
       notes: form.notes.trim() || null,
       source: eventToken ? "qr" : "manual",
+      ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
     };
-    if (isBackfill) {
-      // Store as local noon on selected date to avoid TZ rollover in date-only queries
-      payload.created_at = new Date(`${entryDate}T12:00:00`).toISOString();
-    }
-    // 诊断信息
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    console.log("[Register] Supabase URL:", supabaseUrl);
-    console.log("[Register] Target table: registrations");
-    console.log("[Register] Payload:", payload);
 
-    const insertQuery = supabase
-      .from("registrations")
-      .insert(payload as never);
+    const companionRows = cleanCompanions.map((c) => ({
+      ...(groupId ? { visitor_group_id: groupId } : {}),
+      is_primary: false,
+      relationship_to_primary: c.relationship_to_primary,
+      primary_registration_id: primaryId ?? null,
+      event_id: eventId,
+      name: c.name,
+      gender: c.gender || null,
+      age_group: c.age_group || null,
+      phone: c.phone || null,
+      wechat: c.wechat || null,
+      // Inherited fields
+      city: form.city.trim() || null,
+      zip: form.zip.trim() || null,
+      source_channel: form.source_channel || null,
+      referrer_type: form.referrer_type || null,
+      invited_by: form.referrer_type === "friend" ? form.invited_by.trim() || null : null,
+      referrer_other: form.referrer_type === "other" ? form.referrer_other.trim() || null : null,
+      source: eventToken ? "qr" : "manual",
+      ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
+    }));
 
+    const rows = [primary, ...companionRows];
+
+    const insertQuery = supabase.from("registrations").insert(rows as never);
     const { data, error } = isAdmin
       ? await insertQuery.select()
       : await insertQuery;
     setSubmitting(false);
-
-    console.log("[Register] Insert data:", data);
-    console.log("[Register] Insert error:", error);
 
     if (error) {
       const parts = [
@@ -168,9 +226,13 @@ function RegisterPage() {
       toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 12000 });
       return;
     }
-    toast.success(isAdmin && data?.[0]
-      ? `登记成功（id: ${(data[0] as { id: string }).id.slice(0, 8)}…）`
-      : "登记成功");
+    const totalCount = 1 + cleanCompanions.length;
+    toast.success(
+      cleanCompanions.length > 0
+        ? `登记成功，已记录你和 ${cleanCompanions.length} 位同行成员的信息`
+        : "登记成功",
+    );
+    console.log("[Register] inserted", totalCount, "rows, groupId:", groupId);
     setDone(true);
   }
 
@@ -193,7 +255,9 @@ function RegisterPage() {
           <div className="text-6xl mb-6">🕊️</div>
           <h1 className="font-serif text-4xl text-foreground mb-4">愿主祝福您</h1>
           <p className="text-muted-foreground mb-6">
-            谢谢您完成登记。我们的同工会很快与您联系,期待再次见到您。
+            {companions.filter((c) => c.name.trim()).length > 0
+              ? "登记成功，已记录你和同行成员的信息。欢迎来到基督之家第三家！"
+              : "谢谢您完成登记。我们的同工会很快与您联系,期待再次见到您。"}
           </p>
           <div className="mx-auto max-w-sm text-left mb-8">
             <p className="font-serif text-lg text-foreground leading-relaxed">
@@ -410,8 +474,147 @@ function RegisterPage() {
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
           </Field>
 
+          {/* 同行成员 */}
+          <div className="pt-4 border-t border-border/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">同行成员（选填）</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  和您一起来的家人 / 朋友，可一次登记，无需重复扫码
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCompanions([...companions, emptyCompanion()])}
+              >
+                + 添加同行成员
+              </Button>
+            </div>
+
+            {companions.map((c, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">
+                    成员 {i + 1}
+                    {c.name ? <span className="text-muted-foreground"> · {c.name}</span> : null}
+                    {c.relationship_to_primary ? (
+                      <span className="text-muted-foreground"> · {c.relationship_to_primary}</span>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setCompanions(companions.filter((_, idx) => idx !== i))
+                    }
+                  >
+                    删除
+                  </Button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">姓名</Label>
+                    <Input
+                      value={c.name}
+                      onChange={(e) => {
+                        const next = [...companions];
+                        next[i] = { ...c, name: e.target.value };
+                        setCompanions(next);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">与主要登记人的关系</Label>
+                    <select
+                      value={c.relationship_to_primary}
+                      onChange={(e) => {
+                        const next = [...companions];
+                        next[i] = { ...c, relationship_to_primary: e.target.value };
+                        setCompanions(next);
+                      }}
+                      className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">请选择关系</option>
+                      {["配偶", "子女", "父母", "亲戚", "朋友", "同学", "同事", "其他"].map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">性别</Label>
+                    <RadioGroup
+                      value={c.gender}
+                      onValueChange={(v) => {
+                        const next = [...companions];
+                        next[i] = { ...c, gender: v };
+                        setCompanions(next);
+                      }}
+                      className="flex gap-4 pt-1"
+                    >
+                      {["男", "女"].map((g) => (
+                        <label key={g} className="flex items-center gap-1.5 cursor-pointer">
+                          <RadioGroupItem value={g} /> <span className="text-sm">{g}</span>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">年龄段</Label>
+                    <select
+                      value={c.age_group}
+                      onChange={(e) => {
+                        const next = [...companions];
+                        next[i] = { ...c, age_group: e.target.value };
+                        setCompanions(next);
+                      }}
+                      className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
+                    >
+                      <option value="">请选择</option>
+                      {["60岁以上", "40-60岁", "20-39岁", "10-19岁", "10岁以下"].map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">电话（选填）</Label>
+                    <Input
+                      type="tel"
+                      value={c.phone}
+                      onChange={(e) => {
+                        const next = [...companions];
+                        next[i] = { ...c, phone: e.target.value };
+                        setCompanions(next);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">微信（选填）</Label>
+                    <Input
+                      value={c.wechat}
+                      onChange={(e) => {
+                        const next = [...companions];
+                        next[i] = { ...c, wechat: e.target.value };
+                        setCompanions(next);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <Button type="submit" size="lg" disabled={submitting} className="w-full rounded-full">
-            {submitting ? "提交中..." : "提交登记"}
+            {submitting
+              ? "提交中..."
+              : companions.length > 0
+              ? `提交登记（共 ${1 + companions.filter((c) => c.name.trim()).length} 人）`
+              : "提交登记"}
           </Button>
         </form>
       </div>

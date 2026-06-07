@@ -1378,6 +1378,7 @@ export type Database = {
           id: string
           invited_by: string | null
           is_first_visit: boolean | null
+          is_primary: boolean
           last_followup_at: string | null
           marital_status: string | null
           name: string
@@ -1385,14 +1386,18 @@ export type Database = {
           next_followup_at: string | null
           notes: string | null
           phone: string | null
+          primary_registration_id: string | null
           referrer_other: string | null
           referrer_type: string | null
+          relationship_to_primary: string | null
           source: string
           source_channel: string | null
           spouse_name: string | null
+          visitor_group_id: string | null
           wants_followup: boolean | null
           wants_info: boolean | null
           wants_visit: boolean | null
+          wechat: string | null
           zip: string | null
         }
         Insert: {
@@ -1414,6 +1419,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           is_first_visit?: boolean | null
+          is_primary?: boolean
           last_followup_at?: string | null
           marital_status?: string | null
           name: string
@@ -1421,14 +1427,18 @@ export type Database = {
           next_followup_at?: string | null
           notes?: string | null
           phone?: string | null
+          primary_registration_id?: string | null
           referrer_other?: string | null
           referrer_type?: string | null
+          relationship_to_primary?: string | null
           source?: string
           source_channel?: string | null
           spouse_name?: string | null
+          visitor_group_id?: string | null
           wants_followup?: boolean | null
           wants_info?: boolean | null
           wants_visit?: boolean | null
+          wechat?: string | null
           zip?: string | null
         }
         Update: {
@@ -1450,6 +1460,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           is_first_visit?: boolean | null
+          is_primary?: boolean
           last_followup_at?: string | null
           marital_status?: string | null
           name?: string
@@ -1457,14 +1468,18 @@ export type Database = {
           next_followup_at?: string | null
           notes?: string | null
           phone?: string | null
+          primary_registration_id?: string | null
           referrer_other?: string | null
           referrer_type?: string | null
+          relationship_to_primary?: string | null
           source?: string
           source_channel?: string | null
           spouse_name?: string | null
+          visitor_group_id?: string | null
           wants_followup?: boolean | null
           wants_info?: boolean | null
           wants_visit?: boolean | null
+          wechat?: string | null
           zip?: string | null
         }
         Relationships: [

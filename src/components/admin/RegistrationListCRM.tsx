@@ -67,6 +67,11 @@ export type Reg = {
   source: string;
   created_at: string;
   follow_up_person: string | null;
+  visitor_group_id: string | null;
+  is_primary: boolean | null;
+  relationship_to_primary: string | null;
+  primary_registration_id: string | null;
+  wechat: string | null;
 };
 
 function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
@@ -306,6 +311,22 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
     return { todayCnt, weekCnt, seekers, christians, waiting, contacted };
   }, [regs]);
 
+  // Group counts: visitor_group_id -> total members
+  const groupSizes = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of regs) {
+      if (!r.visitor_group_id) continue;
+      m.set(r.visitor_group_id, (m.get(r.visitor_group_id) ?? 0) + 1);
+    }
+    return m;
+  }, [regs]);
+  const companionsOf = (r: Reg): Reg[] => {
+    if (!r.visitor_group_id || !r.is_primary) return [];
+    return regs.filter(
+      (x) => x.visitor_group_id === r.visitor_group_id && x.id !== r.id,
+    );
+  };
+
   return (
     <TooltipProvider delayDuration={300}>
       <section className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6">
@@ -477,7 +498,27 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                         <div className="flex items-center gap-2.5 min-w-[160px]">
                           <Avatar r={r} />
                           <div className="leading-tight">
-                            <div className="font-medium text-foreground">{r.name || "—"}</div>
+                            <div className="font-medium text-foreground flex items-center gap-1.5 flex-wrap">
+                              {r.name || "—"}
+                              {r.is_primary === false && r.relationship_to_primary && (
+                                <Pill cls="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                                  同行 · {r.relationship_to_primary}
+                                </Pill>
+                              )}
+                              {r.is_primary !== false &&
+                                r.visitor_group_id &&
+                                (groupSizes.get(r.visitor_group_id) ?? 1) > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDetailReg(r)}
+                                    className="inline-flex"
+                                  >
+                                    <Pill cls="bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/15 cursor-pointer">
+                                      同行 {(groupSizes.get(r.visitor_group_id) ?? 1) - 1} 人
+                                    </Pill>
+                                  </button>
+                                )}
+                            </div>
                             {r.name_en && (
                               <div className="text-[11px] text-muted-foreground">{r.name_en}</div>
                             )}
@@ -576,7 +617,7 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
           </div>
         )}
 
-        <DetailDrawer reg={detailReg} onClose={() => setDetailReg(null)} onEdit={(r) => { setDetailReg(null); onEdit(r); }} />
+        <DetailDrawer reg={detailReg} companions={detailReg ? companionsOf(detailReg) : []} onClose={() => setDetailReg(null)} onEdit={(r) => { setDetailReg(null); onEdit(r); }} />
       </section>
     </TooltipProvider>
   );
@@ -662,10 +703,12 @@ function FollowUpEditor({
 
 function DetailDrawer({
   reg,
+  companions,
   onClose,
   onEdit,
 }: {
   reg: Reg | null;
+  companions: Reg[];
   onClose: () => void;
   onEdit: (r: Reg) => void;
 }) {
@@ -726,6 +769,39 @@ function DetailDrawer({
               {reg.notes && (
                 <DetailGroup title="备注">
                   <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">{reg.notes}</p>
+                </DetailGroup>
+              )}
+
+              {companions.length > 0 && (
+                <DetailGroup title={`同行成员 (${companions.length})`}>
+                  <div className="space-y-2">
+                    {companions.map((c) => (
+                      <div
+                        key={c.id}
+                        className="rounded-lg border border-border/60 bg-muted/30 p-2.5 flex items-center justify-between gap-2"
+                      >
+                        <div className="leading-tight">
+                          <div className="text-sm font-medium">
+                            {c.name}
+                            {c.relationship_to_primary && (
+                              <span className="text-muted-foreground text-xs"> · {c.relationship_to_primary}</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {[
+                              c.gender,
+                              c.age_group,
+                              c.phone,
+                              c.wechat ? `微信:${c.wechat}` : null,
+                            ].filter(Boolean).join(" · ") || "—"}
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </DetailGroup>
               )}
 
