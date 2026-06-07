@@ -33,6 +33,7 @@ import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel"
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
 import { QrLibraryManager } from "@/components/admin/QrLibraryManager";
+import { RetreatQrPanel } from "@/components/admin/RetreatQrPanel";
 import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/bootstrap-admin.functions";
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
