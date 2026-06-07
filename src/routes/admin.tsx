@@ -771,7 +771,7 @@ function AdminPage() {
     }
   }, [fetchUsersFn]);
 
-  useEffect(() => setOrigin(window.location.origin), []);
+  useEffect(() => setOrigin(getPublicOrigin()), []);
 
   const loadData = useCallback(async () => {
     const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }, { data: cs }] = await Promise.all([
