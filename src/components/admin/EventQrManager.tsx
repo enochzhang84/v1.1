@@ -29,7 +29,7 @@ export function EventQrManager({
   printFooter = "基督之家第三家",
   downloadName = "qrcode",
 }: Props) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const fallback = `${origin}${defaultPath}`;
   const [url, setUrl] = useState<string>(persistedUrl?.trim() ? persistedUrl : fallback);
   const [renderUrl, setRenderUrl] = useState<string>(url);
