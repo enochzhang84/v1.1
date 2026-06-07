@@ -115,13 +115,11 @@ function Index() {
     }
   };
 
-  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
-  const url = event
-    ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}`
-    : `${PUBLISHED_ORIGIN}/register`;
-  const [qrImgFailed, setQrImgFailed] = useState(false);
-  const uploadedQr = home?.qr_newcomer_url || home?.qr_image_url || null;
-  const showUploadedQr = !!uploadedQr && !qrImgFailed;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const registerUrl =
+    home?.qr_newcomer_url && /^https?:\/\//.test(home.qr_newcomer_url)
+      ? home.qr_newcomer_url
+      : `${origin}/register${event ? `?event=${event.qr_token}` : ""}`;
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
