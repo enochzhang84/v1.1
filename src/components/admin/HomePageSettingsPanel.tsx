@@ -24,7 +24,6 @@ type Settings = {
   welcome_content_html: string | null;
   qr_title: string | null;
   qr_description: string | null;
-  qr_image_url: string | null;
   qr_newcomer_url: string | null;
   qr_retreat_url: string | null;
 };
@@ -79,16 +78,17 @@ export function HomePageSettingsPanel() {
   const [s, setS] = useState<Settings | null>(null);
   const { alert, confirm, dialog } = useWin98Dialog();
 
-  // 二维码必须指向 *发布* 站点，否则扫码会落到预览域名。
-  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
-  const origin = PUBLISHED_ORIGIN;
+  // Use the current site origin — never hard-code a published host so the
+  // generated QR always points back to wherever the admin is running.
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
   const [qrType, setQrType] = useState<"newcomer" | "retreat" | "custom">("newcomer");
   const [qrCustom, setQrCustom] = useState("");
   const qrSvgRef = useRef<HTMLDivElement>(null);
 
   const qrValue =
     qrType === "newcomer"
-      ? `${origin}/register`
+      ? (s?.qr_newcomer_url || `${origin}/register`)
       : qrType === "retreat"
       ? `${origin}/retreat-register`
       : qrCustom || `${origin}/`;
@@ -139,7 +139,6 @@ export function HomePageSettingsPanel() {
         welcome_content_html: s.welcome_content_html,
         qr_title: s.qr_title,
         qr_description: s.qr_description,
-        qr_image_url: s.qr_image_url,
         qr_newcomer_url: s.qr_newcomer_url,
         qr_retreat_url: s.qr_retreat_url,
       })
@@ -219,44 +218,8 @@ export function HomePageSettingsPanel() {
     w.document.close();
   }
 
-  async function uploadQrAsPng(name: string): Promise<string | null> {
-    const blob = await qrSvgToPngBlob(640);
-    if (!blob) return null;
-    const file = new File([blob], `${name}.png`, { type: "image/png" });
-    return uploadFile(file, `${name}.png`);
-  }
-
-  async function saveQr() {
-    const url = await uploadQrAsPng(`qr-${qrType}`);
-    if (!url) return alert("保存失败", "二维码上传失败。", "error");
-    if (qrType === "newcomer") update({ qr_newcomer_url: url });
-    else if (qrType === "retreat") update({ qr_retreat_url: url });
-    alert(
-      "系统提示",
-      "二维码图片已上传，记得点击底部「保存全部设置」持久化。",
-      "success",
-    );
-  }
-
-  function replaceSiteQr(scope: "newcomer" | "retreat" | "all") {
-    confirm(
-      "系统提示",
-      `将使用当前生成的二维码替换：${
-        scope === "all" ? "全部二维码" : scope === "newcomer" ? "新人登记二维码" : "退修会二维码"
-      }。是否继续？`,
-      async () => {
-        const url = await uploadQrAsPng(`qr-${scope === "all" ? qrType : scope}`);
-        if (!url) return alert("替换失败", "二维码上传失败。", "error");
-        const patch: Partial<Settings> = {};
-        if (scope === "newcomer" || scope === "all") patch.qr_newcomer_url = url;
-        if (scope === "retreat" || scope === "all") patch.qr_retreat_url = url;
-        if (scope === "all") patch.qr_image_url = url;
-        update(patch);
-        alert("系统提示", "替换成功，请点击底部「保存全部设置」持久化。", "success");
-      },
-      "warn",
-    );
-  }
+  // QR upload / replace removed: QR codes are now always generated from
+  // qr_newcomer_url (or the current origin) — never stored as images.
 
   if (loading) {
     return <div className="text-[12px] text-black">加载中…</div>;
@@ -477,62 +440,26 @@ export function HomePageSettingsPanel() {
               <Win98Button onClick={copyLink}>复制链接</Win98Button>
               <Win98Button onClick={downloadPng}>下载 PNG</Win98Button>
               <Win98Button onClick={printQr}>打印二维码</Win98Button>
-              <Win98Button onClick={saveQr}>保存二维码</Win98Button>
             </div>
-            <div className="pt-2 mt-2" style={{ borderTop: "1px solid #808080" }}>
-              <div className="text-[11px] font-bold mb-1">一键替换网站内二维码</div>
-              <div className="flex flex-wrap gap-2">
-                <Win98Button onClick={() => replaceSiteQr("newcomer")}>
-                  替换新人登记二维码
-                </Win98Button>
-                <Win98Button onClick={() => replaceSiteQr("retreat")}>
-                  替换退修会二维码
-                </Win98Button>
-                <Win98Button onClick={() => replaceSiteQr("all")}>替换全部二维码</Win98Button>
-              </div>
+            <div className="text-[11px] pt-2" style={{ borderTop: "1px solid #808080" }}>
+              二维码图片不再上传到服务器，首页扫码区始终根据「登记链接」实时生成，避免后续更新覆盖二维码。
             </div>
-            {(s.qr_newcomer_url || s.qr_retreat_url) && (
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                {s.qr_newcomer_url && (
-                  <div className="text-center">
-                    <img
-                      src={s.qr_newcomer_url}
-                      alt="新人二维码"
-                      className="h-24 w-24 mx-auto object-contain bg-white"
-                      style={{
-                        borderStyle: "solid",
-                        borderWidth: 2,
-                        borderColor: "#808080 #ffffff #ffffff #808080",
-                      }}
-                    />
-                    <div className="text-[10px] mt-1">当前新人二维码</div>
-                  </div>
-                )}
-                {s.qr_retreat_url && (
-                  <div className="text-center">
-                    <img
-                      src={s.qr_retreat_url}
-                      alt="退修会二维码"
-                      className="h-24 w-24 mx-auto object-contain bg-white"
-                      style={{
-                        borderStyle: "solid",
-                        borderWidth: 2,
-                        borderColor: "#808080 #ffffff #ffffff #808080",
-                      }}
-                    />
-                    <div className="text-[10px] mt-1">当前退修会二维码</div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </Win98GroupBox>
 
-      {/* Right-side QR */}
-      <Win98GroupBox title="右侧二维码区设置">
+      {/* Right-side QR — link only */}
+      <Win98GroupBox title="右侧二维码区设置（仅链接）">
         <div className="text-[11px]">
-          二维码图片仅用于展示。实际登记链接仍由活动二维码自动生成，不受这里影响。
+          首页二维码会根据下面的「登记链接」实时生成。留空时使用当前站点的 <code className="px-1 bg-white border border-[#808080]">/register</code>。
+        </div>
+        <div>
+          <Win98Label>登记链接 (qr_newcomer_url)</Win98Label>
+          <Win98Input
+            value={s.qr_newcomer_url ?? ""}
+            onChange={(e) => update({ qr_newcomer_url: e.target.value })}
+            placeholder={`${origin}/register`}
+          />
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
@@ -550,51 +477,6 @@ export function HomePageSettingsPanel() {
               onChange={(e) => update({ qr_description: e.target.value })}
               placeholder="例如：扫码填写新人资料"
             />
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {s.qr_image_url ? (
-            <img
-              src={s.qr_image_url}
-              alt="二维码预览"
-              className="h-28 w-28 object-contain bg-white"
-              style={{
-                borderStyle: "solid",
-                borderWidth: 2,
-                borderColor: "#808080 #ffffff #ffffff #808080",
-              }}
-              onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0.3")}
-            />
-          ) : (
-            <div
-              className="h-28 w-28 grid place-items-center text-[11px] bg-white"
-              style={{
-                borderStyle: "solid",
-                borderWidth: 2,
-                borderColor: "#808080 #ffffff #ffffff #808080",
-              }}
-            >
-              使用动态二维码
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  if (!f) return;
-                  const url = await uploadFile(f, `qrcode.${f.name.split(".").pop() || "png"}`);
-                  if (url) update({ qr_image_url: url });
-                }}
-              />
-              <Win98Button asChild>上传二维码</Win98Button>
-            </label>
-            <Win98Button onClick={() => update({ qr_image_url: null })}>
-              恢复默认二维码
-            </Win98Button>
           </div>
         </div>
       </Win98GroupBox>
