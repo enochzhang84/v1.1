@@ -255,45 +255,19 @@ function Index() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              {showUploadedQr ? (
-                <>
-                  <img
-                    src={uploadedQr!}
-                    onError={() => setQrImgFailed(true)}
-                    alt={home?.qr_title || "二维码"}
-                    className="w-60 h-60 object-contain"
-                  />
-                  <p className="text-center mt-4 text-sm text-muted-foreground">
-                    {home?.qr_description || (home?.qr_title ? home.qr_title : (event ? `扫码登记 · ${event.name}` : ""))}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <QRCodeSVG value={url} size={240} level="H" />
-                  <p className="text-center mt-4 text-sm text-muted-foreground">
-                    {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
-                  </p>
-                </>
-              )}
+              <QRCodeSVG value={registerUrl} size={240} level="H" />
+              <p className="text-center mt-4 text-sm text-muted-foreground">
+                {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
+              </p>
             </div>
-            {(() => {
-              const origin =
-                typeof window !== "undefined" ? window.location.origin : "";
-              const registerUrl =
-                home?.qr_newcomer_url && /^https?:\/\/.+\/register(\?|$)/.test(home.qr_newcomer_url)
-                  ? home.qr_newcomer_url
-                  : `${origin}/register${event ? `?event=${event.qr_token}` : ""}`;
-              return (
-                <a href={registerUrl} className="mt-6">
-                  <Button
-                    size="lg"
-                    className="rounded-full px-8 bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                  >
-                    立即登记 / Register Now
-                  </Button>
-                </a>
-              );
-            })()}
+            <a href={registerUrl} className="mt-6">
+              <Button
+                size="lg"
+                className="rounded-full px-8 bg-green-600 hover:bg-green-700 text-white shadow-lg"
+              >
+                立即登记 / Register Now
+              </Button>
+            </a>
           </div>
         </div>
       </main>
