@@ -97,7 +97,7 @@ function SignagePage() {
   };
 
   const copyLink = async (p: Poster) => {
-    const url = `${window.location.origin}/display/poster/${p.slug || p.id}`;
+    const url = `${getPublicOrigin()}/display/poster/${p.slug || p.id}`;
     await navigator.clipboard.writeText(url);
     toast.success("链接已复制");
   };
