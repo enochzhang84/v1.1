@@ -4323,6 +4323,10 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
               </div>
             </div>
           </div>
+          {/* 退修会二维码管理（动态 URL + 持久化） */}
+          <div className="mt-4">
+            <RetreatQrPanel />
+          </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">教会服侍</h2>
