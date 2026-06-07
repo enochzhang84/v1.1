@@ -2791,6 +2791,18 @@ function AdminPage() {
             {backupOpen && <BackupRestorePanel />}
           </DialogContent>
         </Dialog>
+        {/* 版本更新 Dialog */}
+        <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>版本更新</DialogTitle>
+              <DialogDescription>
+                查看当前部署版本与 GitHub 最新提交；仅超级管理员且在 VPS 环境可执行更新。
+              </DialogDescription>
+            </DialogHeader>
+            {versionOpen && <VersionUpdatePanel isSuperAdmin={isSuperAdmin} />}
+          </DialogContent>
+        </Dialog>
             </TabsContent>
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
