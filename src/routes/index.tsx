@@ -260,7 +260,15 @@ function Index() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              <QRCodeSVG value={registerUrl} size={240} level="H" />
+              {home?.qr_image_url ? (
+                <img
+                  src={home.qr_image_url}
+                  alt="主页二维码"
+                  className="w-[240px] h-[240px] object-contain bg-white"
+                />
+              ) : (
+                <QRCodeSVG value={registerUrl} size={240} level="H" />
+              )}
               <p className="text-center mt-4 text-sm text-muted-foreground">
                 {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
               </p>
@@ -274,6 +282,7 @@ function Index() {
               </Button>
             </a>
           </div>
+
         </div>
       </main>
     </div>
