@@ -703,10 +703,12 @@ function FollowUpEditor({
 
 function DetailDrawer({
   reg,
+  companions,
   onClose,
   onEdit,
 }: {
   reg: Reg | null;
+  companions: Reg[];
   onClose: () => void;
   onEdit: (r: Reg) => void;
 }) {
