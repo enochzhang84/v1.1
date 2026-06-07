@@ -208,11 +208,28 @@ export function HomePageSettingsPanel() {
         qr_newcomer_url: s.qr_newcomer_url,
         qr_retreat_url: s.qr_retreat_url,
         qr_image_url: s.qr_image_url,
+        site_title: s.site_title,
+        site_subtitle: s.site_subtitle,
+        bible_verse: s.bible_verse,
+        theme_text: s.theme_text,
+        church_name: s.church_name,
+        church_address: s.church_address,
+        church_address_en: s.church_address_en,
+        church_phone: s.church_phone,
+        church_email: s.church_email,
+        church_website: s.church_website,
+        worship_schedule: s.worship_schedule,
+        primary_button_text: s.primary_button_text,
+        primary_button_url: s.primary_button_url,
+        secondary_button_text: s.secondary_button_text,
+        secondary_button_url: s.secondary_button_url,
+        background_image_url: s.background_image_url,
+        footer_text: s.footer_text,
       })
       .eq("id", s.id);
     setSaving(false);
     if (error) alert("保存失败", error.message, "error");
-    else alert("系统提示", "全部设置已保存。", "success");
+    else alert("系统提示", "主页设置已保存。", "success");
   }
 
   /* ─── QR helpers ────────────────────────────────────────────────────── */
