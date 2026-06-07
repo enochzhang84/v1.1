@@ -63,7 +63,7 @@ function Index() {
   useEffect(() => {
     (supabase as any)
       .from("home_page_settings")
-      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_image_url, qr_newcomer_url")
+      .select("logo_url, welcome_title, welcome_subtitle, welcome_description, welcome_image_url, qr_title, qr_description, qr_newcomer_url")
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle()
