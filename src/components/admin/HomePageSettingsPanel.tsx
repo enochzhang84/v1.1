@@ -236,25 +236,34 @@ export function HomePageSettingsPanel() {
     w.document.close();
   }
 
-  function saveQrLink(scope: "newcomer" | "retreat", value: string) {
+  async function saveQrLink(scope: "newcomer" | "retreat", value: string) {
+    if (!s) return;
     const trimmed = value.trim();
+    let finalUrl: string | null = null;
     if (!trimmed) {
-      // Empty = clear override and fall back to current-origin auto-generated QR.
-      if (scope === "newcomer") update({ qr_newcomer_url: null });
-      else update({ qr_retreat_url: null });
-      alert("系统提示", "已清空，二维码将跟随当前站点域名自动生成。", "success");
-      return;
+      finalUrl = null;
+    } else {
+      const check =
+        scope === "newcomer" ? validateRegisterUrl(trimmed) : validateRetreatUrl(trimmed);
+      if (!check.ok) return alert("URL 校验失败", check.error, "error");
+      finalUrl = trimmed;
     }
-    const check = scope === "newcomer" ? validateRegisterUrl(trimmed) : validateRetreatUrl(trimmed);
-    if (!check.ok) return alert("URL 校验失败", check.error, "error");
-    if (scope === "newcomer") update({ qr_newcomer_url: trimmed });
-    else update({ qr_retreat_url: trimmed });
+    const patch: Partial<Settings> =
+      scope === "newcomer"
+        ? { qr_newcomer_url: finalUrl, qr_image_url: null }
+        : { qr_retreat_url: finalUrl };
+    const { error } = await (supabase as any)
+      .from("home_page_settings")
+      .update(patch)
+      .eq("id", s.id);
+    if (error) return alert("保存失败", error.message, "error");
+    update(patch);
     alert(
       "系统提示",
-      "链接已设置，请点击底部「保存全部设置」持久化。",
+      finalUrl ? "二维码链接已更新" : "已清空，二维码将跟随当前站点域名自动生成。",
       "success",
     );
-  }
+    }
 
   if (loading) {
     return <div className="text-[12px] text-black">加载中…</div>;
