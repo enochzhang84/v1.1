@@ -2828,6 +2828,7 @@ function AdminPage() {
 
         {welcomeSubTab === "greet" && (
           <div className="space-y-8 mt-8">
+        <DbWriteTestPanel />
         <RegistrationListCRM
           regs={regs as any}
           filtered={filtered as any}
