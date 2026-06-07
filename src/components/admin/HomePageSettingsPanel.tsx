@@ -108,7 +108,18 @@ export function HomePageSettingsPanel() {
         .limit(1)
         .maybeSingle();
       if (error) alert("加载失败", error.message, "error");
-      setS(data ?? null);
+      if (data) {
+        setS(data);
+      } else {
+        // 自动创建一条默认记录，避免后续操作提示「未找到主页设置记录」
+        const { data: created, error: insErr } = await (supabase as any)
+          .from("home_page_settings")
+          .insert({ welcome_mode: "text" })
+          .select("*")
+          .single();
+        if (insErr) alert("初始化失败", insErr.message, "error");
+        setS(created ?? null);
+      }
       setLoading(false);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -225,25 +236,34 @@ export function HomePageSettingsPanel() {
     w.document.close();
   }
 
-  function saveQrLink(scope: "newcomer" | "retreat", value: string) {
+  async function saveQrLink(scope: "newcomer" | "retreat", value: string) {
+    if (!s) return;
     const trimmed = value.trim();
+    let finalUrl: string | null = null;
     if (!trimmed) {
-      // Empty = clear override and fall back to current-origin auto-generated QR.
-      if (scope === "newcomer") update({ qr_newcomer_url: null });
-      else update({ qr_retreat_url: null });
-      alert("系统提示", "已清空，二维码将跟随当前站点域名自动生成。", "success");
-      return;
+      finalUrl = null;
+    } else {
+      const check =
+        scope === "newcomer" ? validateRegisterUrl(trimmed) : validateRetreatUrl(trimmed);
+      if (!check.ok) return alert("URL 校验失败", check.error, "error");
+      finalUrl = trimmed;
     }
-    const check = scope === "newcomer" ? validateRegisterUrl(trimmed) : validateRetreatUrl(trimmed);
-    if (!check.ok) return alert("URL 校验失败", check.error, "error");
-    if (scope === "newcomer") update({ qr_newcomer_url: trimmed });
-    else update({ qr_retreat_url: trimmed });
+    const patch: Partial<Settings> =
+      scope === "newcomer"
+        ? { qr_newcomer_url: finalUrl, qr_image_url: null }
+        : { qr_retreat_url: finalUrl };
+    const { error } = await (supabase as any)
+      .from("home_page_settings")
+      .update(patch)
+      .eq("id", s.id);
+    if (error) return alert("保存失败", error.message, "error");
+    update(patch);
     alert(
       "系统提示",
-      "链接已设置，请点击底部「保存全部设置」持久化。",
+      finalUrl ? "二维码链接已更新" : "已清空，二维码将跟随当前站点域名自动生成。",
       "success",
     );
-  }
+    }
 
   if (loading) {
     return <div className="text-[12px] text-black">加载中…</div>;
@@ -552,48 +572,37 @@ export function HomePageSettingsPanel() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {s.qr_image_url ? (
-            <img
-              src={s.qr_image_url}
-              alt="二维码预览"
-              className="h-28 w-28 object-contain bg-white"
-              style={{
-                borderStyle: "solid",
-                borderWidth: 2,
-                borderColor: "#808080 #ffffff #ffffff #808080",
-              }}
-              onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0.3")}
+          <div
+            className="h-28 w-28 grid place-items-center bg-white p-2"
+            style={{
+              borderStyle: "solid",
+              borderWidth: 2,
+              borderColor: "#808080 #ffffff #ffffff #808080",
+            }}
+          >
+            <QRCodeSVG
+              value={(s.qr_newcomer_url?.trim() || `${origin}/register`)}
+              size={96}
+              level="H"
             />
-          ) : (
-            <div
-              className="h-28 w-28 grid place-items-center text-[11px] bg-white"
-              style={{
-                borderStyle: "solid",
-                borderWidth: 2,
-                borderColor: "#808080 #ffffff #ffffff #808080",
-              }}
-            >
-              使用动态二维码
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="text-[11px] break-all">
+              当前链接：{s.qr_newcomer_url?.trim() || `${origin}/register（自动）`}
             </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  if (!f) return;
-                  const url = await uploadFile(f, `qrcode.${f.name.split(".").pop() || "png"}`);
-                  if (url) update({ qr_image_url: url });
-                }}
-              />
-              <Win98Button asChild>上传二维码</Win98Button>
-            </label>
-            <Win98Button onClick={() => update({ qr_image_url: null })}>
-              恢复默认二维码
-            </Win98Button>
+            <div className="flex flex-wrap gap-2">
+              <Win98Button
+                onClick={() => saveQrLink("newcomer", `${origin}/register`)}
+              >
+                替换新人登记二维码
+              </Win98Button>
+              <Win98Button onClick={() => saveQrLink("newcomer", "")}>
+                恢复默认（跟随当前域名）
+              </Win98Button>
+            </div>
+            <div className="text-[11px] text-[#555]">
+              二维码不再依赖上传图片，统一根据当前站点域名动态生成。
+            </div>
           </div>
         </div>
       </Win98GroupBox>
