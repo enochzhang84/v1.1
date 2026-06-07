@@ -28,6 +28,24 @@ type Settings = {
   qr_newcomer_url: string | null;
   qr_retreat_url: string | null;
   qr_image_url: string | null;
+  // Extended editable fields
+  site_title: string | null;
+  site_subtitle: string | null;
+  bible_verse: string | null;
+  theme_text: string | null;
+  church_name: string | null;
+  church_address: string | null;
+  church_address_en: string | null;
+  church_phone: string | null;
+  church_email: string | null;
+  church_website: string | null;
+  worship_schedule: string | null;
+  primary_button_text: string | null;
+  primary_button_url: string | null;
+  secondary_button_text: string | null;
+  secondary_button_url: string | null;
+  background_image_url: string | null;
+  footer_text: string | null;
 };
 
 const BUCKET = "site-assets";
