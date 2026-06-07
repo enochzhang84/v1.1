@@ -173,7 +173,7 @@ function PosterDisplay() {
               value={
                 poster.link_url.startsWith("http")
                   ? poster.link_url
-                  : `${typeof window !== "undefined" ? window.location.origin : ""}${poster.link_url}`
+                  : `${getPublicOrigin()}${poster.link_url}`
               }
               size={220}
             />
