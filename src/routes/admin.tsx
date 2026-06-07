@@ -31,6 +31,7 @@ import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword, setUserAnalyticsArea } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
+import { VersionUpdatePanel } from "@/components/admin/VersionUpdatePanel";
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
 import { QrLibraryManager } from "@/components/admin/QrLibraryManager";
@@ -733,6 +734,7 @@ function AdminPage() {
   const [qrLibOpen, setQrLibOpen] = useState(false);
   const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [versionOpen, setVersionOpen] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
@@ -2755,6 +2757,12 @@ function AdminPage() {
               💾 备份与恢复
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setVersionOpen(true)}
+            >
+              🔄 版本更新
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
@@ -2781,6 +2789,18 @@ function AdminPage() {
               </DialogDescription>
             </DialogHeader>
             {backupOpen && <BackupRestorePanel />}
+          </DialogContent>
+        </Dialog>
+        {/* 版本更新 Dialog */}
+        <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>版本更新</DialogTitle>
+              <DialogDescription>
+                查看当前部署版本与 GitHub 最新提交；仅超级管理员且在 VPS 环境可执行更新。
+              </DialogDescription>
+            </DialogHeader>
+            {versionOpen && <VersionUpdatePanel isSuperAdmin={isSuperAdmin} />}
           </DialogContent>
         </Dialog>
             </TabsContent>

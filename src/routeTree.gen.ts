@@ -36,6 +36,7 @@ import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$tok
 import { Route as DisplaySlugRouteImport } from './routes/display.$slug'
 import { Route as AdultCheckinKindRouteImport } from './routes/adult-checkin.$kind'
 import { Route as DisplayPosterIdRouteImport } from './routes/display.poster.$id'
+import { Route as ApiAdminSelfUpdateRouteImport } from './routes/api/admin/self-update'
 
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
@@ -172,6 +173,11 @@ const DisplayPosterIdRoute = DisplayPosterIdRouteImport.update({
   path: '/display/poster/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSelfUpdateRoute = ApiAdminSelfUpdateRouteImport.update({
+  id: '/api/admin/self-update',
+  path: '/api/admin/self-update',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
+  '/api/admin/self-update': typeof ApiAdminSelfUpdateRoute
   '/display/poster/$id': typeof DisplayPosterIdRoute
 }
 export interface FileRoutesByTo {
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
+  '/api/admin/self-update': typeof ApiAdminSelfUpdateRoute
   '/display/poster/$id': typeof DisplayPosterIdRoute
 }
 export interface FileRoutesById {
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
+  '/api/admin/self-update': typeof ApiAdminSelfUpdateRoute
   '/display/poster/$id': typeof DisplayPosterIdRoute
 }
 export interface FileRouteTypes {
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
+    | '/api/admin/self-update'
     | '/display/poster/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
+    | '/api/admin/self-update'
     | '/display/poster/$id'
   id:
     | '__root__'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
+    | '/api/admin/self-update'
     | '/display/poster/$id'
   fileRoutesById: FileRoutesById
 }
@@ -378,6 +390,7 @@ export interface RootRouteChildren {
   AdultCheckinKindRoute: typeof AdultCheckinKindRoute
   DisplaySlugRoute: typeof DisplaySlugRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
+  ApiAdminSelfUpdateRoute: typeof ApiAdminSelfUpdateRoute
   DisplayPosterIdRoute: typeof DisplayPosterIdRoute
 }
 
@@ -572,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DisplayPosterIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/self-update': {
+      id: '/api/admin/self-update'
+      path: '/api/admin/self-update'
+      fullPath: '/api/admin/self-update'
+      preLoaderRoute: typeof ApiAdminSelfUpdateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -602,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdultCheckinKindRoute: AdultCheckinKindRoute,
   DisplaySlugRoute: DisplaySlugRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
+  ApiAdminSelfUpdateRoute: ApiAdminSelfUpdateRoute,
   DisplayPosterIdRoute: DisplayPosterIdRoute,
 }
 export const routeTree = rootRouteImport
