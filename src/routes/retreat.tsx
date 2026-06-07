@@ -17,7 +17,7 @@ export const Route = createFileRoute("/retreat")({
 });
 
 function RetreatPage() {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const url = `${origin}/retreat-register`;
   const [qrImg, setQrImg] = useState<string | null>(null);
   const [qrFailed, setQrFailed] = useState(false);
