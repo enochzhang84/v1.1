@@ -97,6 +97,11 @@ type Reg = {
   faith_stage: string | null;
   last_followup_at: string | null;
   next_followup_at: string | null;
+  visitor_group_id: string | null;
+  is_primary: boolean | null;
+  relationship_to_primary: string | null;
+  primary_registration_id: string | null;
+  wechat: string | null;
 };
 
 
