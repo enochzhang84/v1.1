@@ -24,7 +24,6 @@ type Settings = {
   welcome_content_html: string | null;
   qr_title: string | null;
   qr_description: string | null;
-  qr_image_url: string | null;
   qr_newcomer_url: string | null;
   qr_retreat_url: string | null;
 };
