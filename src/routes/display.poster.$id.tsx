@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/display/poster/$id")({
   component: PosterDisplay,
@@ -172,7 +173,7 @@ function PosterDisplay() {
               value={
                 poster.link_url.startsWith("http")
                   ? poster.link_url
-                  : `${typeof window !== "undefined" ? window.location.origin : ""}${poster.link_url}`
+                  : `${getPublicOrigin()}${poster.link_url}`
               }
               size={220}
             />

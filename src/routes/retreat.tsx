@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/retreat")({
   component: RetreatPage,
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/retreat")({
 });
 
 function RetreatPage() {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const url = `${origin}/retreat-register`;
   const [qrImg, setQrImg] = useState<string | null>(null);
   const [qrFailed, setQrFailed] = useState(false);

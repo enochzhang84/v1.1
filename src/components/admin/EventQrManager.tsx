@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 type Props = {
   title: string;
@@ -28,7 +29,7 @@ export function EventQrManager({
   printFooter = "基督之家第三家",
   downloadName = "qrcode",
 }: Props) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicOrigin();
   const fallback = `${origin}${defaultPath}`;
   const [url, setUrl] = useState<string>(persistedUrl?.trim() ? persistedUrl : fallback);
   const [renderUrl, setRenderUrl] = useState<string>(url);

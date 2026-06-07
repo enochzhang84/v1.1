@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, Fragment } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
+import { getPublicOrigin } from "@/lib/public-origin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -771,7 +772,7 @@ function AdminPage() {
     }
   }, [fetchUsersFn]);
 
-  useEffect(() => setOrigin(window.location.origin), []);
+  useEffect(() => setOrigin(getPublicOrigin()), []);
 
   const loadData = useCallback(async () => {
     const [{ data: r }, { data: e }, { data: s }, { data: a }, { data: f }, { data: cs }] = await Promise.all([

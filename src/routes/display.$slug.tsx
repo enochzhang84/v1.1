@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/display/$slug")({
   component: DisplayScreen,
@@ -383,7 +384,7 @@ function ContentRenderer({
         <div className="flex-1 flex items-center justify-center px-12">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="bg-white p-6 rounded-2xl">
-              <QRCodeSVG value={url || `${typeof window !== "undefined" ? window.location.origin : ""}/retreat-register`} size={portrait ? 380 : 460} />
+              <QRCodeSVG value={url || `${getPublicOrigin()}/retreat-register`} size={portrait ? 380 : 460} />
             </div>
             <div className="text-left">
               <div className={`${headingSize} font-serif font-bold mb-4`}>{title || "退修会报名"}</div>

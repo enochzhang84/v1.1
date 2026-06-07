@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/signage")({
   component: SignagePage,
@@ -96,7 +97,7 @@ function SignagePage() {
   };
 
   const copyLink = async (p: Poster) => {
-    const url = `${window.location.origin}/display/poster/${p.slug || p.id}`;
+    const url = `${getPublicOrigin()}/display/poster/${p.slug || p.id}`;
     await navigator.clipboard.writeText(url);
     toast.success("链接已复制");
   };
