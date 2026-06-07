@@ -311,6 +311,22 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
     return { todayCnt, weekCnt, seekers, christians, waiting, contacted };
   }, [regs]);
 
+  // Group counts: visitor_group_id -> total members
+  const groupSizes = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of regs) {
+      if (!r.visitor_group_id) continue;
+      m.set(r.visitor_group_id, (m.get(r.visitor_group_id) ?? 0) + 1);
+    }
+    return m;
+  }, [regs]);
+  const companionsOf = (r: Reg): Reg[] => {
+    if (!r.visitor_group_id || !r.is_primary) return [];
+    return regs.filter(
+      (x) => x.visitor_group_id === r.visitor_group_id && x.id !== r.id,
+    );
+  };
+
   return (
     <TooltipProvider delayDuration={300}>
       <section className="bg-card border border-border/50 rounded-2xl p-5 sm:p-6">
