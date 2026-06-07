@@ -772,6 +772,39 @@ function DetailDrawer({
                 </DetailGroup>
               )}
 
+              {companions.length > 0 && (
+                <DetailGroup title={`同行成员 (${companions.length})`}>
+                  <div className="space-y-2">
+                    {companions.map((c) => (
+                      <div
+                        key={c.id}
+                        className="rounded-lg border border-border/60 bg-muted/30 p-2.5 flex items-center justify-between gap-2"
+                      >
+                        <div className="leading-tight">
+                          <div className="text-sm font-medium">
+                            {c.name}
+                            {c.relationship_to_primary && (
+                              <span className="text-muted-foreground text-xs"> · {c.relationship_to_primary}</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {[
+                              c.gender,
+                              c.age_group,
+                              c.phone,
+                              c.wechat ? `微信:${c.wechat}` : null,
+                            ].filter(Boolean).join(" · ") || "—"}
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => onEdit(c)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </DetailGroup>
+              )}
+
               <div className="flex items-center gap-2 pt-2">
                 <Button size="sm" onClick={() => onEdit(reg)}>
                   <Pencil className="h-3.5 w-3.5 mr-1" /> 编辑资料
