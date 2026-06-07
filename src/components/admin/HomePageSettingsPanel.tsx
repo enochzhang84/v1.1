@@ -218,44 +218,8 @@ export function HomePageSettingsPanel() {
     w.document.close();
   }
 
-  async function uploadQrAsPng(name: string): Promise<string | null> {
-    const blob = await qrSvgToPngBlob(640);
-    if (!blob) return null;
-    const file = new File([blob], `${name}.png`, { type: "image/png" });
-    return uploadFile(file, `${name}.png`);
-  }
-
-  async function saveQr() {
-    const url = await uploadQrAsPng(`qr-${qrType}`);
-    if (!url) return alert("保存失败", "二维码上传失败。", "error");
-    if (qrType === "newcomer") update({ qr_newcomer_url: url });
-    else if (qrType === "retreat") update({ qr_retreat_url: url });
-    alert(
-      "系统提示",
-      "二维码图片已上传，记得点击底部「保存全部设置」持久化。",
-      "success",
-    );
-  }
-
-  function replaceSiteQr(scope: "newcomer" | "retreat" | "all") {
-    confirm(
-      "系统提示",
-      `将使用当前生成的二维码替换：${
-        scope === "all" ? "全部二维码" : scope === "newcomer" ? "新人登记二维码" : "退修会二维码"
-      }。是否继续？`,
-      async () => {
-        const url = await uploadQrAsPng(`qr-${scope === "all" ? qrType : scope}`);
-        if (!url) return alert("替换失败", "二维码上传失败。", "error");
-        const patch: Partial<Settings> = {};
-        if (scope === "newcomer" || scope === "all") patch.qr_newcomer_url = url;
-        if (scope === "retreat" || scope === "all") patch.qr_retreat_url = url;
-        if (scope === "all") patch.qr_image_url = url;
-        update(patch);
-        alert("系统提示", "替换成功，请点击底部「保存全部设置」持久化。", "success");
-      },
-      "warn",
-    );
-  }
+  // QR upload / replace removed: QR codes are now always generated from
+  // qr_newcomer_url (or the current origin) — never stored as images.
 
   if (loading) {
     return <div className="text-[12px] text-black">加载中…</div>;
