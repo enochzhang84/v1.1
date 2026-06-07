@@ -101,8 +101,23 @@ export function HomePageSettingsPanel() {
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (error) alert("加载失败", error.message, "error");
-      setS(data ?? null);
+      if (error) {
+        alert("加载失败", error.message, "error");
+        setLoading(false);
+        return;
+      }
+      if (data) {
+        setS(data);
+      } else {
+        // Auto-create a default record so the panel is always usable.
+        const { data: created, error: insErr } = await (supabase as any)
+          .from("home_page_settings")
+          .insert({ welcome_mode: "text" })
+          .select("*")
+          .maybeSingle();
+        if (insErr) alert("初始化失败", insErr.message, "error");
+        else setS(created);
+      }
       setLoading(false);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
