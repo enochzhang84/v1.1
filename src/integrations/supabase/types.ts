@@ -848,15 +848,31 @@ export type Database = {
       }
       home_page_settings: {
         Row: {
+          background_image_url: string | null
+          bible_verse: string | null
+          church_address: string | null
+          church_address_en: string | null
+          church_email: string | null
+          church_name: string | null
+          church_phone: string | null
+          church_website: string | null
+          footer_text: string | null
           id: string
           logo_subtitle: string | null
           logo_title: string | null
           logo_url: string | null
+          primary_button_text: string | null
+          primary_button_url: string | null
           qr_description: string | null
           qr_image_url: string | null
           qr_newcomer_url: string | null
           qr_retreat_url: string | null
           qr_title: string | null
+          secondary_button_text: string | null
+          secondary_button_url: string | null
+          site_subtitle: string | null
+          site_title: string | null
+          theme_text: string | null
           updated_at: string
           welcome_content_html: string | null
           welcome_description: string | null
@@ -864,17 +880,34 @@ export type Database = {
           welcome_mode: string
           welcome_subtitle: string | null
           welcome_title: string | null
+          worship_schedule: string | null
         }
         Insert: {
+          background_image_url?: string | null
+          bible_verse?: string | null
+          church_address?: string | null
+          church_address_en?: string | null
+          church_email?: string | null
+          church_name?: string | null
+          church_phone?: string | null
+          church_website?: string | null
+          footer_text?: string | null
           id?: string
           logo_subtitle?: string | null
           logo_title?: string | null
           logo_url?: string | null
+          primary_button_text?: string | null
+          primary_button_url?: string | null
           qr_description?: string | null
           qr_image_url?: string | null
           qr_newcomer_url?: string | null
           qr_retreat_url?: string | null
           qr_title?: string | null
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          site_subtitle?: string | null
+          site_title?: string | null
+          theme_text?: string | null
           updated_at?: string
           welcome_content_html?: string | null
           welcome_description?: string | null
@@ -882,17 +915,34 @@ export type Database = {
           welcome_mode?: string
           welcome_subtitle?: string | null
           welcome_title?: string | null
+          worship_schedule?: string | null
         }
         Update: {
+          background_image_url?: string | null
+          bible_verse?: string | null
+          church_address?: string | null
+          church_address_en?: string | null
+          church_email?: string | null
+          church_name?: string | null
+          church_phone?: string | null
+          church_website?: string | null
+          footer_text?: string | null
           id?: string
           logo_subtitle?: string | null
           logo_title?: string | null
           logo_url?: string | null
+          primary_button_text?: string | null
+          primary_button_url?: string | null
           qr_description?: string | null
           qr_image_url?: string | null
           qr_newcomer_url?: string | null
           qr_retreat_url?: string | null
           qr_title?: string | null
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          site_subtitle?: string | null
+          site_title?: string | null
+          theme_text?: string | null
           updated_at?: string
           welcome_content_html?: string | null
           welcome_description?: string | null
@@ -900,6 +950,7 @@ export type Database = {
           welcome_mode?: string
           welcome_subtitle?: string | null
           welcome_title?: string | null
+          worship_schedule?: string | null
         }
         Relationships: []
       }

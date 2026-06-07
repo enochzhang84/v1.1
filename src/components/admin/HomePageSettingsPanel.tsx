@@ -28,6 +28,24 @@ type Settings = {
   qr_newcomer_url: string | null;
   qr_retreat_url: string | null;
   qr_image_url: string | null;
+  // Extended editable fields
+  site_title: string | null;
+  site_subtitle: string | null;
+  bible_verse: string | null;
+  theme_text: string | null;
+  church_name: string | null;
+  church_address: string | null;
+  church_address_en: string | null;
+  church_phone: string | null;
+  church_email: string | null;
+  church_website: string | null;
+  worship_schedule: string | null;
+  primary_button_text: string | null;
+  primary_button_url: string | null;
+  secondary_button_text: string | null;
+  secondary_button_url: string | null;
+  background_image_url: string | null;
+  footer_text: string | null;
 };
 
 const BUCKET = "site-assets";
@@ -190,11 +208,28 @@ export function HomePageSettingsPanel() {
         qr_newcomer_url: s.qr_newcomer_url,
         qr_retreat_url: s.qr_retreat_url,
         qr_image_url: s.qr_image_url,
+        site_title: s.site_title,
+        site_subtitle: s.site_subtitle,
+        bible_verse: s.bible_verse,
+        theme_text: s.theme_text,
+        church_name: s.church_name,
+        church_address: s.church_address,
+        church_address_en: s.church_address_en,
+        church_phone: s.church_phone,
+        church_email: s.church_email,
+        church_website: s.church_website,
+        worship_schedule: s.worship_schedule,
+        primary_button_text: s.primary_button_text,
+        primary_button_url: s.primary_button_url,
+        secondary_button_text: s.secondary_button_text,
+        secondary_button_url: s.secondary_button_url,
+        background_image_url: s.background_image_url,
+        footer_text: s.footer_text,
       })
       .eq("id", s.id);
     setSaving(false);
     if (error) alert("保存失败", error.message, "error");
-    else alert("系统提示", "全部设置已保存。", "success");
+    else alert("系统提示", "主页设置已保存。", "success");
   }
 
   /* ─── QR helpers ────────────────────────────────────────────────────── */
@@ -498,6 +533,192 @@ export function HomePageSettingsPanel() {
               </div>
             </div>
           </Card>
+
+          {/* 3b. 教会信息 */}
+          <Card title="③-2 教会基本信息">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Win98Label>网站主标题</Win98Label>
+                <Win98Input
+                  value={s.site_title ?? ""}
+                  onChange={(e) => update({ site_title: e.target.value })}
+                  placeholder="基督之家第三家"
+                />
+              </div>
+              <div>
+                <Win98Label>网站副标题</Win98Label>
+                <Win98Input
+                  value={s.site_subtitle ?? ""}
+                  onChange={(e) => update({ site_subtitle: e.target.value })}
+                  placeholder="The Home of Christ Church"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Win98Label>首页经文</Win98Label>
+                <Win98Textarea
+                  value={s.bible_verse ?? ""}
+                  onChange={(e) => update({ bible_verse: e.target.value })}
+                  placeholder="凡劳苦担重担的人，可以到我这里来…(马太 11:28)"
+                  rows={2}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Win98Label>今年主题</Win98Label>
+                <Win98Input
+                  value={s.theme_text ?? ""}
+                  onChange={(e) => update({ theme_text: e.target.value })}
+                  placeholder="信靠顺服 活出基督"
+                />
+              </div>
+              <div>
+                <Win98Label>教会名称</Win98Label>
+                <Win98Input
+                  value={s.church_name ?? ""}
+                  onChange={(e) => update({ church_name: e.target.value })}
+                  placeholder="The Home of Christ Church In Fremont"
+                />
+              </div>
+              <div>
+                <Win98Label>教会电话</Win98Label>
+                <Win98Input
+                  value={s.church_phone ?? ""}
+                  onChange={(e) => update({ church_phone: e.target.value })}
+                  placeholder="510 651-9631"
+                />
+              </div>
+              <div>
+                <Win98Label>教会邮箱</Win98Label>
+                <Win98Input
+                  value={s.church_email ?? ""}
+                  onChange={(e) => update({ church_email: e.target.value })}
+                  placeholder="contact@hoc3.org"
+                />
+              </div>
+              <div>
+                <Win98Label>教会网址</Win98Label>
+                <Win98Input
+                  value={s.church_website ?? ""}
+                  onChange={(e) => update({ church_website: e.target.value })}
+                  placeholder="hoc3.org"
+                />
+              </div>
+              <div>
+                <Win98Label>教会地址（中文）</Win98Label>
+                <Win98Input
+                  value={s.church_address ?? ""}
+                  onChange={(e) => update({ church_address: e.target.value })}
+                  placeholder="4248 Solar Way, Fremont, CA 94538"
+                />
+              </div>
+              <div>
+                <Win98Label>教会地址（英文）</Win98Label>
+                <Win98Input
+                  value={s.church_address_en ?? ""}
+                  onChange={(e) => update({ church_address_en: e.target.value })}
+                  placeholder="4248 Solar Way, Fremont, CA 94538"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Win98Label>主日崇拜时间（每行一条）</Win98Label>
+                <Win98Textarea
+                  value={s.worship_schedule ?? ""}
+                  onChange={(e) => update({ worship_schedule: e.target.value })}
+                  placeholder={"成人主日学 中文 9:30 am\n成人主日学 英文 9:30 am\n主日敬拜 中文 11:00 am\n主日敬拜 英文 11:00 am\n儿童主日学 11:00 am"}
+                  rows={5}
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* 3c. 按钮 & 底部 & 页面背景 */}
+          <Card title="③-3 按钮 / 底部 / 页面背景">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Win98Label>主按钮文字</Win98Label>
+                <Win98Input
+                  value={s.primary_button_text ?? ""}
+                  onChange={(e) => update({ primary_button_text: e.target.value })}
+                  placeholder="立即登记 / Register Now"
+                />
+              </div>
+              <div>
+                <Win98Label>主按钮跳转链接</Win98Label>
+                <Win98Input
+                  value={s.primary_button_url ?? ""}
+                  onChange={(e) => update({ primary_button_url: e.target.value })}
+                  placeholder="/register"
+                />
+              </div>
+              <div>
+                <Win98Label>次按钮文字（可选）</Win98Label>
+                <Win98Input
+                  value={s.secondary_button_text ?? ""}
+                  onChange={(e) => update({ secondary_button_text: e.target.value })}
+                  placeholder="了解更多"
+                />
+              </div>
+              <div>
+                <Win98Label>次按钮跳转链接（可选）</Win98Label>
+                <Win98Input
+                  value={s.secondary_button_url ?? ""}
+                  onChange={(e) => update({ secondary_button_url: e.target.value })}
+                  placeholder="https://hoc3.org"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Win98Label>底部版权信息</Win98Label>
+                <Win98Input
+                  value={s.footer_text ?? ""}
+                  onChange={(e) => update({ footer_text: e.target.value })}
+                  placeholder="© 基督之家第三家"
+                />
+              </div>
+            </div>
+            <div>
+              <Win98Label>页面整体背景图（可选）</Win98Label>
+              <div className="flex items-center gap-3">
+                {s.background_image_url ? (
+                  <img
+                    src={s.background_image_url}
+                    alt="页面背景预览"
+                    className="h-24 w-40 object-cover bg-white"
+                    style={{ borderStyle: "solid", borderWidth: 2, borderColor: "#808080 #ffffff #ffffff #808080" }}
+                  />
+                ) : (
+                  <div
+                    className="h-24 w-40 grid place-items-center text-[11px] bg-white"
+                    style={{ borderStyle: "solid", borderWidth: 2, borderColor: "#808080 #ffffff #ffffff #808080" }}
+                  >
+                    未设置
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        const url = await uploadFile(
+                          f,
+                          `page-bg.${f.name.split(".").pop() || "jpg"}`,
+                        );
+                        if (url) update({ background_image_url: url });
+                      }}
+                    />
+                    <Win98Button asChild>上传页面背景</Win98Button>
+                  </label>
+                  <Win98Button onClick={() => update({ background_image_url: null })}>
+                    清除
+                  </Win98Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+
 
           {/* 4. 二维码管理 */}
           <Card
