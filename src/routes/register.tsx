@@ -255,7 +255,9 @@ function RegisterPage() {
           <div className="text-6xl mb-6">🕊️</div>
           <h1 className="font-serif text-4xl text-foreground mb-4">愿主祝福您</h1>
           <p className="text-muted-foreground mb-6">
-            谢谢您完成登记。我们的同工会很快与您联系,期待再次见到您。
+            {companions.filter((c) => c.name.trim()).length > 0
+              ? "登记成功，已记录你和同行成员的信息。欢迎来到基督之家第三家！"
+              : "谢谢您完成登记。我们的同工会很快与您联系,期待再次见到您。"}
           </p>
           <div className="mx-auto max-w-sm text-left mb-8">
             <p className="font-serif text-lg text-foreground leading-relaxed">
