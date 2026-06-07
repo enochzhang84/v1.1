@@ -617,7 +617,7 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
           </div>
         )}
 
-        <DetailDrawer reg={detailReg} onClose={() => setDetailReg(null)} onEdit={(r) => { setDetailReg(null); onEdit(r); }} />
+        <DetailDrawer reg={detailReg} companions={detailReg ? companionsOf(detailReg) : []} onClose={() => setDetailReg(null)} onEdit={(r) => { setDetailReg(null); onEdit(r); }} />
       </section>
     </TooltipProvider>
   );
