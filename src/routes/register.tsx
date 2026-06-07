@@ -34,6 +34,24 @@ function RegisterPage() {
   };
   const [entryDate, setEntryDate] = useState<string>(todayStr());
 
+  type Companion = {
+    name: string;
+    gender: string;
+    age_group: string;
+    phone: string;
+    wechat: string;
+    relationship_to_primary: string;
+  };
+  const emptyCompanion = (): Companion => ({
+    name: "",
+    gender: "",
+    age_group: "",
+    phone: "",
+    wechat: "",
+    relationship_to_primary: "",
+  });
+  const [companions, setCompanions] = useState<Companion[]>([]);
+
   const [form, setForm] = useState({
     name: "",
     name_en: "",
