@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
-import { buildRetreatRegisterUrl } from "@/lib/qr-url";
 
 export const Route = createFileRoute("/retreat")({
   component: RetreatPage,
@@ -15,9 +16,19 @@ export const Route = createFileRoute("/retreat")({
 });
 
 function RetreatPage() {
-  // Always generate the QR from the current site origin so scans stay on
-  // the same deployment (and same database) as the page being viewed.
-  const url = buildRetreatRegisterUrl();
+  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
+  const url = `${PUBLISHED_ORIGIN}/retreat-register`;
+  const [qrImg, setQrImg] = useState<string | null>(null);
+  const [qrFailed, setQrFailed] = useState(false);
+  useEffect(() => {
+    (supabase as any)
+      .from("home_page_settings")
+      .select("qr_retreat_url")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: { data: any }) => { if (data?.qr_retreat_url) setQrImg(data.qr_retreat_url); });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,7 +78,16 @@ function RetreatPage() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              <QRCodeSVG value={url} size={240} level="H" />
+              {qrImg && !qrFailed ? (
+                <img
+                  src={qrImg}
+                  onError={() => setQrFailed(true)}
+                  alt="退修会二维码"
+                  className="w-60 h-60 object-contain"
+                />
+              ) : (
+                <QRCodeSVG value={url} size={240} level="H" />
+              )}
               <div className="text-center mt-4">
                 <p className="text-sm font-medium">扫码登记</p>
                 <p className="text-xs text-muted-foreground mt-1">退修会登记</p>

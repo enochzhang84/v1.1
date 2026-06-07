@@ -10,12 +10,6 @@ import {
   Win98GroupBox,
 } from "./win98";
 import logoDefault from "@/assets/logo.png";
-import {
-  QR_LEGACY_NOTICE,
-  isLegacyLovableUrl,
-  validateRegisterUrl,
-  validateRetreatUrl,
-} from "@/lib/qr-url";
 
 type Settings = {
   id: string;
@@ -83,11 +77,11 @@ export function HomePageSettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [s, setS] = useState<Settings | null>(null);
-  const { alert, dialog } = useWin98Dialog();
+  const { alert, confirm, dialog } = useWin98Dialog();
 
-  // 二维码默认跟随当前站点域名，避免硬编码到旧的 Lovable 预览地址。
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "https://hoc3.lioneapps.com";
+  // 二维码必须指向 *发布* 站点，否则扫码会落到预览域名。
+  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
+  const origin = PUBLISHED_ORIGIN;
   const [qrType, setQrType] = useState<"newcomer" | "retreat" | "custom">("newcomer");
   const [qrCustom, setQrCustom] = useState("");
   const qrSvgRef = useRef<HTMLDivElement>(null);
@@ -225,23 +219,42 @@ export function HomePageSettingsPanel() {
     w.document.close();
   }
 
-  function saveQrLink(scope: "newcomer" | "retreat", value: string) {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      // Empty = clear override and fall back to current-origin auto-generated QR.
-      if (scope === "newcomer") update({ qr_newcomer_url: null });
-      else update({ qr_retreat_url: null });
-      alert("系统提示", "已清空，二维码将跟随当前站点域名自动生成。", "success");
-      return;
-    }
-    const check = scope === "newcomer" ? validateRegisterUrl(trimmed) : validateRetreatUrl(trimmed);
-    if (!check.ok) return alert("URL 校验失败", check.error, "error");
-    if (scope === "newcomer") update({ qr_newcomer_url: trimmed });
-    else update({ qr_retreat_url: trimmed });
+  async function uploadQrAsPng(name: string): Promise<string | null> {
+    const blob = await qrSvgToPngBlob(640);
+    if (!blob) return null;
+    const file = new File([blob], `${name}.png`, { type: "image/png" });
+    return uploadFile(file, `${name}.png`);
+  }
+
+  async function saveQr() {
+    const url = await uploadQrAsPng(`qr-${qrType}`);
+    if (!url) return alert("保存失败", "二维码上传失败。", "error");
+    if (qrType === "newcomer") update({ qr_newcomer_url: url });
+    else if (qrType === "retreat") update({ qr_retreat_url: url });
     alert(
       "系统提示",
-      "链接已设置，请点击底部「保存全部设置」持久化。",
+      "二维码图片已上传，记得点击底部「保存全部设置」持久化。",
       "success",
+    );
+  }
+
+  function replaceSiteQr(scope: "newcomer" | "retreat" | "all") {
+    confirm(
+      "系统提示",
+      `将使用当前生成的二维码替换：${
+        scope === "all" ? "全部二维码" : scope === "newcomer" ? "新人登记二维码" : "退修会二维码"
+      }。是否继续？`,
+      async () => {
+        const url = await uploadQrAsPng(`qr-${scope === "all" ? qrType : scope}`);
+        if (!url) return alert("替换失败", "二维码上传失败。", "error");
+        const patch: Partial<Settings> = {};
+        if (scope === "newcomer" || scope === "all") patch.qr_newcomer_url = url;
+        if (scope === "retreat" || scope === "all") patch.qr_retreat_url = url;
+        if (scope === "all") patch.qr_image_url = url;
+        update(patch);
+        alert("系统提示", "替换成功，请点击底部「保存全部设置」持久化。", "success");
+      },
+      "warn",
     );
   }
 
@@ -464,66 +477,54 @@ export function HomePageSettingsPanel() {
               <Win98Button onClick={copyLink}>复制链接</Win98Button>
               <Win98Button onClick={downloadPng}>下载 PNG</Win98Button>
               <Win98Button onClick={printQr}>打印二维码</Win98Button>
+              <Win98Button onClick={saveQr}>保存二维码</Win98Button>
             </div>
-            <div
-              className="pt-2 mt-2 space-y-3"
-              style={{ borderTop: "1px solid #808080" }}
-            >
-              <div className="text-[11px] font-bold">设置二维码链接</div>
-              <div
-                className="text-[11px] p-2"
-                style={{ background: "#ffffe1", border: "1px solid #808080" }}
-              >
-                {QR_LEGACY_NOTICE}
-              </div>
-              <div className="space-y-1">
-                <Win98Label>新人登记链接</Win98Label>
-                <Win98Input
-                  value={s.qr_newcomer_url ?? ""}
-                  onChange={(e) => update({ qr_newcomer_url: e.target.value })}
-                  placeholder={`留空 = 自动使用 ${origin}/register`}
-                />
-                {isLegacyLovableUrl(s.qr_newcomer_url) && (
-                  <div className="text-[11px] text-[#a00]">
-                    ⚠ 检测到旧的 Lovable 地址，请改为 https://hoc3.lioneapps.com/register
-                    或 https://hoc3v1.lioneapps.com/register
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Win98Button
-                    onClick={() => saveQrLink("newcomer", s.qr_newcomer_url ?? "")}
-                  >
-                    保存新人登记链接
-                  </Win98Button>
-                  <Win98Button onClick={() => saveQrLink("newcomer", "")}>
-                    清空（跟随当前域名）
-                  </Win98Button>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Win98Label>退修会登记链接</Win98Label>
-                <Win98Input
-                  value={s.qr_retreat_url ?? ""}
-                  onChange={(e) => update({ qr_retreat_url: e.target.value })}
-                  placeholder={`留空 = 自动使用 ${origin}/retreat-register`}
-                />
-                {isLegacyLovableUrl(s.qr_retreat_url) && (
-                  <div className="text-[11px] text-[#a00]">
-                    ⚠ 检测到旧的 Lovable 地址，请改为当前域名。
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Win98Button
-                    onClick={() => saveQrLink("retreat", s.qr_retreat_url ?? "")}
-                  >
-                    保存退修会链接
-                  </Win98Button>
-                  <Win98Button onClick={() => saveQrLink("retreat", "")}>
-                    清空（跟随当前域名）
-                  </Win98Button>
-                </div>
+            <div className="pt-2 mt-2" style={{ borderTop: "1px solid #808080" }}>
+              <div className="text-[11px] font-bold mb-1">一键替换网站内二维码</div>
+              <div className="flex flex-wrap gap-2">
+                <Win98Button onClick={() => replaceSiteQr("newcomer")}>
+                  替换新人登记二维码
+                </Win98Button>
+                <Win98Button onClick={() => replaceSiteQr("retreat")}>
+                  替换退修会二维码
+                </Win98Button>
+                <Win98Button onClick={() => replaceSiteQr("all")}>替换全部二维码</Win98Button>
               </div>
             </div>
+            {(s.qr_newcomer_url || s.qr_retreat_url) && (
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                {s.qr_newcomer_url && (
+                  <div className="text-center">
+                    <img
+                      src={s.qr_newcomer_url}
+                      alt="新人二维码"
+                      className="h-24 w-24 mx-auto object-contain bg-white"
+                      style={{
+                        borderStyle: "solid",
+                        borderWidth: 2,
+                        borderColor: "#808080 #ffffff #ffffff #808080",
+                      }}
+                    />
+                    <div className="text-[10px] mt-1">当前新人二维码</div>
+                  </div>
+                )}
+                {s.qr_retreat_url && (
+                  <div className="text-center">
+                    <img
+                      src={s.qr_retreat_url}
+                      alt="退修会二维码"
+                      className="h-24 w-24 mx-auto object-contain bg-white"
+                      style={{
+                        borderStyle: "solid",
+                        borderWidth: 2,
+                        borderColor: "#808080 #ffffff #ffffff #808080",
+                      }}
+                    />
+                    <div className="text-[10px] mt-1">当前退修会二维码</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </Win98GroupBox>

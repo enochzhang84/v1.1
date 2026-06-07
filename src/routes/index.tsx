@@ -115,17 +115,13 @@ function Index() {
     }
   };
 
-  // QR code must follow the *current* site domain so that scans always land
-  // on the same deployment (and the same database) as the page being viewed.
-  // An admin may override with a fully-qualified URL via home.qr_newcomer_url,
-  // but legacy hard-coded Lovable URLs are ignored.
-  const adminUrl = (home?.qr_newcomer_url ?? "").trim();
-  const useAdminUrl =
-    /^https?:\/\//i.test(adminUrl) && !/hoc3newcomer\.lovable\.app/i.test(adminUrl);
-  const dynamicUrl = event
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://hoc3.lioneapps.com"}/register?event=${event.qr_token}`
-    : `${typeof window !== "undefined" ? window.location.origin : "https://hoc3.lioneapps.com"}/register`;
-  const url = useAdminUrl ? adminUrl : dynamicUrl;
+  const PUBLISHED_ORIGIN = "https://hoc3newcomer.lovable.app";
+  const url = event
+    ? `${PUBLISHED_ORIGIN}/register?event=${event.qr_token}`
+    : `${PUBLISHED_ORIGIN}/register`;
+  const [qrImgFailed, setQrImgFailed] = useState(false);
+  const uploadedQr = home?.qr_newcomer_url || home?.qr_image_url || null;
+  const showUploadedQr = !!uploadedQr && !qrImgFailed;
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? "min-h-[120vh]" : ""}`}>
@@ -261,10 +257,26 @@ function Index() {
 
           <div className="flex flex-col items-center">
             <div className="bg-card p-8 rounded-2xl shadow-xl border border-border/40">
-              <QRCodeSVG value={url} size={240} level="H" />
-              <p className="text-center mt-4 text-sm text-muted-foreground">
-                {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
-              </p>
+              {showUploadedQr ? (
+                <>
+                  <img
+                    src={uploadedQr!}
+                    onError={() => setQrImgFailed(true)}
+                    alt={home?.qr_title || "二维码"}
+                    className="w-60 h-60 object-contain"
+                  />
+                  <p className="text-center mt-4 text-sm text-muted-foreground">
+                    {home?.qr_description || (home?.qr_title ? home.qr_title : (event ? `扫码登记 · ${event.name}` : ""))}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <QRCodeSVG value={url} size={240} level="H" />
+                  <p className="text-center mt-4 text-sm text-muted-foreground">
+                    {home?.qr_description || `${home?.qr_title || "扫码登记"}${event ? ` · ${event.name}` : ""}`}
+                  </p>
+                </>
+              )}
             </div>
             {event && (
               <Link to="/register" search={{ event: event.qr_token }} className="mt-6">

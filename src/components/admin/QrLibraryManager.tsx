@@ -396,9 +396,17 @@ const QrThumb = memo(function QrThumb({
   lite?: boolean;
   onGenerate?: () => void;
 }) {
-  // Prefer dynamic QR generation from target_url over a previously uploaded
-  // image — uploaded images may bake in a stale/legacy domain that no
-  // longer matches the current deployment.
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        loading="lazy"
+        alt=""
+        style={{ width: size, height: size }}
+        className="object-contain"
+      />
+    );
+  }
   if (targetUrl) {
     if (lite) {
       return (
@@ -418,17 +426,6 @@ const QrThumb = memo(function QrThumb({
       );
     }
     return <QRCodeSVG value={targetUrl} size={size} level="H" />;
-  }
-  if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        loading="lazy"
-        alt=""
-        style={{ width: size, height: size }}
-        className="object-contain"
-      />
-    );
   }
   return (
     <div
