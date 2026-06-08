@@ -1093,3 +1093,110 @@ export function HomePageSettingsPanel() {
     </div>
   );
 }
+
+/* ───── 后台 Logo 编辑 ─────────────────────────────────────────────────── */
+function AdminLogoEditor({
+  alert,
+}: {
+  alert: (title: string, msg: string, kind?: "info" | "success" | "warn" | "error") => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [zh, setZh] = useState(ADMIN_LOGO_DEFAULTS.admin_logo_title_zh);
+  const [en, setEn] = useState(ADMIN_LOGO_DEFAULTS.admin_logo_title_en);
+  const [ver, setVer] = useState(ADMIN_LOGO_DEFAULTS.admin_logo_version);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("app_settings")
+        .select("key,value")
+        .in("key", [
+          "admin_logo_title_zh",
+          "admin_logo_title_en",
+          "admin_logo_version",
+        ]);
+      if (data) {
+        for (const r of data as Array<{ key: string; value: string | null }>) {
+          if (r.key === "admin_logo_title_zh" && r.value) setZh(r.value);
+          if (r.key === "admin_logo_title_en" && r.value) setEn(r.value);
+          if (r.key === "admin_logo_version" && r.value) setVer(r.value);
+        }
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    const rows = [
+      { key: "admin_logo_title_zh", value: zh.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_title_zh },
+      { key: "admin_logo_title_en", value: en.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_title_en },
+      { key: "admin_logo_version", value: ver.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_version },
+    ];
+    const { error } = await (supabase as any)
+      .from("app_settings")
+      .upsert(rows, { onConflict: "key" });
+    setSaving(false);
+    if (error) {
+      alert("保存失败", error.message, "error");
+      return;
+    }
+    emitAdminLogoUpdated();
+    alert("系统提示", "后台 Logo 已保存，左上角已更新。", "success");
+  }
+
+  function restoreDefaults() {
+    setZh(ADMIN_LOGO_DEFAULTS.admin_logo_title_zh);
+    setEn(ADMIN_LOGO_DEFAULTS.admin_logo_title_en);
+    setVer(ADMIN_LOGO_DEFAULTS.admin_logo_version);
+  }
+
+  if (loading) {
+    return <div className="p-10 text-sm text-muted-foreground">加载中…</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <Card title="后台 Logo 编辑" description="后台左上角显示的中文名称、英文名称与版本号">
+        <div className="space-y-5">
+          <Field label="后台中文名称" hint={`默认：${ADMIN_LOGO_DEFAULTS.admin_logo_title_zh}`}>
+            <Input value={zh} onChange={(e) => setZh(e.target.value)} placeholder={ADMIN_LOGO_DEFAULTS.admin_logo_title_zh} />
+          </Field>
+          <Field label="后台英文名称" hint={`默认：${ADMIN_LOGO_DEFAULTS.admin_logo_title_en}`}>
+            <Input value={en} onChange={(e) => setEn(e.target.value)} placeholder={ADMIN_LOGO_DEFAULTS.admin_logo_title_en} />
+          </Field>
+          <Field label="后台版本号" hint={`默认：${ADMIN_LOGO_DEFAULTS.admin_logo_version}`}>
+            <Input value={ver} onChange={(e) => setVer(e.target.value)} placeholder={ADMIN_LOGO_DEFAULTS.admin_logo_version} />
+          </Field>
+
+          <div className="rounded-xl bg-muted/40 p-5">
+            <div className="text-xs text-muted-foreground mb-3">预览（与后台左上角一致）</div>
+            <div className="flex flex-col gap-0.5 leading-tight">
+              <span className="text-[24px] font-bold font-serif">{zh || ADMIN_LOGO_DEFAULTS.admin_logo_title_zh}</span>
+              <span className="text-[16px] text-foreground/80 tracking-wide">{en || ADMIN_LOGO_DEFAULTS.admin_logo_title_en}</span>
+              <span className="text-[14px] text-muted-foreground">{ver || ADMIN_LOGO_DEFAULTS.admin_logo_version}</span>
+              <span className="text-[13px] text-muted-foreground/80">2026年6月8日星期一 09:39:20</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={save} disabled={saving} className="rounded-full">
+              <Save className="w-4 h-4 mr-1.5" />
+              {saving ? "保存中…" : "保存"}
+            </Button>
+            <Button variant="ghost" onClick={restoreDefaults} className="rounded-full">
+              <RefreshCw className="w-4 h-4 mr-1.5" /> 恢复默认
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="后台 Logo 图片（预留）" description="计划支持上传 SVG / PNG Logo，当前未开放">
+        <div className="text-sm text-muted-foreground">
+          此功能预留，后续将支持上传 SVG / PNG 自定义 Logo 图片。
+        </div>
+      </Card>
+    </div>
+  );
+}
