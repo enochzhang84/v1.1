@@ -432,7 +432,7 @@ export function ScreenManager() {
 
       {/* Playlists */}
       <div className="border border-border/50 rounded-xl p-4 space-y-4">
-        <h3 className="font-semibold">播放列表（自动轮播 · 任意页面/板块）</h3>
+        <h3 className="font-semibold">播放列表</h3>
         <div className="flex flex-wrap gap-2 items-center">
           <Input
             className="max-w-xs"
