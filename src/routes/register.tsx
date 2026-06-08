@@ -201,7 +201,7 @@ function RegisterPage() {
     const companionRows = cleanCompanions.map((c) => ({
       ...(groupId ? { visitor_group_id: groupId } : {}),
       is_primary: false,
-      relationship_to_primary: c.relationship_to_primary,
+      relationship_to_primary: null,
       primary_registration_id: primaryId ?? null,
       event_id: eventId,
       name: c.name,
@@ -209,13 +209,27 @@ function RegisterPage() {
       age_group: c.age_group || null,
       phone: c.phone || null,
       wechat: c.wechat || null,
-      // Inherited fields
+      faith: c.faith || null,
+      faith_years: c.faith === "christian" && c.faith_years ? Number(c.faith_years) : null,
+      faith_other: c.faith === "other" ? c.faith_other.trim() || null : null,
+      marital_status: c.marital_status || null,
+      spouse_name: c.marital_status === "married" ? c.spouse_name.trim() || null : null,
+      referrer_type: c.referrer_type || form.referrer_type || null,
+      invited_by:
+        (c.referrer_type || form.referrer_type) === "friend"
+          ? (c.invited_by.trim() || form.invited_by.trim() || null)
+          : null,
+      referrer_other:
+        (c.referrer_type || form.referrer_type) === "other"
+          ? (c.referrer_other.trim() || form.referrer_other.trim() || null)
+          : null,
+      source_channel: c.source_channel || form.source_channel || null,
+      wants_visit: c.wants_visit,
+      wants_info: c.wants_info,
+      notes: c.notes.trim() || null,
+      // Inherited address
       city: form.city.trim() || null,
       zip: form.zip.trim() || null,
-      source_channel: form.source_channel || null,
-      referrer_type: form.referrer_type || null,
-      invited_by: form.referrer_type === "friend" ? form.invited_by.trim() || null : null,
-      referrer_other: form.referrer_type === "other" ? form.referrer_other.trim() || null : null,
       source: eventToken ? "qr" : "manual",
       ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
     }));
