@@ -36,6 +36,7 @@ import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
+import AutoBackupCenter from "@/components/admin/AutoBackupCenter";
 import { QrLibraryManager } from "@/components/admin/QrLibraryManager";
 import { RetreatQrPanel } from "@/components/admin/RetreatQrPanel";
 import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/bootstrap-admin.functions";
@@ -773,6 +774,7 @@ function AdminPage() {
   const [qrLibOpen, setQrLibOpen] = useState(false);
   const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [autoBackupOpen, setAutoBackupOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
   const [opsCenterOpen, setOpsCenterOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
@@ -2854,6 +2856,18 @@ function AdminPage() {
             {backupOpen && <BackupRestorePanel />}
           </DialogContent>
         </Dialog>
+        {/* 自动备份中心 Dialog */}
+        <Dialog open={autoBackupOpen} onOpenChange={setAutoBackupOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>☁️ 自动备份中心</DialogTitle>
+              <DialogDescription>
+                每日定时备份数据库并同步至 Google Drive / OneDrive / Dropbox。仅超级管理员可用。
+              </DialogDescription>
+            </DialogHeader>
+            {autoBackupOpen && <AutoBackupCenter />}
+          </DialogContent>
+        </Dialog>
         {/* 系统升级 Dialog */}
         <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -2898,6 +2912,12 @@ function AdminPage() {
                     disabled={deployExporting}
                   >
                     {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setOpsCenterOpen(false); setAutoBackupOpen(true); }}
+                  >
+                    ☁️ 自动备份中心
                   </Button>
                 </div>
               </section>
