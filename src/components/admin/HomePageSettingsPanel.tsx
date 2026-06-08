@@ -559,6 +559,12 @@ export function HomePageSettingsPanel() {
     </Card>
   );
 
+  const SectionAdminLogo = (
+    <AdminLogoEditor alert={alert} />
+  );
+
+
+
   const SectionQr = (
     <div className="space-y-5">
       <Card
