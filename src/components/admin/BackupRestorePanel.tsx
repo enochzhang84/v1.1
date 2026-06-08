@@ -361,6 +361,176 @@ export function BackupRestorePanel() {
     }
   };
 
+  // ============== 部署 / 迁移包导出 ==============
+  function dateStamp() {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+  }
+
+  function downloadBlob(blob: Blob, name: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function buildSystemInstallFiles(): Promise<Record<string, string>> {
+    const r: any = await doExportDeploy();
+    return r.files as Record<string, string>;
+  }
+
+  async function buildHistoryDataFiles(): Promise<{
+    files: Record<string, string>;
+    summary: Record<string, number>;
+    total: number;
+  }> {
+    const payload: any = await doExport();
+    const files: Record<string, string> = {};
+    files["manifest.json"] = JSON.stringify(payload, null, 2);
+    files["README_DATA.md"] =
+      `# HOC3 历史数据包\n\n导出时间：${payload.created_at}\n总记录数：${
+        Object.values(payload.summary || {}).reduce((s: number, v: any) => s + Number(v || 0), 0)
+      }\n\n根目录的 manifest.json 是完整可恢复的备份文件；data/<table>.json 是按表拆分的副本，便于阅读。\n\n恢复方式：在备份与恢复模块上传本 zip（推荐），或直接上传 manifest.json。\n`;
+    for (const [t, rows] of Object.entries(payload.tables || {})) {
+      files[`data/${t}.json`] = JSON.stringify(rows ?? [], null, 2);
+    }
+    return { files, summary: payload.summary || {}, total: Object.values(payload.summary || {}).reduce((s: number, v: any) => s + Number(v || 0), 0) };
+  }
+
+  async function zipFiles(files: Record<string, string>): Promise<Blob> {
+    const JSZipMod = (await import("jszip")).default;
+    const zip = new JSZipMod();
+    for (const [name, content] of Object.entries(files)) {
+      zip.file(name, content);
+    }
+    return zip.generateAsync({ type: "blob" });
+  }
+
+  const onExportSystemInstall = async () => {
+    if (!window.confirm("将导出系统安装包（不含用户数据），用于在新 Supabase + VPS 上快速安装 HOC3。是否继续？")) return;
+    setDeployBusy("system");
+    try {
+      const files = await buildSystemInstallFiles();
+      const blob = await zipFiles(files);
+      downloadBlob(blob, `hoc3_system_package_${dateStamp()}.zip`);
+      toast.success("系统安装包：用于安装 HOC3");
+    } catch (e: any) {
+      toast.error(`导出失败：${e?.message || e}`);
+    } finally {
+      setDeployBusy(null);
+    }
+  };
+
+  const onExportHistoryData = async () => {
+    if (!window.confirm("将导出历史数据包（所有业务记录的 JSON 备份）。是否继续？")) return;
+    setDeployBusy("history");
+    try {
+      const { files } = await buildHistoryDataFiles();
+      const blob = await zipFiles(files);
+      downloadBlob(blob, `hoc3_data_backup_${dateStamp()}.zip`);
+      toast.success("历史数据包：用于恢复历史记录");
+      await refreshLogs();
+    } catch (e: any) {
+      toast.error(`导出失败：${e?.message || e}`);
+    } finally {
+      setDeployBusy(null);
+    }
+  };
+
+  const onExportFullMigration = async () => {
+    if (!window.confirm("将导出完整迁移包（系统安装包 + 历史数据包），用于完整复制到新服务器。是否继续？")) return;
+    setDeployBusy("full");
+    try {
+      const [sysFiles, hist] = await Promise.all([
+        buildSystemInstallFiles(),
+        buildHistoryDataFiles(),
+      ]);
+      const files: Record<string, string> = {};
+      for (const [n, c] of Object.entries(sysFiles)) files[`system/${n}`] = c;
+      for (const [n, c] of Object.entries(hist.files)) files[`data/${n}`] = c;
+      files["README_MIGRATION.md"] =
+        `# HOC3 完整迁移包\n\n本包含「系统安装包」+「历史数据包」。\n\n## 迁移步骤\n\n1. 新建 Supabase 项目\n2. 执行 system/hoc3_database_init_v1.sql\n3. 执行 system/hoc3_seed_data_v1.sql\n4. 执行 system/hoc3_rls_dev_open.sql\n5. 在 VPS 上按 system/.env.example 配置 .env\n6. git pull && npm install && npm run build && pm2 restart hoc3\n7. 第一个登录的账号自动成为超级管理员\n8. 在「备份与恢复」上传 data/ 子目录（或整个本 zip），选择「合并模式」恢复历史数据\n\n## 安全说明\n\n本包不包含 SUPABASE_SERVICE_ROLE_KEY、密码、JWT Secret、API Secret。\n`;
+      const blob = await zipFiles(files);
+      downloadBlob(blob, `hoc3_full_migration_package_${dateStamp()}.zip`);
+      toast.success("完整迁移包：用于完整迁移到新服务器");
+      await refreshLogs();
+    } catch (e: any) {
+      toast.error(`导出失败：${e?.message || e}`);
+    } finally {
+      setDeployBusy(null);
+    }
+  };
+
+  // ============== 从 zip 恢复（系统包 / 历史数据包 / 完整迁移包） ==============
+  const onPickZip = () => zipRef.current?.click();
+
+  const onZipFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setBusy(true);
+    try {
+      const JSZipMod = (await import("jszip")).default;
+      const zip = await JSZipMod.loadAsync(f);
+      // 1. 优先查找 manifest.json（历史数据包 / 完整迁移包内 data/manifest.json）
+      let manifestEntry =
+        zip.file("manifest.json") ||
+        zip.file("data/manifest.json") ||
+        zip.file(/manifest\.json$/)[0];
+      let payload: any = null;
+      if (manifestEntry) {
+        const text = await manifestEntry.async("string");
+        payload = JSON.parse(text);
+      } else {
+        // 2. 没有 manifest，则尝试从 data/<table>.json 重建
+        const tableFiles = zip.file(/(?:^|\/)data\/[^/]+\.json$/);
+        if (tableFiles.length > 0) {
+          const tables: Record<string, any[]> = {};
+          for (const entry of tableFiles) {
+            const name = entry.name.split("/").pop()!.replace(/\.json$/, "");
+            if (name === "manifest") continue;
+            const txt = await entry.async("string");
+            try {
+              tables[name] = JSON.parse(txt);
+            } catch {
+              /* skip */
+            }
+          }
+          payload = {
+            backup_version: 1,
+            created_at: new Date().toISOString(),
+            project_name: "HOC3 (recovered from zip)",
+            tables,
+          };
+        }
+      }
+      if (!payload) {
+        // 仅含系统安装包 (.sql / .env)，没有数据可恢复
+        toast.error("此 zip 仅含系统安装包（SQL/env），需要手动在 Supabase SQL Editor 执行，无法在此恢复。");
+        return;
+      }
+      if (!payload?.tables || typeof payload.tables !== "object") {
+        toast.error("zip 内 manifest.json 格式不正确：缺少 tables 字段");
+        return;
+      }
+      const preview: any = await doPreviewRestore({ data: { payload } });
+      setRestorePreview(preview);
+      setPendingPayload(payload);
+      toast.success("已读取 zip，请确认下方预检查后恢复。");
+    } catch (err: any) {
+      toast.error(`读取 zip 失败：${err?.message || err}`);
+    } finally {
+      setBusy(false);
+      if (zipRef.current) zipRef.current.value = "";
+    }
+  };
+
+
+
   return (
     <div className="space-y-6">
       <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
