@@ -1639,15 +1639,8 @@ function AdminPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link to="/" className="flex flex-col gap-0.5 leading-tight">
-            <span className="font-serif text-lg sm:text-xl whitespace-normal sm:whitespace-nowrap">
-              {t("appTitle")} <span className="text-xs sm:text-sm font-sans text-muted-foreground align-middle">{APP_VERSION}</span>
-            </span>
-            <span className="text-xs sm:text-sm text-muted-foreground tracking-wide">
-              {t("appSubtitle")}
-            </span>
-            <NowLabel />
-          </Link>
+          <AdminBrand />
+
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
             {/* 语言切换 */}
             <div className="col-span-2 sm:col-span-1 inline-flex items-center rounded-md border border-border/60 overflow-hidden text-xs">
