@@ -1007,6 +1007,7 @@ export function HomePageSettingsPanel() {
   const middle =
     section === "basic" ? SectionBasic
     : section === "carousel" ? SectionCarousel
+    : section === "adminLogo" ? SectionAdminLogo
     : section === "qr" ? SectionQr
     : section === "welcome" ? SectionWelcome
     : section === "retreat" ? SectionRetreat
