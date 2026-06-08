@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { exportBackup, listBackupLogs } from "@/lib/backup.functions";
+import { exportBackup, listBackupLogs, simulateBackup } from "@/lib/backup.functions";
 
 // 备份内容模块
 const CONTENT_MODULES = [
@@ -66,10 +66,12 @@ export default function AutoBackupCenter() {
   const [saving, setSaving] = useState(false);
   const [runningNow, setRunningNow] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
+  const [simulating, setSimulating] = useState(false);
   const isLovable = useMemo(() => detectIsLovableEnv(), []);
 
   const exportBackupFn = useServerFn(exportBackup);
   const listLogsFn = useServerFn(listBackupLogs);
+  const simulateBackupFn = useServerFn(simulateBackup);
 
   const loadConfig = async () => {
     setLoading(true);
@@ -182,6 +184,20 @@ export default function AutoBackupCenter() {
     }
   };
 
+  const handleSimulateBackup = async () => {
+    if (!confirm("生成一条模拟备份记录用于测试 UI？")) return;
+    setSimulating(true);
+    try {
+      await simulateBackupFn();
+      toast.success("模拟备份成功：已生成测试记录");
+      await loadLogs();
+    } catch (e: any) {
+      toast.error(`模拟备份失败：${e?.message || "未知错误"}`);
+    } finally {
+      setSimulating(false);
+    }
+  };
+
   const lastLog = logs[0];
   const formatSize = (b?: number | null) => {
     if (!b) return "—";
@@ -222,7 +238,7 @@ export default function AutoBackupCenter() {
         </div>
         <div className="rounded-md border p-3">
           <div className="text-[11px] text-muted-foreground">最后备份状态</div>
-          <div className="text-sm font-medium">{lastLog ? "✅ 成功" : "—"}</div>
+          <div className="text-sm font-medium">{lastLog ? (lastLog.kind === "simulate" ? "🧪 模拟成功" : "✅ 成功") : "—"}</div>
         </div>
         <div className="rounded-md border p-3">
           <div className="text-[11px] text-muted-foreground">云盘连接</div>
@@ -320,6 +336,9 @@ export default function AutoBackupCenter() {
         <Button variant="outline" onClick={handleBackupNow} disabled={runningNow}>
           {runningNow ? "备份中…" : "⚡ 立即备份"}
         </Button>
+        <Button variant="secondary" onClick={handleSimulateBackup} disabled={simulating}>
+          {simulating ? "模拟中…" : "🧪 模拟备份"}
+        </Button>
         <Button variant="ghost" onClick={loadLogs}>🔄 刷新记录</Button>
       </section>
 
@@ -358,7 +377,7 @@ export default function AutoBackupCenter() {
                       <td className="px-2 py-1.5">{formatSize(l.file_size_bytes)}</td>
                       <td className="px-2 py-1.5">{l.total_tables ?? "—"}</td>
                       <td className="px-2 py-1.5">{l.total_records ?? "—"}</td>
-                      <td className="px-2 py-1.5"><Badge variant="secondary">成功</Badge></td>
+                      <td className="px-2 py-1.5">{l.kind === "simulate" ? <Badge variant="outline">模拟成功</Badge> : <Badge variant="secondary">成功</Badge>}</td>
                     </tr>
                   );
                 })
