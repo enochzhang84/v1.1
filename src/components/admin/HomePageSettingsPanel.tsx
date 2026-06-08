@@ -19,7 +19,9 @@ import {
   Upload,
   RefreshCw,
   Check,
+  LogOut,
 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
