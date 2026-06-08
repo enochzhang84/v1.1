@@ -452,6 +452,18 @@ export function HomeVisualEditor() {
         </div>
       </div>
 
+      {loadError && (
+        <div className="px-4 py-2 bg-destructive/10 border-b border-destructive/30 text-sm text-destructive">
+          ⚠ {loadError}
+        </div>
+      )}
+      {emptyState && !loadError && (
+        <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-900 flex items-center justify-between">
+          <span>📄 还没有数据库内容，已为你加载「基督三家主页」默认模板。点击右上角「保存」即可初始化。</span>
+          <Button size="sm" onClick={handleSave} disabled={saving}>使用默认模板初始化</Button>
+        </div>
+      )}
+
       {/* 主体 */}
       <div className="flex-1 overflow-y-auto bg-muted/20 p-4">
         {showPreview ? (
