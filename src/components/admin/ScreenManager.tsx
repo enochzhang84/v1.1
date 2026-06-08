@@ -224,21 +224,33 @@ export function ScreenManager() {
   const [newPlInterval, setNewPlInterval] = useState(10);
   const createPlaylist = async () => {
     if (!newPlName.trim()) return toast.error("请输入播放列表名称");
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("display_playlists" as never)
-      .insert([{ name: newPlName, interval_seconds: newPlInterval } as never]);
-    if (error) toast.error(error.message);
-    else {
-      setNewPlName("");
-      setNewPlInterval(10);
-      toast.success("已创建播放列表");
+      .insert([{ name: newPlName, interval_seconds: newPlInterval } as never])
+      .select()
+      .single();
+    if (error) return toast.error(error.message);
+    if (data) {
+      setPlaylists((prev) => {
+        const next = [...prev, data as unknown as Playlist];
+        next.sort((a, b) => a.name.localeCompare(b.name));
+        return next;
+      });
     }
+    setNewPlName("");
+    setNewPlInterval(10);
+    toast.success("已创建播放列表");
+    load();
   };
 
   const deletePlaylist = async (id: string) => {
     if (!confirm("删除此播放列表？")) return;
     const { error } = await supabase.from("display_playlists" as never).delete().eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) return toast.error(error.message);
+    setPlaylists((prev) => prev.filter((p) => p.id !== id));
+    setItems((prev) => prev.filter((it) => it.playlist_id !== id));
+    toast.success("已删除");
+    load();
   };
 
   const addLibraryItem = async (
@@ -420,7 +432,7 @@ export function ScreenManager() {
 
       {/* Playlists */}
       <div className="border border-border/50 rounded-xl p-4 space-y-4">
-        <h3 className="font-semibold">播放列表（自动轮播 · 任意页面/板块）</h3>
+        <h3 className="font-semibold">播放列表</h3>
         <div className="flex flex-wrap gap-2 items-center">
           <Input
             className="max-w-xs"
