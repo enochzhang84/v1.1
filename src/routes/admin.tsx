@@ -1705,6 +1705,7 @@ function AdminPage() {
                 { value: "kitchen", key: "modKitchen" as TKey },
                 { value: "sunday", key: "modSundaySchool" as TKey },
                 { value: "events", key: "modEvents" as TKey },
+                { value: "retreat", key: "modRetreat" as TKey },
               ] as { value: string; key: TKey }[]).map((x) => ({ value: x.value, label: t(x.key) })))
                 .filter((tab) => {
                   // super_admin 不受 service_area 限制
