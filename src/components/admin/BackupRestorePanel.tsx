@@ -546,8 +546,71 @@ export function BackupRestorePanel() {
         </div>
       )}
 
+      {/* 0、部署 / 迁移包导出（仅超级管理员） */}
+      <section className="space-y-3 rounded-md border border-sky-200 bg-sky-50/60 p-4">
+        <div>
+          <h3 className="font-medium">🚀 部署 / 迁移包导出</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            用于快速复制 HOC3、迁移 VPS、迁移后端数据库、建立新教会副本。导出文件不包含 Service Role Key、密码、JWT Secret 等敏感凭据。
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-md border bg-background p-3 space-y-2">
+            <div className="text-sm font-medium">① 系统安装包</div>
+            <p className="text-xs text-muted-foreground min-h-[3rem]">
+              数据库结构 + 默认配置 + 开发 RLS + .env 模板 + 部署说明。<br />
+              <span className="text-muted-foreground/80">用于安装 HOC3，不含用户数据。</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={onExportSystemInstall}
+              disabled={deployBusy !== null || busy}
+            >
+              {deployBusy === "system" ? "生成中..." : "📦 导出系统安装包"}
+            </Button>
+          </div>
+          <div className="rounded-md border bg-background p-3 space-y-2">
+            <div className="text-sm font-medium">② 历史数据包</div>
+            <p className="text-xs text-muted-foreground min-h-[3rem]">
+              新人登记、退修会、签到、团契、聊天、反馈、用户权限等全部业务记录的 JSON 备份。<br />
+              <span className="text-muted-foreground/80">用于恢复历史记录。</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={onExportHistoryData}
+              disabled={deployBusy !== null || busy}
+            >
+              {deployBusy === "history" ? "生成中..." : "🗂 导出历史数据包"}
+            </Button>
+          </div>
+          <div className="rounded-md border-2 border-sky-400 bg-background p-3 space-y-2">
+            <div className="text-sm font-medium">③ 完整迁移包 <span className="text-[10px] text-sky-700">推荐</span></div>
+            <p className="text-xs text-muted-foreground min-h-[3rem]">
+              系统安装包 + 历史数据包。<br />
+              <span className="text-muted-foreground/80">用于完整迁移到新服务器。</span>
+            </p>
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={onExportFullMigration}
+              disabled={deployBusy !== null || busy}
+            >
+              {deployBusy === "full" ? "生成中..." : "🚚 导出完整迁移包"}
+            </Button>
+          </div>
+        </div>
+        <div className="text-[11px] text-muted-foreground border-t pt-2">
+          仅超级管理员可导出。生成的文件均不包含 Service Role Key、密码、JWT Secret 或 API Secret。
+        </div>
+      </section>
+
       {/* 一、备份 */}
       <section className="space-y-2">
+
         <h3 className="font-medium">📦 一键备份</h3>
         <p className="text-xs text-muted-foreground">
           导出全部 {Object.keys(GROUP_LABELS).length} 个模块共 {Object.keys(TABLE_NOTES).length} 张表为 JSON 文件，可下载保存到本地。
