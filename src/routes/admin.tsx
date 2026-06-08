@@ -2904,8 +2904,22 @@ function AdminPage() {
             </DialogHeader>
 
             <div className="space-y-6 py-2">
-              {/* 1. 数据管理 */}
+              {/* 0. 系统状态 */}
               <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">🩺 系统状态</h3>
+                <p className="text-xs text-muted-foreground">查看系统健康检查、用户统计、数据库 / Auth / Storage 状态。</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setOpsCenterOpen(false); setHealthOpen(true); }}
+                  >
+                    🩺 系统状态 / 健康检查
+                  </Button>
+                </div>
+              </section>
+
+              {/* 1. 数据管理 */}
+              <section className="space-y-2 border-t border-border/50 pt-4">
                 <h3 className="text-sm font-semibold text-foreground">📦 数据管理</h3>
                 <p className="text-xs text-muted-foreground">备份、恢复、导出部署文件。</p>
                 <div className="flex flex-wrap gap-2">
