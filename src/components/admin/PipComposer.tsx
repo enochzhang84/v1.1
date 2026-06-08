@@ -19,9 +19,20 @@ import {
   CornerDownRight,
   Cable,
   RefreshCw,
+  Monitor,
+  MonitorPlay,
+  Radio,
+  Copy as CopyIcon,
+  Image as CameraSnap,
+  Square,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toPng } from "html-to-image";
 import { cn } from "@/lib/utils";
+
+type OutputMode = "preview" | "second-screen" | "fullscreen" | "obs" | "ndi" | "rtmp";
+type OutputStatus = "idle" | "browser" | "second" | "obs";
 
 type VideoKind = "youtube" | "camera" | "capture" | "url";
 type PptKind = "image" | "url" | "capture";
