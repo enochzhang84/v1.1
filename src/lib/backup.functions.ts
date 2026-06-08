@@ -262,6 +262,38 @@ export const exportBackup = createServerFn({ method: "POST" })
   });
 
 // ---------- Backup logs ----------
+export const simulateBackup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertSuperAdmin(context.userId);
+    let creatorName: string | null = null;
+    try {
+      const { data: prof } = await supabaseAdmin
+        .from("user_profiles")
+        .select("display_name, worker_name, full_name")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      creatorName = prof?.display_name || prof?.worker_name || prof?.full_name || null;
+    } catch {
+      // ignore
+    }
+    const { data, error } = await supabaseAdmin
+      .from("backup_logs")
+      .insert({
+        created_by: context.userId,
+        creator_name: creatorName,
+        file_size_bytes: 13107200,
+        total_tables: 10,
+        total_records: 1250,
+        summary: {},
+        kind: "simulate",
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return { log: data };
+  });
+
 export const listBackupLogs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
