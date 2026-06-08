@@ -367,30 +367,31 @@ function SourceRow({
   compact?: boolean;
 }) {
   return (
-    <div className={cn("space-y-1.5", !present && "opacity-40")}>
+    <div className={cn(compact ? "space-y-1" : "space-y-1.5", !present && "opacity-40")}>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium">{label}</span>
+        <span className={cn("font-medium truncate", compact ? "text-[10px]" : "text-[11px]")}>{label}</span>
         <button
           type="button"
           onClick={onMute}
           disabled={!present}
           className={cn(
-            "text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded border",
+            "inline-flex items-center gap-1 rounded border",
+            compact ? "text-[9px] px-1 py-0.5" : "text-[10px] px-1.5 py-0.5",
             mute
               ? "bg-muted text-muted-foreground border-border"
               : "bg-background border-border hover:bg-muted/40",
           )}
         >
           {mute ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
-          {mute ? "已静音" : "静音"}
+          {!compact && (mute ? "已静音" : "静音")}
         </button>
       </div>
       <div className="space-y-0.5">
-        <Meter ch={chs[0]} mute={mute || !present} />
-        <Meter ch={chs[1]} mute={mute || !present} />
+        <Meter ch={chs[0]} mute={mute || !present} compact={compact} />
+        <Meter ch={chs[1]} mute={mute || !present} compact={compact} />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-muted-foreground w-8">音量</span>
+      <div className="flex items-center gap-1.5">
+        {!compact && <span className="text-[10px] text-muted-foreground w-8">音量</span>}
         <Slider
           value={[vol]}
           min={0}
@@ -400,9 +401,9 @@ function SourceRow({
           disabled={!present}
           className="flex-1"
         />
-        <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-right">{vol}%</span>
+        <span className={cn("tabular-nums text-muted-foreground text-right", compact ? "text-[9px] w-6" : "text-[10px] w-8")}>{vol}%</span>
       </div>
-      {note && <p className="text-[10px] text-muted-foreground leading-snug">{note}</p>}
+      {note && !compact && <p className="text-[10px] text-muted-foreground leading-snug">{note}</p>}
     </div>
   );
 }
