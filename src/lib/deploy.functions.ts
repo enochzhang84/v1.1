@@ -98,6 +98,22 @@ export const exportDeployPackage = createServerFn({ method: "POST" })
 
     const tablesArg = [...BACKUP_TABLES];
 
+    // ===== 读取当前版本号（用于 version.json） =====
+    let systemVersion = "v2.0.0";
+    let databaseVersion = "v1.0.0";
+    try {
+      const { data: vers } = await supabaseAdmin
+        .from("app_settings")
+        .select("key,value")
+        .in("key", ["system_version", "database_version"]);
+      for (const r of (vers || []) as Array<{ key: string; value: string }>) {
+        if (r.key === "system_version" && r.value) systemVersion = r.value;
+        if (r.key === "database_version" && r.value) databaseVersion = r.value;
+      }
+    } catch {
+      /* ignore */
+    }
+
     // 拉结构
     let columns: Array<{
       table_name: string;
