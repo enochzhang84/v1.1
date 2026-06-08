@@ -93,7 +93,8 @@ function RetreatAdminPage() {
   const [editGroup, setEditGroup] = useState<GroupMember[] | null>(null);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    async function check() {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user.id;
       if (!uid) {
@@ -104,11 +105,23 @@ function RetreatAdminPage() {
         .from("user_roles")
         .select("role")
         .eq("user_id", uid);
-      const ok = (roles ?? []).some((r) => r.role === "admin");
+      if (cancelled) return;
+      const ok = (roles ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
       setIsAdmin(ok);
       setChecking(false);
       if (ok) load();
-    })();
+    }
+    check();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        setChecking(true);
+        check();
+      }
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -123,8 +136,9 @@ function RetreatAdminPage() {
 
   if (checking) return <div className="p-10 text-center text-sm text-muted-foreground">加载中…</div>;
   if (!isAdmin) return (
-    <div className="p-10 text-center text-sm">
-      需要管理员权限。<Link to="/login" className="underline">去登录</Link>
+    <div className="p-10 text-center text-sm space-y-2">
+      <p>无权限访问退修会后台，请联系超级管理员。</p>
+      <Link to="/admin" className="underline">返回后台</Link>
     </div>
   );
 
