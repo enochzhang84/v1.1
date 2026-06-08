@@ -6854,11 +6854,30 @@ function NowLabel() {
     hour12: false,
   });
   return (
-    <span className="text-sm font-sans text-muted-foreground font-normal">
+    <span className="text-[13px] font-sans text-muted-foreground/80 font-normal">
       {dateStr} {timeStr}
     </span>
   );
 }
+
+function AdminBrand() {
+  const logo = useAdminLogo();
+  return (
+    <Link to="/" className="flex flex-col gap-0.5 leading-tight">
+      <span className="text-[24px] font-bold font-serif whitespace-normal sm:whitespace-nowrap">
+        {logo.admin_logo_title_zh}
+      </span>
+      <span className="text-[16px] text-foreground/80 tracking-wide">
+        {logo.admin_logo_title_en}
+      </span>
+      <span className="text-[14px] text-muted-foreground">
+        {logo.admin_logo_version}
+      </span>
+      <NowLabel />
+    </Link>
+  );
+}
+
 
 // ============= 儿童主日学 — 入学记录 =============
 function KidsEnrollmentRecordsSection({
