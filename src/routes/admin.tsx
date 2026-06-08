@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, Fragment } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { getPublicOrigin } from "@/lib/public-origin";
+import { useAdminLogo } from "@/hooks/useAdminLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1638,15 +1639,8 @@ function AdminPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link to="/" className="flex flex-col gap-0.5 leading-tight">
-            <span className="font-serif text-lg sm:text-xl whitespace-normal sm:whitespace-nowrap">
-              {t("appTitle")} <span className="text-xs sm:text-sm font-sans text-muted-foreground align-middle">{APP_VERSION}</span>
-            </span>
-            <span className="text-xs sm:text-sm text-muted-foreground tracking-wide">
-              {t("appSubtitle")}
-            </span>
-            <NowLabel />
-          </Link>
+          <AdminBrand />
+
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
             {/* 语言切换 */}
             <div className="col-span-2 sm:col-span-1 inline-flex items-center rounded-md border border-border/60 overflow-hidden text-xs">
@@ -6860,11 +6854,30 @@ function NowLabel() {
     hour12: false,
   });
   return (
-    <span className="text-sm font-sans text-muted-foreground font-normal">
+    <span className="text-[13px] font-sans text-muted-foreground/80 font-normal">
       {dateStr} {timeStr}
     </span>
   );
 }
+
+function AdminBrand() {
+  const logo = useAdminLogo();
+  return (
+    <Link to="/" className="flex flex-col gap-0.5 leading-tight">
+      <span className="text-[24px] font-bold font-serif whitespace-normal sm:whitespace-nowrap">
+        {logo.admin_logo_title_zh}
+      </span>
+      <span className="text-[16px] text-foreground/80 tracking-wide">
+        {logo.admin_logo_title_en}
+      </span>
+      <span className="text-[14px] text-muted-foreground">
+        {logo.admin_logo_version}
+      </span>
+      <NowLabel />
+    </Link>
+  );
+}
+
 
 // ============= 儿童主日学 — 入学记录 =============
 function KidsEnrollmentRecordsSection({
