@@ -421,7 +421,14 @@ export function HomeVisualEditor() {
 
   const previewBlocks = useMemo(() => sanitizeBlocks(blocks), [blocks]);
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">加载中…</div>;
+  if (loading) {
+    return (
+      <div className="p-12 flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm">正在加载主页内容…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
