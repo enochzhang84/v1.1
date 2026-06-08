@@ -1126,7 +1126,7 @@ export default function PipComposer() {
               <Label className="text-xs text-muted-foreground">截图</Label>
               <div className="mt-2">
                 <Button variant="outline" onClick={takeScreenshot} className="gap-1.5 w-full">
-                  <CameraSnap className="size-3.5" /> 保存当前画面为 PNG
+                  <ImageDown className="size-3.5" /> 保存当前画面为 PNG
                 </Button>
                 <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
                   注意：YouTube / 跨域网页内容因浏览器安全限制无法被截取。
