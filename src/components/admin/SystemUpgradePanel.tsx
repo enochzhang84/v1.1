@@ -152,12 +152,23 @@ export function SystemUpgradePanel({ isSuperAdmin }: { isSuperAdmin: boolean }) 
       // mark old current as non-current
       await supabase.from("app_versions").update({ is_current: false }).eq("is_current", true);
 
-      const releasedAt = pkgInfo.releaseDate || pkgInfo.released_at || null;
+      const releasedAt =
+        pkgInfo.releaseDate || pkgInfo.released_at || pkgInfo.release_date || null;
+      const noteHeader = [
+        pkgInfo.title ? `【${pkgInfo.title}】` : "",
+        pkgInfo.build_number ? `Build: ${pkgInfo.build_number}` : "",
+      ]
+        .filter(Boolean)
+        .join("  ");
+      const noteBody = pkgDescription.length
+        ? pkgDescription.map((d) => `• ${d}`).join("\n")
+        : "";
+      const notes = [noteHeader, noteBody].filter(Boolean).join("\n").trim() || null;
       const { error: insErr } = await supabase.from("app_versions").insert({
         version: pkgSysVer,
         database_version: pkgDbVer || dbVer,
         released_at: releasedAt ? new Date(releasedAt).toISOString() : null,
-        notes: pkgDescription.length ? pkgDescription.map((d) => `• ${d}`).join("\n") : null,
+        notes,
         installed_by: uid,
         status: "success",
         is_current: true,
@@ -165,17 +176,21 @@ export function SystemUpgradePanel({ isSuperAdmin }: { isSuperAdmin: boolean }) 
       });
       if (insErr) throw insErr;
 
-      // upsert version settings
-      const updates = [
-        { key: "system_version", value: pkgSysVer, updated_at: new Date().toISOString() },
+      // upsert version settings —— system_version 是 admin 左上角的权威来源
+      const nowIso = new Date().toISOString();
+      const updates: Array<{ key: string; value: string; updated_at: string }> = [
+        { key: "system_version", value: pkgSysVer, updated_at: nowIso },
+        // 让旧 admin_logo_version 与之同步，避免被手工覆盖后版本错位
+        { key: "admin_logo_version", value: `Version ${pkgSysVer.replace(/^v/i, "")}`, updated_at: nowIso },
       ];
       if (pkgDbVer) {
-        updates.push({ key: "database_version", value: pkgDbVer, updated_at: new Date().toISOString() });
+        updates.push({ key: "database_version", value: pkgDbVer, updated_at: nowIso });
       }
       const { error: setErr } = await supabase.from("app_settings").upsert(updates, { onConflict: "key" });
       if (setErr) throw setErr;
 
-      toast.success(`已记录升级到 HOC3 ${pkgSysVer}`);
+      emitAdminLogoUpdated();
+      toast.success(`已记录升级到 HOC3 ${pkgSysVer}，后台左上角版本号已更新`);
       setPkgFile(null);
       setPkgInfo(null);
       await load();
