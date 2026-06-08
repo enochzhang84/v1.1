@@ -1697,7 +1697,7 @@ function AdminPage() {
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full min-w-0">
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-1">
               {(([
                 { value: "stats", key: "modReports" as TKey },
                 { value: "welcome", key: "modWelcome" as TKey },
@@ -1705,6 +1705,7 @@ function AdminPage() {
                 { value: "kitchen", key: "modKitchen" as TKey },
                 { value: "sunday", key: "modSundaySchool" as TKey },
                 { value: "events", key: "modEvents" as TKey },
+                { value: "retreat", key: "modRetreat" as TKey },
               ] as { value: string; key: TKey }[]).map((x) => ({ value: x.value, label: t(x.key) })))
                 .filter((tab) => {
                   // super_admin 不受 service_area 限制
@@ -4354,24 +4355,6 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                 </div>
               );
             })}
-            {/* 退修会登记 — 与新人登记并排 */}
-            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
-              <p className="font-medium text-center">退修会登记</p>
-              {publicBase && <QRCodeSVG value={`${publicBase}/retreat`} size={180} level="H" />}
-              <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
-              <div className="flex gap-2 flex-wrap justify-center">
-                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${publicBase}/retreat`); toast.success("链接已复制"); }}>
-                  复制链接
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}>
-                  打开
-                </Button>
-              </div>
-            </div>
-          </div>
-          {/* 退修会二维码管理（动态 URL + 持久化） */}
-          <div className="mt-4">
-            <RetreatQrPanel />
           </div>
         </section>
         <section className="bg-card border border-border/50 rounded-2xl p-6">
@@ -4462,11 +4445,37 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             </div>
           </div>
         </section>
+            </TabsContent>
 
+            <TabsContent value="retreat" className="space-y-8 mt-0">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <h2 className="font-serif text-xl">退修会</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
+              <p className="font-medium text-center">退修会登记</p>
+              {publicBase && <QRCodeSVG value={`${publicBase}/retreat`} size={180} level="H" />}
+              <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
+              <div className="flex gap-2 flex-wrap justify-center">
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${publicBase}/retreat`); toast.success("链接已复制"); }}>
+                  复制链接
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}>
+                  打开
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <RetreatQrPanel />
+          </div>
+        </section>
             </TabsContent>
 
           </fieldset>
         </Tabs>
+
 
         {/* 主日学课程设置 Dialog */}
         <Dialog open={coursesOpen} onOpenChange={setCoursesOpen}>
