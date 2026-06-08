@@ -2807,7 +2807,7 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => { window.location.href = "/admin/home-editor"; }}
+              onClick={() => { window.location.href = "/home-editor"; }}
             >
               🎨 可视化编辑
             </Button>

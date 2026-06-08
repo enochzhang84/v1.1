@@ -288,31 +288,69 @@ export function HomeVisualEditor() {
   const [blocks, setBlocks] = useState<HomeBlock[]>([]);
   const [contentId, setContentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [emptyState, setEmptyState] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setLoading((l) => {
+          if (l) setLoadError("加载主页内容超时（10 秒）。可能是网络问题或数据库权限不足。");
+          return false;
+        });
+      }
+    }, 10000);
+
     (async () => {
-      const { data, error } = await supabase
-        .from("home_page_content")
-        .select("id, blocks, updated_at")
-        .eq("slug", "home")
-        .maybeSingle();
-      if (error) {
-        console.error(error);
+      try {
+        const { data, error } = await supabase
+          .from("home_page_content")
+          .select("id, blocks, updated_at")
+          .eq("slug", "home")
+          .maybeSingle();
+        if (cancelled) return;
+        if (error) {
+          console.error("[home-editor] 读取失败", error);
+          setLoadError(`读取主页内容失败：${error.message}（code: ${error.code ?? "-"}）`);
+          setBlocks(defaultHomeTemplate());
+          setEmptyState(true);
+        } else if (data) {
+          setContentId(data.id);
+          const arr = Array.isArray(data.blocks) ? (data.blocks as unknown as HomeBlock[]) : [];
+          if (arr.length === 0) {
+            setBlocks(defaultHomeTemplate());
+            setEmptyState(true);
+          } else {
+            setBlocks(arr);
+          }
+          setSavedAt(data.updated_at);
+        } else {
+          // 没有记录 → 显示「使用默认模板初始化」
+          setBlocks(defaultHomeTemplate());
+          setEmptyState(true);
+        }
+      } catch (e) {
+        console.error("[home-editor] 异常", e);
+        if (!cancelled) {
+          setLoadError((e as Error).message || String(e));
+          setBlocks(defaultHomeTemplate());
+          setEmptyState(true);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+        clearTimeout(timeout);
       }
-      if (data) {
-        setContentId(data.id);
-        setBlocks(Array.isArray(data.blocks) ? (data.blocks as unknown as HomeBlock[]) : defaultHomeTemplate());
-        setSavedAt(data.updated_at);
-      } else {
-        setBlocks(defaultHomeTemplate());
-      }
-      setLoading(false);
     })();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
+
+
 
   const addBlock = useCallback((type: HomeBlock["type"]) => {
     const id = newId();
@@ -383,7 +421,14 @@ export function HomeVisualEditor() {
 
   const previewBlocks = useMemo(() => sanitizeBlocks(blocks), [blocks]);
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">加载中…</div>;
+  if (loading) {
+    return (
+      <div className="p-12 flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm">正在加载主页内容…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -406,6 +451,18 @@ export function HomeVisualEditor() {
           <Button size="sm" onClick={handleSave} disabled={saving}><Save className="h-3.5 w-3.5 mr-1" />{saving ? "保存中…" : "保存"}</Button>
         </div>
       </div>
+
+      {loadError && (
+        <div className="px-4 py-2 bg-destructive/10 border-b border-destructive/30 text-sm text-destructive">
+          ⚠ {loadError}
+        </div>
+      )}
+      {emptyState && !loadError && (
+        <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-900 flex items-center justify-between">
+          <span>📄 还没有数据库内容，已为你加载「基督三家主页」默认模板。点击右上角「保存」即可初始化。</span>
+          <Button size="sm" onClick={handleSave} disabled={saving}>使用默认模板初始化</Button>
+        </div>
+      )}
 
       {/* 主体 */}
       <div className="flex-1 overflow-y-auto bg-muted/20 p-4">
