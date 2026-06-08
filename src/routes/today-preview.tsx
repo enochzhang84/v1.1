@@ -171,10 +171,10 @@ function PreviewPage() {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.session.user.id)
-          .eq("role", "admin")
-          .maybeSingle();
-        if (!roleData) {
-          navigate({ to: "/login" });
+          .in("role", ["admin", "super_admin"]);
+        if (!roleData || roleData.length === 0) {
+          // 没有权限就停留在当前页面显示提示，不强制跳转登录
+          setLoading(false);
           return;
         }
         const { start, end } = getTodayRangeForSanFrancisco();
