@@ -239,7 +239,8 @@ function RegisterPage() {
       zip: form.zip.trim() || null,
       source: eventToken ? "qr" : "manual",
       ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
-    }));
+    });
+    });
 
     const rows = [primary, ...companionRows];
 
