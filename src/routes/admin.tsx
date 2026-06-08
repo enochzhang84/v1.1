@@ -3199,15 +3199,15 @@ function AdminPage() {
 
         {mediaSubTab === "screen" && (
         <section className="bg-card border border-border/50 rounded-2xl p-6 mt-8">
-          <h2 className="font-serif text-xl mb-4">影音投影</h2>
+          <h2 className="font-serif text-xl mb-4">今日登记名单</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
-              <p className="text-sm text-muted-foreground">今日登记名单(适合投影)</p>
+              <p className="text-sm text-muted-foreground">投影到主屏幕</p>
               <Button
                 variant="outline"
                 onClick={() => window.open("/today-preview", "_blank")}
               >
-                今日登记名单
+                投影到主屏幕
               </Button>
             </div>
           </div>
