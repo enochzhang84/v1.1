@@ -46,15 +46,26 @@ export function useAdminLogo(): AdminLogo {
     if (!data) return;
     const next = { ...ADMIN_LOGO_DEFAULTS } as AdminLogo;
     let systemVer: string | null = null;
+    let savedVer: string | null = null;
     for (const row of data as Array<{ key: string; value: string | null }>) {
+      if (row.key === "admin_logo_version") {
+        savedVer = row.value ?? null;
+        continue;
+      }
       if ((TEXT_KEYS as string[]).includes(row.key) && row.value) {
         (next as any)[row.key] = row.value;
       }
       if (row.key === "system_version") systemVer = row.value ?? null;
     }
-    // 优先使用 system_version 作为版本号（升级包安装后自动同步）
-    const sv = formatVersion(systemVer);
-    if (sv) next.admin_logo_version = sv;
+    // 优先使用用户在「后台设置」中保存的版本号；
+    // 没有自定义时再回退到升级包写入的 system_version；
+    // 都没有时使用默认值。
+    if (savedVer && savedVer.trim()) {
+      next.admin_logo_version = savedVer.trim();
+    } else {
+      const sv = formatVersion(systemVer);
+      if (sv) next.admin_logo_version = sv;
+    }
     setLogo(next);
   }, []);
 
