@@ -246,6 +246,14 @@ export default function PipComposer() {
   const [pipBorder, setPipBorder] = useState<boolean>(true);
   const [pipOpacity, setPipOpacity] = useState<number>(100);
 
+  // Output settings
+  const [outputMode, setOutputMode] = useState<OutputMode>("preview");
+  const [outputStatus, setOutputStatus] = useState<OutputStatus>("idle");
+  const [outputResolution, setOutputResolution] = useState<string>("auto");
+  const [rtmpUrl, setRtmpUrl] = useState<string>("");
+  const [rtmpKey, setRtmpKey] = useState<string>("");
+  const outputWindowRef = useRef<Window | null>(null);
+
   // Refs
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef<{ active: boolean; offX: number; offY: number }>({
