@@ -4471,26 +4471,55 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
 
             <TabsContent value="retreat" className="space-y-8 mt-0">
         <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-4 flex-wrap">
-            <h2 className="font-serif text-xl">退修会</h2>
+          <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+            <h2 className="font-serif text-xl">退修会主页</h2>
+            <div className="flex gap-2 flex-wrap">
+              <Button size="sm" variant="outline" onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}>
+                打开公开页
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => window.open("/retreat-admin", "_blank", "noopener,noreferrer")}>
+                查看名单
+              </Button>
+            </div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
-              <p className="font-medium text-center">退修会登记</p>
-              {publicBase && <QRCodeSVG value={`${publicBase}/retreat`} size={180} level="H" />}
-              <p className="text-xs text-muted-foreground break-all text-center">{publicBase}/retreat</p>
-              <div className="flex gap-2 flex-wrap justify-center">
-                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${publicBase}/retreat`); toast.success("链接已复制"); }}>
-                  复制链接
+
+          <div className="grid gap-10 md:grid-cols-2 items-center">
+            <div className="font-kaiti text-foreground">
+              <h1 className="font-serif text-2xl md:text-3xl mb-2 leading-tight">
+                欢迎你参加退修会
+              </h1>
+              <div className="text-base leading-relaxed mb-6">
+                <p>2026 基督之家联合退修会</p>
+                <p>主题：跨越—萬國萬代</p>
+                <p>讲员：柏有成博士</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  7/24 Fri 1:00PM — 7/26 Sun 1:00PM<br />
+                  Sonoma State University
+                </p>
+              </div>
+              <blockquote className="italic text-foreground/85 leading-relaxed">
+                「神能将各样的恩惠多多地加给你们，使你们凡事常常充足，能多行各样善事。」
+                <div className="mt-1 text-sm text-muted-foreground not-italic">— 哥林多后书 9:8</div>
+              </blockquote>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <div className="bg-card p-6 rounded-2xl shadow-md border border-border/40 flex flex-col items-center">
+                {publicBase && <QRCodeSVG value={`${publicBase}/retreat-register`} size={200} level="H" />}
+                <p className="text-sm font-medium mt-3">扫码登记</p>
+                <p className="text-xs text-muted-foreground break-all text-center mt-1 max-w-[220px]">
+                  {publicBase}/retreat-register
+                </p>
+              </div>
+              <div className="mt-4 flex gap-2 flex-wrap justify-center">
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(`${publicBase}/retreat-register`); toast.success("链接已复制"); }}>
+                  复制登记链接
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => window.open("/retreat", "_blank", "noopener,noreferrer")}>
-                  打开
+                <Button size="sm" variant="outline" onClick={() => window.open("/retreat-register", "_blank", "noopener,noreferrer")}>
+                  打开登记页
                 </Button>
               </div>
             </div>
-          </div>
-          <div className="mt-4">
-            <RetreatQrPanel />
           </div>
         </section>
             </TabsContent>
