@@ -694,9 +694,7 @@ function AdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _setUserDisabledFn = useServerFn(setUserDisabled);
   const setUserAnalyticsAreaFn = useServerFn(setUserAnalyticsArea);
-  const exportDeployPackageFn = useServerFn(
-    (require("@/lib/deploy.functions") as typeof import("@/lib/deploy.functions")).exportDeployPackage,
-  );
+  const exportDeployPackageFn = useServerFn(exportDeployPackage);
   const [deployExporting, setDeployExporting] = useState(false);
   async function handleExportDeployPackage() {
     if (!window.confirm("此操作将生成部署文件，不包含用户隐私数据。是否继续？")) return;
