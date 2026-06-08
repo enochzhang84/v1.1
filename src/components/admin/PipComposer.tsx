@@ -962,8 +962,8 @@ export default function PipComposer() {
           </div>
         </div>
 
-        {/* 右侧：布局 / PIP 控制 */}
-        <div className="space-y-4">
+        {/* 右侧：布局 / PIP 控制（移动端显示，桌面端由中间列替代） */}
+        <div className="space-y-4 lg:hidden">
           <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-2">
             <div className="text-sm font-medium mb-1">布局模式</div>
             <div className="grid grid-cols-1 gap-1.5">
