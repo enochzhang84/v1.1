@@ -2901,6 +2901,12 @@ function AdminPage() {
                   >
                     {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setOpsCenterOpen(false); setAutoBackupOpen(true); }}
+                  >
+                    ☁️ 自动备份中心
+                  </Button>
                 </div>
               </section>
 
