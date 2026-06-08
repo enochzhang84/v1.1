@@ -504,139 +504,196 @@ function RegisterPage() {
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
           </Field>
 
-          {/* 同行成员 */}
-          <div className="pt-4 border-t border-border/50 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">同行成员（选填）</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  和您一起来的家人 / 朋友，可一次登记，无需重复扫码
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setCompanions([...companions, emptyCompanion()])}
-              >
-                + 添加同行成员
-              </Button>
-            </div>
+          {/* 同行新人 */}
+          <div className="pt-4 border-t border-border/50 space-y-4">
+            {companions.map((c, i) => {
+              const update = (patch: Partial<Companion>) => {
+                const next = [...companions];
+                next[i] = { ...c, ...patch };
+                setCompanions(next);
+              };
+              return (
+                <div
+                  key={i}
+                  className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">
+                      同行新人 {i + 1}
+                      {c.name ? <span className="text-muted-foreground"> · {c.name}</span> : null}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCompanions(companions.filter((_, idx) => idx !== i))}
+                    >
+                      删除
+                    </Button>
+                  </div>
 
-            {companions.map((c, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">
-                    成员 {i + 1}
-                    {c.name ? <span className="text-muted-foreground"> · {c.name}</span> : null}
-                    {c.relationship_to_primary ? (
-                      <span className="text-muted-foreground"> · {c.relationship_to_primary}</span>
-                    ) : null}
+                  <Field label="姓名">
+                    <Input value={c.name} onChange={(e) => update({ name: e.target.value })} />
+                  </Field>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field label="性别">
+                      <RadioGroup value={c.gender} onValueChange={(v) => update({ gender: v })} className="flex gap-4 pt-2">
+                        {["男", "女"].map((g) => (
+                          <label key={g} className="flex items-center gap-2 cursor-pointer">
+                            <RadioGroupItem value={g} /> <span className="text-sm">{g}</span>
+                          </label>
+                        ))}
+                      </RadioGroup>
+                    </Field>
+                    <Field label="年龄段">
+                      <RadioGroup value={c.age_group} onValueChange={(v) => update({ age_group: v })} className="flex flex-wrap gap-3 pt-2">
+                        {["60岁以上", "40-60岁", "20-39岁", "10-19岁", "10岁以下"].map((a) => (
+                          <label key={a} className="flex items-center gap-2 cursor-pointer">
+                            <RadioGroupItem value={a} /> <span className="text-sm">{a}</span>
+                          </label>
+                        ))}
+                      </RadioGroup>
+                    </Field>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setCompanions(companions.filter((_, idx) => idx !== i))
-                    }
-                  >
-                    删除
-                  </Button>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">姓名</Label>
-                    <Input
-                      value={c.name}
-                      onChange={(e) => {
-                        const next = [...companions];
-                        next[i] = { ...c, name: e.target.value };
-                        setCompanions(next);
-                      }}
-                    />
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field label="电话">
+                      <Input type="tel" value={c.phone} onChange={(e) => update({ phone: e.target.value })} />
+                    </Field>
+                    <Field label="微信">
+                      <Input value={c.wechat} onChange={(e) => update({ wechat: e.target.value })} />
+                    </Field>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">与主要登记人的关系</Label>
-                    <select
-                      value={c.relationship_to_primary}
-                      onChange={(e) => {
-                        const next = [...companions];
-                        next[i] = { ...c, relationship_to_primary: e.target.value };
-                        setCompanions(next);
-                      }}
-                      className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
-                    >
-                      <option value="">请选择关系</option>
-                      {["配偶", "子女", "父母", "亲戚", "朋友", "同学", "同事", "其他"].map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">性别</Label>
-                    <RadioGroup
-                      value={c.gender}
-                      onValueChange={(v) => {
-                        const next = [...companions];
-                        next[i] = { ...c, gender: v };
-                        setCompanions(next);
-                      }}
-                      className="flex gap-4 pt-1"
-                    >
-                      {["男", "女"].map((g) => (
-                        <label key={g} className="flex items-center gap-1.5 cursor-pointer">
-                          <RadioGroupItem value={g} /> <span className="text-sm">{g}</span>
+
+                  <Field label="信仰">
+                    <RadioGroup value={c.faith} onValueChange={(v) => update({ faith: v })} className="flex flex-wrap gap-4 pt-2">
+                      {[
+                        { v: "christian", l: "基督徒" },
+                        { v: "seeker", l: "慕道友" },
+                        { v: "other", l: "其他" },
+                      ].map((o) => (
+                        <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
                         </label>
                       ))}
                     </RadioGroup>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">年龄段</Label>
-                    <select
-                      value={c.age_group}
-                      onChange={(e) => {
-                        const next = [...companions];
-                        next[i] = { ...c, age_group: e.target.value };
-                        setCompanions(next);
-                      }}
-                      className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
-                    >
-                      <option value="">请选择</option>
-                      {["60岁以上", "40-60岁", "20-39岁", "10-19岁", "10岁以下"].map((a) => (
-                        <option key={a} value={a}>{a}</option>
+                    {c.faith === "christian" && (
+                      <div className="pt-3 flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">信主</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={c.faith_years}
+                          onChange={(e) => update({ faith_years: e.target.value })}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">年</span>
+                      </div>
+                    )}
+                    {c.faith === "other" && (
+                      <Input
+                        className="mt-3"
+                        placeholder="请说明"
+                        value={c.faith_other}
+                        onChange={(e) => update({ faith_other: e.target.value })}
+                      />
+                    )}
+                  </Field>
+
+                  <Field label="婚姻">
+                    <RadioGroup value={c.marital_status} onValueChange={(v) => update({ marital_status: v })} className="flex flex-wrap gap-4 pt-2">
+                      {[
+                        { v: "married", l: "已婚" },
+                        { v: "single", l: "单身" },
+                      ].map((o) => (
+                        <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                        </label>
                       ))}
-                    </select>
+                    </RadioGroup>
+                    {c.marital_status === "married" && (
+                      <Input
+                        className="mt-3"
+                        placeholder="配偶姓名"
+                        value={c.spouse_name}
+                        onChange={(e) => update({ spouse_name: e.target.value })}
+                      />
+                    )}
+                  </Field>
+
+                  <Field label="介绍人">
+                    <RadioGroup value={c.referrer_type} onValueChange={(v) => update({ referrer_type: v })} className="flex flex-wrap gap-4 pt-2">
+                      {[
+                        { v: "self", l: "自己" },
+                        { v: "friend", l: "亲友" },
+                        { v: "other", l: "其他" },
+                      ].map((o) => (
+                        <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                    {c.referrer_type === "friend" && (
+                      <Input
+                        className="mt-3"
+                        placeholder="亲友姓名"
+                        value={c.invited_by}
+                        onChange={(e) => update({ invited_by: e.target.value })}
+                      />
+                    )}
+                    {c.referrer_type === "other" && (
+                      <Input
+                        className="mt-3"
+                        placeholder="请说明"
+                        value={c.referrer_other}
+                        onChange={(e) => update({ referrer_other: e.target.value })}
+                      />
+                    )}
+                  </Field>
+
+                  <Field label="如何知道我们教会">
+                    <RadioGroup value={c.source_channel} onValueChange={(v) => update({ source_channel: v })} className="flex flex-wrap gap-4 pt-2">
+                      {[
+                        { v: "chatgpt", l: "ChatGPT" },
+                        { v: "maps", l: "谷歌/苹果地图" },
+                        { v: "wechat", l: "微信/小红书" },
+                        { v: "youtube", l: "YouTube" },
+                        { v: "missionary", l: "宣教士" },
+                      ].map((o) => (
+                        <label key={o.v} className="flex items-center gap-2 cursor-pointer">
+                          <RadioGroupItem value={o.v} /> <span className="text-sm">{o.l}</span>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  </Field>
+
+                  <div className="space-y-3 pt-2 border-t border-border/50">
+                    <label className="flex items-center gap-3 cursor-pointer pt-3">
+                      <Checkbox checked={c.wants_visit} onCheckedChange={(v) => update({ wants_visit: !!v })} />
+                      <span className="text-sm">我欢迎教会牧者探访我</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <Checkbox checked={c.wants_info} onCheckedChange={(v) => update({ wants_info: !!v })} />
+                      <span className="text-sm">我需要教会的资料及联络</span>
+                    </label>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">电话（选填）</Label>
-                    <Input
-                      type="tel"
-                      value={c.phone}
-                      onChange={(e) => {
-                        const next = [...companions];
-                        next[i] = { ...c, phone: e.target.value };
-                        setCompanions(next);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">微信（选填）</Label>
-                    <Input
-                      value={c.wechat}
-                      onChange={(e) => {
-                        const next = [...companions];
-                        next[i] = { ...c, wechat: e.target.value };
-                        setCompanions(next);
-                      }}
-                    />
-                  </div>
+
+                  <Field label="备注 / 代祷事项(选填)">
+                    <Textarea value={c.notes} onChange={(e) => update({ notes: e.target.value })} rows={3} />
+                  </Field>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-full"
+              onClick={() => setCompanions([...companions, emptyCompanion()])}
+            >
+              + 继续添加一位同行新人
+            </Button>
           </div>
 
           <Button type="submit" size="lg" disabled={submitting} className="w-full rounded-full">
