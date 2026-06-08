@@ -3202,7 +3202,6 @@ function AdminPage() {
           <h2 className="font-serif text-xl mb-4">今日登记名单</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-start gap-3">
-              <p className="text-sm text-muted-foreground">投影到主屏幕</p>
               <Button
                 variant="outline"
                 onClick={() => window.open("/today-preview", "_blank")}
