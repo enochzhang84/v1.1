@@ -25,16 +25,13 @@ export function HomeBlocksRenderer({ blocks, css }: { blocks: HomeBlock[]; css?:
       {blocks.map((b) => {
         switch (b.type) {
           case "heading": {
-            const Tag = (`h${b.level}` as unknown) as keyof JSX.IntrinsicElements;
             const sizes: Record<number, string> = { 1: "text-4xl md:text-5xl font-bold", 2: "text-3xl md:text-4xl font-bold", 3: "text-xl md:text-2xl font-semibold" };
-            return (
-              <Tag
-                key={b.id}
-                className={`${sizes[b.level]} ${alignClass(b.align)}`}
-                style={{ color: b.color || undefined }}
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(b.html) }}
-              />
-            );
+            const cls = `${sizes[b.level]} ${alignClass(b.align)}`;
+            const style = { color: b.color || undefined };
+            const inner = { __html: sanitizeHtml(b.html) };
+            if (b.level === 1) return <h1 key={b.id} className={cls} style={style} dangerouslySetInnerHTML={inner} />;
+            if (b.level === 2) return <h2 key={b.id} className={cls} style={style} dangerouslySetInnerHTML={inner} />;
+            return <h3 key={b.id} className={cls} style={style} dangerouslySetInnerHTML={inner} />;
           }
           case "paragraph":
             return (
