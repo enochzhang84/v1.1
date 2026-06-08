@@ -142,7 +142,7 @@ function Card({
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
-export function HomePageSettingsPanel() {
+export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
