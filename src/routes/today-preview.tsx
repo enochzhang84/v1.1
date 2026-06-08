@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon } from "lucide-react";
+import { Settings as SettingsIcon, Maximize, Minimize } from "lucide-react";
 
 type Reg = {
   id: string;
