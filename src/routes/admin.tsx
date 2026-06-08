@@ -2818,6 +2818,13 @@ function AdminPage() {
               🆙 系统升级
             </Button>
             <Button
+              variant="outline"
+              onClick={handleExportDeployPackage}
+              disabled={deployExporting}
+            >
+              {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
+            </Button>
+            <Button
               variant="destructive"
               onClick={() => setInitOpen(true)}
             >
