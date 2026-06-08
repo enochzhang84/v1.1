@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, Fragment } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { getPublicOrigin } from "@/lib/public-origin";
+import { useAdminLogo } from "@/hooks/useAdminLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
