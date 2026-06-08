@@ -19,6 +19,7 @@ import {
   exportSchemaDoc,
   TABLE_NOTES,
 } from "@/lib/backup.functions";
+import { exportDeployPackage } from "@/lib/deploy.functions";
 
 function fileTimestamp() {
   const d = new Date();
