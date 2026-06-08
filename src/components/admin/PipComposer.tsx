@@ -649,7 +649,7 @@ export default function PipComposer() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)_260px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_220px] gap-5">
         {/* 左侧：输入源 */}
         <div className="space-y-5">
           <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
