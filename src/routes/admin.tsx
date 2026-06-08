@@ -2856,6 +2856,18 @@ function AdminPage() {
             {backupOpen && <BackupRestorePanel />}
           </DialogContent>
         </Dialog>
+        {/* 自动备份中心 Dialog */}
+        <Dialog open={autoBackupOpen} onOpenChange={setAutoBackupOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>☁️ 自动备份中心</DialogTitle>
+              <DialogDescription>
+                每日定时备份数据库并同步至 Google Drive / OneDrive / Dropbox。仅超级管理员可用。
+              </DialogDescription>
+            </DialogHeader>
+            {autoBackupOpen && <AutoBackupCenter />}
+          </DialogContent>
+        </Dialog>
         {/* 系统升级 Dialog */}
         <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
