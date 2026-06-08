@@ -19,6 +19,7 @@ import {
   exportSchemaDoc,
   TABLE_NOTES,
 } from "@/lib/backup.functions";
+import { exportDeployPackage } from "@/lib/deploy.functions";
 
 function fileTimestamp() {
   const d = new Date();
@@ -49,6 +50,7 @@ export function BackupRestorePanel() {
   const doPreviewRestore = useServerFn(previewRestore);
   const doListLogs = useServerFn(listBackupLogs);
   const doSchemaDoc = useServerFn(exportSchemaDoc);
+  const doExportDeploy = useServerFn(exportDeployPackage);
 
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set(Object.keys(RESTORE_GROUPS)));
@@ -60,7 +62,9 @@ export function BackupRestorePanel() {
   const [pendingPayload, setPendingPayload] = useState<any | null>(null);
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [logs, setLogs] = useState<any[]>([]);
+  const [deployBusy, setDeployBusy] = useState<null | "system" | "history" | "full">(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const zipRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -357,6 +361,176 @@ export function BackupRestorePanel() {
     }
   };
 
+  // ============== 部署 / 迁移包导出 ==============
+  function dateStamp() {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+  }
+
+  function downloadBlob(blob: Blob, name: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function buildSystemInstallFiles(): Promise<Record<string, string>> {
+    const r: any = await doExportDeploy();
+    return r.files as Record<string, string>;
+  }
+
+  async function buildHistoryDataFiles(): Promise<{
+    files: Record<string, string>;
+    summary: Record<string, number>;
+    total: number;
+  }> {
+    const payload: any = await doExport();
+    const files: Record<string, string> = {};
+    files["manifest.json"] = JSON.stringify(payload, null, 2);
+    files["README_DATA.md"] =
+      `# HOC3 历史数据包\n\n导出时间：${payload.created_at}\n总记录数：${
+        Object.values(payload.summary || {}).reduce((s: number, v: any) => s + Number(v || 0), 0)
+      }\n\n根目录的 manifest.json 是完整可恢复的备份文件；data/<table>.json 是按表拆分的副本，便于阅读。\n\n恢复方式：在备份与恢复模块上传本 zip（推荐），或直接上传 manifest.json。\n`;
+    for (const [t, rows] of Object.entries(payload.tables || {})) {
+      files[`data/${t}.json`] = JSON.stringify(rows ?? [], null, 2);
+    }
+    return { files, summary: payload.summary || {}, total: Object.values(payload.summary || {}).reduce((s: number, v: any) => s + Number(v || 0), 0) };
+  }
+
+  async function zipFiles(files: Record<string, string>): Promise<Blob> {
+    const JSZipMod = (await import("jszip")).default;
+    const zip = new JSZipMod();
+    for (const [name, content] of Object.entries(files)) {
+      zip.file(name, content);
+    }
+    return zip.generateAsync({ type: "blob" });
+  }
+
+  const onExportSystemInstall = async () => {
+    if (!window.confirm("将导出系统安装包（不含用户数据），用于在新 Supabase + VPS 上快速安装 HOC3。是否继续？")) return;
+    setDeployBusy("system");
+    try {
+      const files = await buildSystemInstallFiles();
+      const blob = await zipFiles(files);
+      downloadBlob(blob, `hoc3_system_package_${dateStamp()}.zip`);
+      toast.success("系统安装包：用于安装 HOC3");
+    } catch (e: any) {
+      toast.error(`导出失败：${e?.message || e}`);
+    } finally {
+      setDeployBusy(null);
+    }
+  };
+
+  const onExportHistoryData = async () => {
+    if (!window.confirm("将导出历史数据包（所有业务记录的 JSON 备份）。是否继续？")) return;
+    setDeployBusy("history");
+    try {
+      const { files } = await buildHistoryDataFiles();
+      const blob = await zipFiles(files);
+      downloadBlob(blob, `hoc3_data_backup_${dateStamp()}.zip`);
+      toast.success("历史数据包：用于恢复历史记录");
+      await refreshLogs();
+    } catch (e: any) {
+      toast.error(`导出失败：${e?.message || e}`);
+    } finally {
+      setDeployBusy(null);
+    }
+  };
+
+  const onExportFullMigration = async () => {
+    if (!window.confirm("将导出完整迁移包（系统安装包 + 历史数据包），用于完整复制到新服务器。是否继续？")) return;
+    setDeployBusy("full");
+    try {
+      const [sysFiles, hist] = await Promise.all([
+        buildSystemInstallFiles(),
+        buildHistoryDataFiles(),
+      ]);
+      const files: Record<string, string> = {};
+      for (const [n, c] of Object.entries(sysFiles)) files[`system/${n}`] = c;
+      for (const [n, c] of Object.entries(hist.files)) files[`data/${n}`] = c;
+      files["README_MIGRATION.md"] =
+        `# HOC3 完整迁移包\n\n本包含「系统安装包」+「历史数据包」。\n\n## 迁移步骤\n\n1. 新建 Supabase 项目\n2. 执行 system/hoc3_database_init_v1.sql\n3. 执行 system/hoc3_seed_data_v1.sql\n4. 执行 system/hoc3_rls_dev_open.sql\n5. 在 VPS 上按 system/.env.example 配置 .env\n6. git pull && npm install && npm run build && pm2 restart hoc3\n7. 第一个登录的账号自动成为超级管理员\n8. 在「备份与恢复」上传 data/ 子目录（或整个本 zip），选择「合并模式」恢复历史数据\n\n## 安全说明\n\n本包不包含 SUPABASE_SERVICE_ROLE_KEY、密码、JWT Secret、API Secret。\n`;
+      const blob = await zipFiles(files);
+      downloadBlob(blob, `hoc3_full_migration_package_${dateStamp()}.zip`);
+      toast.success("完整迁移包：用于完整迁移到新服务器");
+      await refreshLogs();
+    } catch (e: any) {
+      toast.error(`导出失败：${e?.message || e}`);
+    } finally {
+      setDeployBusy(null);
+    }
+  };
+
+  // ============== 从 zip 恢复（系统包 / 历史数据包 / 完整迁移包） ==============
+  const onPickZip = () => zipRef.current?.click();
+
+  const onZipFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setBusy(true);
+    try {
+      const JSZipMod = (await import("jszip")).default;
+      const zip = await JSZipMod.loadAsync(f);
+      // 1. 优先查找 manifest.json（历史数据包 / 完整迁移包内 data/manifest.json）
+      let manifestEntry =
+        zip.file("manifest.json") ||
+        zip.file("data/manifest.json") ||
+        zip.file(/manifest\.json$/)[0];
+      let payload: any = null;
+      if (manifestEntry) {
+        const text = await manifestEntry.async("string");
+        payload = JSON.parse(text);
+      } else {
+        // 2. 没有 manifest，则尝试从 data/<table>.json 重建
+        const tableFiles = zip.file(/(?:^|\/)data\/[^/]+\.json$/);
+        if (tableFiles.length > 0) {
+          const tables: Record<string, any[]> = {};
+          for (const entry of tableFiles) {
+            const name = entry.name.split("/").pop()!.replace(/\.json$/, "");
+            if (name === "manifest") continue;
+            const txt = await entry.async("string");
+            try {
+              tables[name] = JSON.parse(txt);
+            } catch {
+              /* skip */
+            }
+          }
+          payload = {
+            backup_version: 1,
+            created_at: new Date().toISOString(),
+            project_name: "HOC3 (recovered from zip)",
+            tables,
+          };
+        }
+      }
+      if (!payload) {
+        // 仅含系统安装包 (.sql / .env)，没有数据可恢复
+        toast.error("此 zip 仅含系统安装包（SQL/env），需要手动在 Supabase SQL Editor 执行，无法在此恢复。");
+        return;
+      }
+      if (!payload?.tables || typeof payload.tables !== "object") {
+        toast.error("zip 内 manifest.json 格式不正确：缺少 tables 字段");
+        return;
+      }
+      const preview: any = await doPreviewRestore({ data: { payload } });
+      setRestorePreview(preview);
+      setPendingPayload(payload);
+      toast.success("已读取 zip，请确认下方预检查后恢复。");
+    } catch (err: any) {
+      toast.error(`读取 zip 失败：${err?.message || err}`);
+    } finally {
+      setBusy(false);
+      if (zipRef.current) zipRef.current.value = "";
+    }
+  };
+
+
+
   return (
     <div className="space-y-6">
       <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
@@ -372,8 +546,71 @@ export function BackupRestorePanel() {
         </div>
       )}
 
+      {/* 0、部署 / 迁移包导出（仅超级管理员） */}
+      <section className="space-y-3 rounded-md border border-sky-200 bg-sky-50/60 p-4">
+        <div>
+          <h3 className="font-medium">🚀 部署 / 迁移包导出</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            用于快速复制 HOC3、迁移 VPS、迁移后端数据库、建立新教会副本。导出文件不包含 Service Role Key、密码、JWT Secret 等敏感凭据。
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-md border bg-background p-3 space-y-2">
+            <div className="text-sm font-medium">① 系统安装包</div>
+            <p className="text-xs text-muted-foreground min-h-[3rem]">
+              数据库结构 + 默认配置 + 开发 RLS + .env 模板 + 部署说明。<br />
+              <span className="text-muted-foreground/80">用于安装 HOC3，不含用户数据。</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={onExportSystemInstall}
+              disabled={deployBusy !== null || busy}
+            >
+              {deployBusy === "system" ? "生成中..." : "📦 导出系统安装包"}
+            </Button>
+          </div>
+          <div className="rounded-md border bg-background p-3 space-y-2">
+            <div className="text-sm font-medium">② 历史数据包</div>
+            <p className="text-xs text-muted-foreground min-h-[3rem]">
+              新人登记、退修会、签到、团契、聊天、反馈、用户权限等全部业务记录的 JSON 备份。<br />
+              <span className="text-muted-foreground/80">用于恢复历史记录。</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={onExportHistoryData}
+              disabled={deployBusy !== null || busy}
+            >
+              {deployBusy === "history" ? "生成中..." : "🗂 导出历史数据包"}
+            </Button>
+          </div>
+          <div className="rounded-md border-2 border-sky-400 bg-background p-3 space-y-2">
+            <div className="text-sm font-medium">③ 完整迁移包 <span className="text-[10px] text-sky-700">推荐</span></div>
+            <p className="text-xs text-muted-foreground min-h-[3rem]">
+              系统安装包 + 历史数据包。<br />
+              <span className="text-muted-foreground/80">用于完整迁移到新服务器。</span>
+            </p>
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={onExportFullMigration}
+              disabled={deployBusy !== null || busy}
+            >
+              {deployBusy === "full" ? "生成中..." : "🚚 导出完整迁移包"}
+            </Button>
+          </div>
+        </div>
+        <div className="text-[11px] text-muted-foreground border-t pt-2">
+          仅超级管理员可导出。生成的文件均不包含 Service Role Key、密码、JWT Secret 或 API Secret。
+        </div>
+      </section>
+
       {/* 一、备份 */}
       <section className="space-y-2">
+
         <h3 className="font-medium">📦 一键备份</h3>
         <p className="text-xs text-muted-foreground">
           导出全部 {Object.keys(GROUP_LABELS).length} 个模块共 {Object.keys(TABLE_NOTES).length} 张表为 JSON 文件，可下载保存到本地。
@@ -483,7 +720,7 @@ export function BackupRestorePanel() {
       <section className="space-y-3">
         <h3 className="font-medium">📥 一键恢复</h3>
         <p className="text-xs text-muted-foreground">
-          选择恢复模式与要恢复的模块，上传 JSON 备份文件后会先做预检查，确认无误再恢复。
+          选择恢复模式与要恢复的模块，可上传 <b>JSON 备份文件</b>、<b>历史数据包 (.zip)</b> 或 <b>完整迁移包 (.zip)</b>，会先做预检查，确认无误再恢复。
         </p>
 
         <div className="rounded-md border p-3 space-y-2">
@@ -533,7 +770,10 @@ export function BackupRestorePanel() {
             全部取消
           </Button>
           <Button onClick={onPickFile} disabled={busy || selected.size === 0}>
-            {busy ? "处理中..." : "📥 选择备份文件"}
+            {busy ? "处理中..." : "📥 选择备份文件 (.json)"}
+          </Button>
+          <Button variant="secondary" onClick={onPickZip} disabled={busy || selected.size === 0}>
+            {busy ? "处理中..." : "🚚 选择迁移包 (.zip)"}
           </Button>
         </div>
         <input
@@ -543,6 +783,14 @@ export function BackupRestorePanel() {
           onChange={onFileChange}
           className="hidden"
         />
+        <input
+          ref={zipRef}
+          type="file"
+          accept=".zip,application/zip"
+          onChange={onZipFileChange}
+          className="hidden"
+        />
+
 
         {restorePreview && (
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
