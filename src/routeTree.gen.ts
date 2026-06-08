@@ -35,6 +35,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
 import { Route as DisplaySlugRouteImport } from './routes/display.$slug'
 import { Route as AdultCheckinKindRouteImport } from './routes/adult-checkin.$kind'
+import { Route as AdminHomeEditorRouteImport } from './routes/admin.home-editor'
 import { Route as DisplayPosterIdRouteImport } from './routes/display.poster.$id'
 import { Route as ApiAdminInstallPackageRouteImport } from './routes/api/admin/install-package'
 
@@ -168,6 +169,11 @@ const AdultCheckinKindRoute = AdultCheckinKindRouteImport.update({
   path: '/adult-checkin/$kind',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminHomeEditorRoute = AdminHomeEditorRouteImport.update({
+  id: '/home-editor',
+  path: '/home-editor',
+  getParentRoute: () => AdminRoute,
+} as any)
 const DisplayPosterIdRoute = DisplayPosterIdRouteImport.update({
   id: '/display/poster/$id',
   path: '/display/poster/$id',
@@ -181,7 +187,7 @@ const ApiAdminInstallPackageRoute = ApiAdminInstallPackageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/admin/home-editor': typeof AdminHomeEditorRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
@@ -211,7 +218,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/admin/home-editor': typeof AdminHomeEditorRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
@@ -242,7 +250,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/admin/home-editor': typeof AdminHomeEditorRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/admin/home-editor'
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/admin/home-editor'
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/admin/home-editor'
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
@@ -365,7 +377,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ChatRoute: typeof ChatRoute
   DataPreviewRoute: typeof DataPreviewRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -578,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdultCheckinKindRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/home-editor': {
+      id: '/admin/home-editor'
+      path: '/home-editor'
+      fullPath: '/admin/home-editor'
+      preLoaderRoute: typeof AdminHomeEditorRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/display/poster/$id': {
       id: '/display/poster/$id'
       path: '/display/poster/$id'
@@ -595,9 +614,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminHomeEditorRoute: typeof AdminHomeEditorRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminHomeEditorRoute: AdminHomeEditorRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   ChatRoute: ChatRoute,
   DataPreviewRoute: DataPreviewRoute,
   FeedbackRoute: FeedbackRoute,
