@@ -354,6 +354,7 @@ function SourceRow({
   vol,
   setVol,
   note,
+  compact,
 }: {
   label: string;
   present: boolean;
@@ -363,6 +364,7 @@ function SourceRow({
   vol: number;
   setVol: (n: number) => void;
   note?: string;
+  compact?: boolean;
 }) {
   return (
     <div className={cn("space-y-1.5", !present && "opacity-40")}>
