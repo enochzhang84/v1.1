@@ -2995,6 +2995,19 @@ function AdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* 系统状态 / 健康检查 Dialog */}
+        <Dialog open={healthOpen} onOpenChange={setHealthOpen}>
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-0 bg-[#F5F5F7]">
+            <DialogHeader className="px-6 pt-5">
+              <DialogTitle>🩺 系统状态</DialogTitle>
+              <DialogDescription>
+                系统运维中心 / 系统状态。仅超级管理员可见。
+              </DialogDescription>
+            </DialogHeader>
+            {healthOpen && <SystemHealthCenter />}
+          </DialogContent>
+        </Dialog>
             </TabsContent>
 
 
