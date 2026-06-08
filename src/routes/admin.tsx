@@ -778,6 +778,7 @@ function AdminPage() {
   const [autoBackupOpen, setAutoBackupOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
   const [opsCenterOpen, setOpsCenterOpen] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
