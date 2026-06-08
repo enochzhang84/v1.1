@@ -267,7 +267,7 @@ export function HomePageSettingsPanel() {
     if (error) alert("保存失败", error.message, "error");
     else {
       setSavedAt(new Date());
-      alert("系统提示", "主页设置已保存。", "success");
+      setDirty(false);
     }
   }
 
