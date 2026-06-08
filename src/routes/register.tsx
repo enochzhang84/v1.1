@@ -25,6 +25,7 @@ function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const todayStr = () => {
     const d = new Date();
     const y = d.getFullYear();
@@ -107,7 +108,12 @@ function RegisterPage() {
       .eq("qr_token", eventToken)
       .eq("is_active", true)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[Register] failed to load event", error);
+          setLoadError(true);
+          return;
+        }
         if (data) {
           setEventId(data.id);
           setEventName(data.name);
@@ -307,6 +313,14 @@ function RegisterPage() {
             <Button variant="outline" className="rounded-full">返回首页</Button>
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md text-center text-muted-foreground">页面加载失败，请联系管理员。</div>
       </div>
     );
   }
