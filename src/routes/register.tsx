@@ -198,7 +198,14 @@ function RegisterPage() {
       ...(createdAtOverride ? { created_at: createdAtOverride } : {}),
     };
 
-    const companionRows = cleanCompanions.map((c) => ({
+    const genId = () =>
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : undefined;
+    const companionRows = cleanCompanions.map((c) => {
+      const cid = genId();
+      return ({
+      ...(cid ? { id: cid } : {}),
       ...(groupId ? { visitor_group_id: groupId } : {}),
       is_primary: false,
       relationship_to_primary: null,
