@@ -19,9 +19,20 @@ import {
   CornerDownRight,
   Cable,
   RefreshCw,
+  Monitor,
+  MonitorPlay,
+  Radio,
+  Copy as CopyIcon,
+  Square,
+  ExternalLink,
+  ImageDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toPng } from "html-to-image";
 import { cn } from "@/lib/utils";
+
+type OutputMode = "preview" | "second-screen" | "fullscreen" | "obs" | "ndi" | "rtmp";
+type OutputStatus = "idle" | "browser" | "second" | "obs";
 
 type VideoKind = "youtube" | "camera" | "capture" | "url";
 type PptKind = "image" | "url" | "capture";
@@ -235,6 +246,14 @@ export default function PipComposer() {
   const [pipBorder, setPipBorder] = useState<boolean>(true);
   const [pipOpacity, setPipOpacity] = useState<number>(100);
 
+  // Output settings
+  const [outputMode, setOutputMode] = useState<OutputMode>("preview");
+  const [outputStatus, setOutputStatus] = useState<OutputStatus>("idle");
+  const [outputResolution, setOutputResolution] = useState<string>("auto");
+  const [rtmpUrl, setRtmpUrl] = useState<string>("");
+  const [rtmpKey, setRtmpKey] = useState<string>("");
+  const outputWindowRef = useRef<Window | null>(null);
+
   // Refs
   const stageRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef<{ active: boolean; offX: number; offY: number }>({
@@ -383,6 +402,144 @@ export default function PipComposer() {
     if (stageRef.current?.requestFullscreen) stageRef.current.requestFullscreen();
     else toast.error("当前浏览器不支持全屏");
   };
+
+  // ===== Output: serialize state and broadcast to /pip-output window =====
+  const outputUrl = useMemo(
+    () => (typeof window === "undefined" ? "/pip-output" : `${window.location.origin}/pip-output`),
+    [],
+  );
+
+  const serializedState = useMemo(
+    () => ({
+      layout,
+      videoKind,
+      youtubeUrl,
+      videoUrl,
+      pptKind,
+      pptImage,
+      pptUrl,
+      pipPos,
+      pipSize,
+      pipRounded,
+      pipBorder,
+      pipOpacity,
+      resolution: outputResolution,
+      ts: Date.now(),
+    }),
+    [
+      layout, videoKind, youtubeUrl, videoUrl, pptKind, pptImage, pptUrl,
+      pipPos, pipSize, pipRounded, pipBorder, pipOpacity, outputResolution,
+    ],
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("pip_output_state", JSON.stringify(serializedState));
+    } catch { /* noop */ }
+    try {
+      const bc = new BroadcastChannel("pip-output");
+      bc.postMessage(serializedState);
+      bc.close();
+    } catch { /* noop */ }
+  }, [serializedState]);
+
+  // Detect when output window closes
+  useEffect(() => {
+    if (!outputWindowRef.current) return;
+    const id = window.setInterval(() => {
+      if (outputWindowRef.current?.closed) {
+        outputWindowRef.current = null;
+        setOutputStatus((s) => (s === "browser" || s === "second" ? "idle" : s));
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [outputStatus]);
+
+  const usesUncapturableSource =
+    videoKind === "camera" || videoKind === "capture" || pptKind === "capture";
+
+  const openOutputWindow = (features: string) => {
+    // Persist latest state first so the new tab reads it on load
+    try {
+      localStorage.setItem("pip_output_state", JSON.stringify(serializedState));
+    } catch { /* noop */ }
+    const w = window.open("/pip-output", "pip-output", features);
+    if (!w) {
+      toast.error("无法打开输出窗口，请允许弹出窗口");
+      return null;
+    }
+    outputWindowRef.current = w;
+    return w;
+  };
+
+  const startBrowserOutput = () => {
+    if (usesUncapturableSource) {
+      toast.warning("摄像头/采集卡 无法跨窗口输出，输出窗口将提示占位");
+    }
+    const w = openOutputWindow("popup,width=1920,height=1080");
+    if (!w) return;
+    setOutputStatus("browser");
+    toast.success("已打开输出窗口，按 F11 进入全屏");
+  };
+
+  const startSecondScreen = async () => {
+    const anyNav = navigator as any;
+    if (!anyNav.getScreenDetails) {
+      // Fallback: just open a popup and hint
+      const w = openOutputWindow("popup,width=1920,height=1080,left=2000,top=0");
+      if (!w) return;
+      setOutputStatus("second");
+      toast.message("浏览器不支持多屏 API，请手动将窗口拖到第二屏后按 F11");
+      return;
+    }
+    try {
+      const sd = await anyNav.getScreenDetails();
+      const other = sd.screens.find((s: any) => !s.isPrimary) ?? sd.screens[0];
+      const w = openOutputWindow(
+        `popup,width=${other.availWidth},height=${other.availHeight},left=${other.availLeft},top=${other.availTop}`,
+      );
+      if (!w) return;
+      setTimeout(() => {
+        try { w.document.documentElement.requestFullscreen?.(); } catch { /* noop */ }
+      }, 500);
+      setOutputStatus("second");
+      toast.success(`已输出到第二屏 (${other.availWidth}×${other.availHeight})`);
+    } catch {
+      toast.error("无法访问多屏信息，请授权 Window Management 权限");
+    }
+  };
+
+  const stopOutput = () => {
+    try { outputWindowRef.current?.close(); } catch { /* noop */ }
+    outputWindowRef.current = null;
+    setOutputStatus("idle");
+    toast.message("已停止输出");
+  };
+
+  const copyObsLink = async () => {
+    try {
+      await navigator.clipboard.writeText(outputUrl);
+      setOutputStatus("obs");
+      toast.success("已复制 OBS Browser Source 链接");
+    } catch {
+      toast.error("复制失败，请手动复制");
+    }
+  };
+
+  const takeScreenshot = async () => {
+    if (!stageRef.current) return;
+    try {
+      const dataUrl = await toPng(stageRef.current, { cacheBust: true, pixelRatio: 2 });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `pip-snapshot-${Date.now()}.png`;
+      a.click();
+      toast.success("已保存当前画面");
+    } catch {
+      toast.error("截图失败（YouTube/网页等跨域内容无法捕获）");
+    }
+  };
+
 
   // Layout rendering
   const renderStage = useMemo(() => {
@@ -792,6 +949,191 @@ export default function PipComposer() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ===== 输出设置 Output ===== */}
+      <div className="mt-6 bg-background/60 border border-border/60 rounded-xl p-5 space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <MonitorPlay className="size-4 text-primary" />
+            <h4 className="font-medium">输出设置 (Output)</h4>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">当前输出：</span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                outputStatus === "idle"
+                  ? "bg-muted text-muted-foreground border-border"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-900",
+              )}
+            >
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  outputStatus === "idle" ? "bg-muted-foreground" : "bg-emerald-500 animate-pulse",
+                )}
+              />
+              {outputStatus === "idle" && "未输出"}
+              {outputStatus === "browser" && "浏览器输出中"}
+              {outputStatus === "second" && "第二屏输出中"}
+              {outputStatus === "obs" && "OBS 链接已生成"}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs text-muted-foreground">输出模式</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 mt-2">
+            {([
+              { v: "preview", label: "仅预览", icon: <Monitor className="size-3.5" /> },
+              { v: "second-screen", label: "第二显示器输出", icon: <MonitorPlay className="size-3.5" /> },
+              { v: "fullscreen", label: "浏览器全屏输出", icon: <Maximize2 className="size-3.5" /> },
+              { v: "obs", label: "OBS Browser Source", icon: <ExternalLink className="size-3.5" /> },
+              { v: "ndi", label: "NDI 输出（预留）", icon: <Radio className="size-3.5" /> },
+              { v: "rtmp", label: "RTMP 推流（预留）", icon: <Radio className="size-3.5" /> },
+            ] as { v: OutputMode; label: string; icon: React.ReactNode }[]).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setOutputMode(o.v)}
+                className={cn(
+                  "text-xs py-2 px-2 rounded-md border flex items-center gap-1.5 transition-colors",
+                  outputMode === o.v
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border hover:bg-muted/40",
+                )}
+              >
+                {o.icon}
+                <span className="truncate">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            {outputMode === "fullscreen" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  在新窗口打开合成画面，按 F11 进入全屏，适合投影机 / 电视 / 主屏幕。
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={startBrowserOutput} className="gap-1.5">
+                    <ExternalLink className="size-3.5" /> 开始输出
+                  </Button>
+                  {outputStatus !== "idle" && (
+                    <Button variant="outline" onClick={stopOutput} className="gap-1.5">
+                      <Square className="size-3.5" /> 停止输出
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {outputMode === "second-screen" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  自动检测多显示器并在第二屏全屏输出。需浏览器支持 Window Management。
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={startSecondScreen} className="gap-1.5">
+                    <MonitorPlay className="size-3.5" /> 输出到第二屏
+                  </Button>
+                  {outputStatus !== "idle" && (
+                    <Button variant="outline" onClick={stopOutput} className="gap-1.5">
+                      <Square className="size-3.5" /> 停止输出
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {outputMode === "obs" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  在 OBS 中新增 <b>Browser Source</b>，将下方链接粘贴为 URL 即可接入：
+                </p>
+                <div className="flex gap-2">
+                  <Input readOnly value={outputUrl} className="text-xs font-mono" />
+                  <Button variant="outline" onClick={copyObsLink} className="gap-1.5">
+                    <CopyIcon className="size-3.5" /> 复制
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {outputMode === "preview" && (
+              <p className="text-xs text-muted-foreground">仅在本页面预览，不进行外部输出。</p>
+            )}
+
+            {outputMode === "ndi" && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>NDI 输出（预留），供教会直播设备接收 IP 视频流。</p>
+                <p className="text-[11px] opacity-70">需配合本地 NDI Bridge / NDI Tools 使用，后续版本开放。</p>
+              </div>
+            )}
+
+            {outputMode === "rtmp" && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">推流到直播服务器（预留）。</p>
+                <Input
+                  placeholder="rtmp://your-server/live"
+                  value={rtmpUrl}
+                  onChange={(e) => setRtmpUrl(e.target.value)}
+                  className="text-sm font-mono"
+                />
+                <Input
+                  placeholder="推流码 stream key"
+                  value={rtmpKey}
+                  onChange={(e) => setRtmpKey(e.target.value)}
+                  className="text-sm font-mono"
+                />
+                <Button disabled variant="outline" className="w-full">即将开放</Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">输出分辨率</Label>
+              <div className="grid grid-cols-4 gap-1.5 mt-2">
+                {[
+                  { v: "auto", label: "自动" },
+                  { v: "1280x720", label: "720p" },
+                  { v: "1920x1080", label: "1080p" },
+                  { v: "3840x2160", label: "4K" },
+                ].map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setOutputResolution(o.v)}
+                    className={cn(
+                      "text-xs py-1.5 rounded-md border transition-colors",
+                      outputResolution === o.v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-border hover:bg-muted/40",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">截图</Label>
+              <div className="mt-2">
+                <Button variant="outline" onClick={takeScreenshot} className="gap-1.5 w-full">
+                  <ImageDown className="size-3.5" /> 保存当前画面为 PNG
+                </Button>
+                <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+                  注意：YouTube / 跨域网页内容因浏览器安全限制无法被截取。
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

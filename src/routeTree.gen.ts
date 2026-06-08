@@ -23,6 +23,7 @@ import { Route as RetreatAdminRouteImport } from './routes/retreat-admin'
 import { Route as RetreatRouteImport } from './routes/retreat'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PipOutputRouteImport } from './routes/pip-output'
 import { Route as MessageBoardRouteImport } from './routes/message-board'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeEditorRouteImport } from './routes/home-editor'
@@ -107,6 +108,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipOutputRoute = PipOutputRouteImport.update({
+  id: '/pip-output',
+  path: '/pip-output',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessageBoardRoute = MessageBoardRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/home-editor': typeof HomeEditorRoute
   '/login': typeof LoginRoute
   '/message-board': typeof MessageBoardRoute
+  '/pip-output': typeof PipOutputRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/retreat': typeof RetreatRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/home-editor': typeof HomeEditorRoute
   '/login': typeof LoginRoute
   '/message-board': typeof MessageBoardRoute
+  '/pip-output': typeof PipOutputRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/retreat': typeof RetreatRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/home-editor': typeof HomeEditorRoute
   '/login': typeof LoginRoute
   '/message-board': typeof MessageBoardRoute
+  '/pip-output': typeof PipOutputRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/retreat': typeof RetreatRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/home-editor'
     | '/login'
     | '/message-board'
+    | '/pip-output'
     | '/register'
     | '/reset-password'
     | '/retreat'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/home-editor'
     | '/login'
     | '/message-board'
+    | '/pip-output'
     | '/register'
     | '/reset-password'
     | '/retreat'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/home-editor'
     | '/login'
     | '/message-board'
+    | '/pip-output'
     | '/register'
     | '/reset-password'
     | '/retreat'
@@ -386,6 +398,7 @@ export interface RootRouteChildren {
   HomeEditorRoute: typeof HomeEditorRoute
   LoginRoute: typeof LoginRoute
   MessageBoardRoute: typeof MessageBoardRoute
+  PipOutputRoute: typeof PipOutputRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RetreatRoute: typeof RetreatRoute
@@ -507,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pip-output': {
+      id: '/pip-output'
+      path: '/pip-output'
+      fullPath: '/pip-output'
+      preLoaderRoute: typeof PipOutputRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/message-board': {
       id: '/message-board'
       path: '/message-board'
@@ -626,6 +646,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeEditorRoute: HomeEditorRoute,
   LoginRoute: LoginRoute,
   MessageBoardRoute: MessageBoardRoute,
+  PipOutputRoute: PipOutputRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RetreatRoute: RetreatRoute,
