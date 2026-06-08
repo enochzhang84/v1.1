@@ -24,6 +24,7 @@ export type PipAudioMonitorProps = {
   layout: Layout;
   videoKind: "youtube" | "url" | "camera" | "capture";
   pptKind: "image" | "url" | "capture";
+  compact?: boolean;
 };
 
 type Channel = { peak: number; rms: number };
@@ -33,22 +34,22 @@ function dbFrom(rms: number) {
   return Math.max(-90, 20 * Math.log10(rms));
 }
 
-function Meter({ ch, mute }: { ch: Channel; mute?: boolean }) {
+function Meter({ ch, mute, compact }: { ch: Channel; mute?: boolean; compact?: boolean }) {
   const db = dbFrom(ch.rms);
   const pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
   const clipping = ch.peak > 0.98;
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative h-2 flex-1 rounded-full bg-muted overflow-hidden">
+    <div className="flex items-center gap-1.5">
+      <div className={cn("flex-1 rounded-full bg-muted overflow-hidden", compact ? "h-1.5" : "h-2")}>
         <div
           className={cn(
-            "absolute inset-y-0 left-0 transition-[width] duration-75",
+            "h-full transition-[width] duration-75",
             mute ? "bg-muted-foreground/40" : clipping ? "bg-red-500" : pct > 75 ? "bg-amber-500" : "bg-emerald-500",
           )}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[10px] tabular-nums text-muted-foreground w-12 text-right">
+      <span className={cn("tabular-nums text-muted-foreground text-right", compact ? "text-[9px] w-8" : "text-[10px] w-12")}>
         {db <= -90 ? "-∞" : `${db.toFixed(0)} dB`}
       </span>
     </div>
@@ -132,7 +133,7 @@ function useTrackMute(stream: MediaStream | null) {
 }
 
 export default function PipAudioMonitor(props: PipAudioMonitorProps) {
-  const { cameraStream, videoCaptureStream, pptCaptureStream, layout, videoKind, pptKind } = props;
+  const { cameraStream, videoCaptureStream, pptCaptureStream, layout, videoKind, pptKind, compact } = props;
 
   const cameraCh = useStreamAnalyser(cameraStream);
   const videoCapCh = useStreamAnalyser(videoCaptureStream);
@@ -211,60 +212,66 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
       : "正常";
 
   return (
-    <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
+    <div className={cn("bg-background/60 border border-border/60 rounded-xl space-y-3", compact ? "p-3" : "p-4")}>
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="text-sm font-medium flex items-center gap-2">
           <Mic className="size-4 text-primary" /> 音频状态
         </div>
-        <span
-          className={cn(
-            "text-[10px] px-2 py-0.5 rounded-full border",
-            outputState === "正常" && "bg-emerald-50 text-emerald-700 border-emerald-200",
-            outputState === "静音" && "bg-muted text-muted-foreground border-border",
-            outputState === "无输入" && "bg-amber-50 text-amber-700 border-amber-200",
-            outputState === "音量过大" && "bg-red-50 text-red-700 border-red-200",
-          )}
-        >
-          输出：{outputState}
-        </span>
-      </div>
-
-      {/* 主声音源 */}
-      <div className="text-[11px] text-muted-foreground">
-        当前声音来自：<span className="text-foreground font-medium">{sourceLabel[activeSource]}</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-muted-foreground">
+            来自：<span className="text-foreground font-medium">{sourceLabel[activeSource]}</span>
+          </span>
+          <span
+            className={cn(
+              "text-[10px] px-2 py-0.5 rounded-full border",
+              outputState === "正常" && "bg-emerald-50 text-emerald-700 border-emerald-200",
+              outputState === "静音" && "bg-muted text-muted-foreground border-border",
+              outputState === "无输入" && "bg-amber-50 text-amber-700 border-amber-200",
+              outputState === "音量过大" && "bg-red-50 text-red-700 border-red-200",
+            )}
+          >
+            输出：{outputState}
+          </span>
+        </div>
       </div>
 
       {/* 警告 */}
-      {silentTooLong && (
-        <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
-          <AlertTriangle className="size-3.5" /> 当前无声音输入
-        </div>
-      )}
-      {clipping && (
-        <div className="flex items-center gap-1.5 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1.5">
-          <AlertTriangle className="size-3.5" /> 声音过大，请降低音量
+      {(silentTooLong || clipping) && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {silentTooLong && (
+            <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1">
+              <AlertTriangle className="size-3" /> 无声音输入
+            </div>
+          )}
+          {clipping && (
+            <div className="flex items-center gap-1.5 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1">
+              <AlertTriangle className="size-3" /> 声音过大
+            </div>
+          )}
         </div>
       )}
 
       {/* 各音源电平 */}
-      <div className="space-y-3 pt-1">
+      <div className={cn(compact ? "grid grid-cols-5 gap-2 pt-1" : "space-y-3 pt-1")}>
         <SourceRow
-          label="采集卡（视频）"
+          label="视频采集"
           present={!!videoCaptureStream}
           chs={videoCapCh}
           mute={videoCapMute}
           onMute={() => setVideoCapMute((m) => !m)}
           vol={videoCapVol}
           setVol={setVideoCapVol}
+          compact={compact}
         />
         <SourceRow
-          label="采集卡（PPT）"
+          label="PPT采集"
           present={!!pptCaptureStream}
           chs={pptCapCh}
           mute={pptCapMute}
           onMute={() => setPptCapMute((m) => !m)}
           vol={pptCapVol}
           setVol={setPptCapVol}
+          compact={compact}
         />
         <SourceRow
           label="摄像头"
@@ -274,6 +281,7 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
           onMute={() => setCameraMute((m) => !m)}
           vol={cameraVol}
           setVol={setCameraVol}
+          compact={compact}
         />
         <SourceRow
           label="YouTube"
@@ -283,12 +291,13 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
           onMute={() => { /* iframe always muted in preview */ }}
           vol={youtubeVol}
           setVol={setYoutubeVol}
-          note="iframe 沙箱内无法检测电平（预览默认静音）"
+          note="iframe 沙箱内无法检测电平"
+          compact={compact}
         />
       </div>
 
       {/* 来源选择 */}
-      <div className="pt-2 border-t border-border/40 space-y-2">
+      <div className={cn("border-t border-border/40 space-y-2", compact ? "pt-1.5" : "pt-2")}>
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input
             type="checkbox"
@@ -301,7 +310,7 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
 
         <div className={cn("space-y-1", followMain && "opacity-50 pointer-events-none")}>
           <div className="text-[11px] text-muted-foreground">手动选择声音源</div>
-          <div className="grid grid-cols-3 gap-1">
+          <div className={cn("gap-1", compact ? "flex" : "grid grid-cols-3")}>
             {([
               { v: "video", l: "视频源" },
               { v: "ppt", l: "PPT 源" },
@@ -314,7 +323,7 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
                 type="button"
                 onClick={() => setManualSource(o.v)}
                 className={cn(
-                  "text-[11px] py-1 rounded-md border transition-colors",
+                  "text-[11px] py-1 rounded-md border transition-colors flex-1",
                   manualSource === o.v
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background border-border hover:bg-muted/40",
@@ -327,9 +336,11 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
         </div>
       </div>
 
-      <p className="text-[10px] text-muted-foreground leading-snug pt-1 border-t border-border/40">
-        系统仅检测音量电平，不录制、不保存声音。
-      </p>
+      {!compact && (
+        <p className="text-[10px] text-muted-foreground leading-snug pt-1 border-t border-border/40">
+          系统仅检测音量电平，不录制、不保存声音。
+        </p>
+      )}
     </div>
   );
 }
@@ -343,6 +354,7 @@ function SourceRow({
   vol,
   setVol,
   note,
+  compact,
 }: {
   label: string;
   present: boolean;
@@ -352,32 +364,34 @@ function SourceRow({
   vol: number;
   setVol: (n: number) => void;
   note?: string;
+  compact?: boolean;
 }) {
   return (
-    <div className={cn("space-y-1.5", !present && "opacity-40")}>
+    <div className={cn(compact ? "space-y-1" : "space-y-1.5", !present && "opacity-40")}>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium">{label}</span>
+        <span className={cn("font-medium truncate", compact ? "text-[10px]" : "text-[11px]")}>{label}</span>
         <button
           type="button"
           onClick={onMute}
           disabled={!present}
           className={cn(
-            "text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded border",
+            "inline-flex items-center gap-1 rounded border",
+            compact ? "text-[9px] px-1 py-0.5" : "text-[10px] px-1.5 py-0.5",
             mute
               ? "bg-muted text-muted-foreground border-border"
               : "bg-background border-border hover:bg-muted/40",
           )}
         >
           {mute ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
-          {mute ? "已静音" : "静音"}
+          {!compact && (mute ? "已静音" : "静音")}
         </button>
       </div>
       <div className="space-y-0.5">
-        <Meter ch={chs[0]} mute={mute || !present} />
-        <Meter ch={chs[1]} mute={mute || !present} />
+        <Meter ch={chs[0]} mute={mute || !present} compact={compact} />
+        <Meter ch={chs[1]} mute={mute || !present} compact={compact} />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-muted-foreground w-8">音量</span>
+      <div className="flex items-center gap-1.5">
+        {!compact && <span className="text-[10px] text-muted-foreground w-8">音量</span>}
         <Slider
           value={[vol]}
           min={0}
@@ -387,9 +401,9 @@ function SourceRow({
           disabled={!present}
           className="flex-1"
         />
-        <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-right">{vol}%</span>
+        <span className={cn("tabular-nums text-muted-foreground text-right", compact ? "text-[9px] w-6" : "text-[10px] w-8")}>{vol}%</span>
       </div>
-      {note && <p className="text-[10px] text-muted-foreground leading-snug">{note}</p>}
+      {note && !compact && <p className="text-[10px] text-muted-foreground leading-snug">{note}</p>}
     </div>
   );
 }
