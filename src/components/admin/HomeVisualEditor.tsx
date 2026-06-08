@@ -288,31 +288,69 @@ export function HomeVisualEditor() {
   const [blocks, setBlocks] = useState<HomeBlock[]>([]);
   const [contentId, setContentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [emptyState, setEmptyState] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setLoading((l) => {
+          if (l) setLoadError("加载主页内容超时（10 秒）。可能是网络问题或数据库权限不足。");
+          return false;
+        });
+      }
+    }, 10000);
+
     (async () => {
-      const { data, error } = await supabase
-        .from("home_page_content")
-        .select("id, blocks, updated_at")
-        .eq("slug", "home")
-        .maybeSingle();
-      if (error) {
-        console.error(error);
+      try {
+        const { data, error } = await supabase
+          .from("home_page_content")
+          .select("id, blocks, updated_at")
+          .eq("slug", "home")
+          .maybeSingle();
+        if (cancelled) return;
+        if (error) {
+          console.error("[home-editor] 读取失败", error);
+          setLoadError(`读取主页内容失败：${error.message}（code: ${error.code ?? "-"}）`);
+          setBlocks(defaultHomeTemplate());
+          setEmptyState(true);
+        } else if (data) {
+          setContentId(data.id);
+          const arr = Array.isArray(data.blocks) ? (data.blocks as unknown as HomeBlock[]) : [];
+          if (arr.length === 0) {
+            setBlocks(defaultHomeTemplate());
+            setEmptyState(true);
+          } else {
+            setBlocks(arr);
+          }
+          setSavedAt(data.updated_at);
+        } else {
+          // 没有记录 → 显示「使用默认模板初始化」
+          setBlocks(defaultHomeTemplate());
+          setEmptyState(true);
+        }
+      } catch (e) {
+        console.error("[home-editor] 异常", e);
+        if (!cancelled) {
+          setLoadError((e as Error).message || String(e));
+          setBlocks(defaultHomeTemplate());
+          setEmptyState(true);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+        clearTimeout(timeout);
       }
-      if (data) {
-        setContentId(data.id);
-        setBlocks(Array.isArray(data.blocks) ? (data.blocks as unknown as HomeBlock[]) : defaultHomeTemplate());
-        setSavedAt(data.updated_at);
-      } else {
-        setBlocks(defaultHomeTemplate());
-      }
-      setLoading(false);
     })();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
+
+
 
   const addBlock = useCallback((type: HomeBlock["type"]) => {
     const id = newId();
