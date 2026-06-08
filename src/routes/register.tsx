@@ -40,7 +40,18 @@ function RegisterPage() {
     age_group: string;
     phone: string;
     wechat: string;
-    relationship_to_primary: string;
+    faith: string;
+    faith_years: string;
+    faith_other: string;
+    marital_status: string;
+    spouse_name: string;
+    referrer_type: string;
+    invited_by: string;
+    referrer_other: string;
+    source_channel: string;
+    wants_visit: boolean;
+    wants_info: boolean;
+    notes: string;
   };
   const emptyCompanion = (): Companion => ({
     name: "",
@@ -48,7 +59,18 @@ function RegisterPage() {
     age_group: "",
     phone: "",
     wechat: "",
-    relationship_to_primary: "",
+    faith: "",
+    faith_years: "",
+    faith_other: "",
+    marital_status: "",
+    spouse_name: "",
+    referrer_type: "",
+    invited_by: "",
+    referrer_other: "",
+    source_channel: "",
+    wants_visit: false,
+    wants_info: false,
+    notes: "",
   });
   const [companions, setCompanions] = useState<Companion[]>([]);
 
