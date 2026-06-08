@@ -774,6 +774,7 @@ function AdminPage() {
   const [qrLibOpen, setQrLibOpen] = useState(false);
   const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [autoBackupOpen, setAutoBackupOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
   const [opsCenterOpen, setOpsCenterOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
