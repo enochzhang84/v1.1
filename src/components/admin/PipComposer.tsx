@@ -865,6 +865,16 @@ export default function PipComposer() {
           <p className="text-xs text-muted-foreground mt-2">
             提示：PIP 小窗可直接拖动；如需推流到直播端，将在后续阶段提供 OBS Browser Source 与 RTMP 输出。
           </p>
+
+          <PipAudioMonitor
+            cameraStream={cameraStream}
+            videoCaptureStream={videoCaptureStream}
+            pptCaptureStream={pptCaptureStream}
+            layout={layout}
+            videoKind={videoKind}
+            pptKind={pptKind}
+            compact
+          />
         </div>
 
         {/* 右侧：布局 / PIP 控制 */}
