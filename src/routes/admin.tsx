@@ -6322,6 +6322,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
         )}
 
       </main>
+      <AdminCopyright />
     </div>
   );
 }
