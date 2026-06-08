@@ -33,6 +33,7 @@ import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword, setUserAnalyticsArea } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
+import { SystemHealthCenter } from "@/components/admin/SystemHealthCenter";
 import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
@@ -778,6 +779,7 @@ function AdminPage() {
   const [autoBackupOpen, setAutoBackupOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
   const [opsCenterOpen, setOpsCenterOpen] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
@@ -2902,8 +2904,22 @@ function AdminPage() {
             </DialogHeader>
 
             <div className="space-y-6 py-2">
-              {/* 1. 数据管理 */}
+              {/* 0. 系统状态 */}
               <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">🩺 系统状态</h3>
+                <p className="text-xs text-muted-foreground">查看系统健康检查、用户统计、数据库 / Auth / Storage 状态。</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setOpsCenterOpen(false); setHealthOpen(true); }}
+                  >
+                    🩺 系统状态 / 健康检查
+                  </Button>
+                </div>
+              </section>
+
+              {/* 1. 数据管理 */}
+              <section className="space-y-2 border-t border-border/50 pt-4">
                 <h3 className="text-sm font-semibold text-foreground">📦 数据管理</h3>
                 <p className="text-xs text-muted-foreground">备份、恢复、导出部署文件。</p>
                 <div className="flex flex-wrap gap-2">
@@ -2977,6 +2993,19 @@ function AdminPage() {
             <DialogFooter>
               <Button variant="secondary" onClick={() => setOpsCenterOpen(false)}>关闭</Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 系统状态 / 健康检查 Dialog */}
+        <Dialog open={healthOpen} onOpenChange={setHealthOpen}>
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-0 bg-[#F5F5F7]">
+            <DialogHeader className="px-6 pt-5">
+              <DialogTitle>🩺 系统状态</DialogTitle>
+              <DialogDescription>
+                系统运维中心 / 系统状态。仅超级管理员可见。
+              </DialogDescription>
+            </DialogHeader>
+            {healthOpen && <SystemHealthCenter />}
           </DialogContent>
         </Dialog>
             </TabsContent>
