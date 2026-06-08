@@ -34,22 +34,22 @@ function dbFrom(rms: number) {
   return Math.max(-90, 20 * Math.log10(rms));
 }
 
-function Meter({ ch, mute }: { ch: Channel; mute?: boolean }) {
+function Meter({ ch, mute, compact }: { ch: Channel; mute?: boolean; compact?: boolean }) {
   const db = dbFrom(ch.rms);
   const pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
   const clipping = ch.peak > 0.98;
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative h-2 flex-1 rounded-full bg-muted overflow-hidden">
+    <div className="flex items-center gap-1.5">
+      <div className={cn("flex-1 rounded-full bg-muted overflow-hidden", compact ? "h-1.5" : "h-2")}>
         <div
           className={cn(
-            "absolute inset-y-0 left-0 transition-[width] duration-75",
+            "h-full transition-[width] duration-75",
             mute ? "bg-muted-foreground/40" : clipping ? "bg-red-500" : pct > 75 ? "bg-amber-500" : "bg-emerald-500",
           )}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[10px] tabular-nums text-muted-foreground w-12 text-right">
+      <span className={cn("tabular-nums text-muted-foreground text-right", compact ? "text-[9px] w-8" : "text-[10px] w-12")}>
         {db <= -90 ? "-∞" : `${db.toFixed(0)} dB`}
       </span>
     </div>
