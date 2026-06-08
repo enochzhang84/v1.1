@@ -403,6 +403,144 @@ export default function PipComposer() {
     else toast.error("当前浏览器不支持全屏");
   };
 
+  // ===== Output: serialize state and broadcast to /pip-output window =====
+  const outputUrl = useMemo(
+    () => (typeof window === "undefined" ? "/pip-output" : `${window.location.origin}/pip-output`),
+    [],
+  );
+
+  const serializedState = useMemo(
+    () => ({
+      layout,
+      videoKind,
+      youtubeUrl,
+      videoUrl,
+      pptKind,
+      pptImage,
+      pptUrl,
+      pipPos,
+      pipSize,
+      pipRounded,
+      pipBorder,
+      pipOpacity,
+      resolution: outputResolution,
+      ts: Date.now(),
+    }),
+    [
+      layout, videoKind, youtubeUrl, videoUrl, pptKind, pptImage, pptUrl,
+      pipPos, pipSize, pipRounded, pipBorder, pipOpacity, outputResolution,
+    ],
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("pip_output_state", JSON.stringify(serializedState));
+    } catch { /* noop */ }
+    try {
+      const bc = new BroadcastChannel("pip-output");
+      bc.postMessage(serializedState);
+      bc.close();
+    } catch { /* noop */ }
+  }, [serializedState]);
+
+  // Detect when output window closes
+  useEffect(() => {
+    if (!outputWindowRef.current) return;
+    const id = window.setInterval(() => {
+      if (outputWindowRef.current?.closed) {
+        outputWindowRef.current = null;
+        setOutputStatus((s) => (s === "browser" || s === "second" ? "idle" : s));
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [outputStatus]);
+
+  const usesUncapturableSource =
+    videoKind === "camera" || videoKind === "capture" || pptKind === "capture";
+
+  const openOutputWindow = (features: string) => {
+    // Persist latest state first so the new tab reads it on load
+    try {
+      localStorage.setItem("pip_output_state", JSON.stringify(serializedState));
+    } catch { /* noop */ }
+    const w = window.open("/pip-output", "pip-output", features);
+    if (!w) {
+      toast.error("无法打开输出窗口，请允许弹出窗口");
+      return null;
+    }
+    outputWindowRef.current = w;
+    return w;
+  };
+
+  const startBrowserOutput = () => {
+    if (usesUncapturableSource) {
+      toast.warning("摄像头/采集卡 无法跨窗口输出，输出窗口将提示占位");
+    }
+    const w = openOutputWindow("popup,width=1920,height=1080");
+    if (!w) return;
+    setOutputStatus("browser");
+    toast.success("已打开输出窗口，按 F11 进入全屏");
+  };
+
+  const startSecondScreen = async () => {
+    const anyNav = navigator as any;
+    if (!anyNav.getScreenDetails) {
+      // Fallback: just open a popup and hint
+      const w = openOutputWindow("popup,width=1920,height=1080,left=2000,top=0");
+      if (!w) return;
+      setOutputStatus("second");
+      toast.message("浏览器不支持多屏 API，请手动将窗口拖到第二屏后按 F11");
+      return;
+    }
+    try {
+      const sd = await anyNav.getScreenDetails();
+      const other = sd.screens.find((s: any) => !s.isPrimary) ?? sd.screens[0];
+      const w = openOutputWindow(
+        `popup,width=${other.availWidth},height=${other.availHeight},left=${other.availLeft},top=${other.availTop}`,
+      );
+      if (!w) return;
+      setTimeout(() => {
+        try { w.document.documentElement.requestFullscreen?.(); } catch { /* noop */ }
+      }, 500);
+      setOutputStatus("second");
+      toast.success(`已输出到第二屏 (${other.availWidth}×${other.availHeight})`);
+    } catch {
+      toast.error("无法访问多屏信息，请授权 Window Management 权限");
+    }
+  };
+
+  const stopOutput = () => {
+    try { outputWindowRef.current?.close(); } catch { /* noop */ }
+    outputWindowRef.current = null;
+    setOutputStatus("idle");
+    toast.message("已停止输出");
+  };
+
+  const copyObsLink = async () => {
+    try {
+      await navigator.clipboard.writeText(outputUrl);
+      setOutputStatus("obs");
+      toast.success("已复制 OBS Browser Source 链接");
+    } catch {
+      toast.error("复制失败，请手动复制");
+    }
+  };
+
+  const takeScreenshot = async () => {
+    if (!stageRef.current) return;
+    try {
+      const dataUrl = await toPng(stageRef.current, { cacheBust: true, pixelRatio: 2 });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `pip-snapshot-${Date.now()}.png`;
+      a.click();
+      toast.success("已保存当前画面");
+    } catch {
+      toast.error("截图失败（YouTube/网页等跨域内容无法捕获）");
+    }
+  };
+
+
   // Layout rendering
   const renderStage = useMemo(() => {
     const video = (
