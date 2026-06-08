@@ -710,15 +710,17 @@ function AdminPage() {
       }
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
+      const ver = (result as any).version?.systemVersion?.replace(/^v/i, "") ?? "package";
+      const fname = `hoc3-update-v${ver}.zip`;
       const a = document.createElement("a");
       a.href = url;
-      a.download = "hoc3_deploy_package.zip";
+      a.download = fname;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      try { logAction("导出部署文件 hoc3_deploy_package.zip"); } catch {}
-      toast.success("部署文件已生成，请按 README_DEPLOY.md 顺序部署。");
+      try { logAction(`导出部署/升级包 ${fname}`); } catch {}
+      toast.success(`已生成 ${fname}，包含 version.json，可直接用于系统升级或新站部署。`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(`导出失败：${msg}`);
