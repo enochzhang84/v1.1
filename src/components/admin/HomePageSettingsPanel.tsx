@@ -66,6 +66,7 @@ const BUCKET = "site-assets";
 type SectionKey =
   | "basic"
   | "carousel"
+  | "adminLogo"
   | "qr"
   | "welcome"
   | "retreat"
@@ -75,6 +76,7 @@ type SectionKey =
 const SECTIONS: { key: SectionKey; label: string; hint: string; icon: any }[] = [
   { key: "basic", label: "基本设置", hint: "教会信息 · 联系方式", icon: SettingsIcon },
   { key: "carousel", label: "首页轮播", hint: "Logo · 背景图", icon: Images },
+  { key: "adminLogo", label: "后台 Logo 编辑", hint: "后台左上角名称 · 版本号", icon: SettingsIcon },
   { key: "qr", label: "二维码管理", hint: "主页二维码", icon: QrCode },
   { key: "welcome", label: "迎宾页面", hint: "欢迎语 · 经文 · 主日时间", icon: HandHeart },
   { key: "retreat", label: "退修会页面", hint: "登记链接 · 二维码", icon: Tent },
