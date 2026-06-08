@@ -50,6 +50,7 @@ export function BackupRestorePanel() {
   const doPreviewRestore = useServerFn(previewRestore);
   const doListLogs = useServerFn(listBackupLogs);
   const doSchemaDoc = useServerFn(exportSchemaDoc);
+  const doExportDeploy = useServerFn(exportDeployPackage);
 
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set(Object.keys(RESTORE_GROUPS)));
@@ -61,7 +62,9 @@ export function BackupRestorePanel() {
   const [pendingPayload, setPendingPayload] = useState<any | null>(null);
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [logs, setLogs] = useState<any[]>([]);
+  const [deployBusy, setDeployBusy] = useState<null | "system" | "history" | "full">(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const zipRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     (async () => {
