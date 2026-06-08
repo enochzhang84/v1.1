@@ -146,9 +146,11 @@ export function HomePageSettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [s, setS] = useState<Settings | null>(null);
   const [section, setSection] = useState<SectionKey>("basic");
   const { alert, confirm, dialog } = useWin98Dialog();
+  const navigate = useNavigate();
 
   const origin = useMemo(() => getPublicOrigin(), []);
 
