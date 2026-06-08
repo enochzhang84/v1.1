@@ -31,6 +31,7 @@ function FellowshipCheckinPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [fellowships, setFellowships] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const [form, setForm] = useState({
     checkin_date: todayISO(),
     name: "",
@@ -42,11 +43,16 @@ function FellowshipCheckinPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("fellowships")
         .select("name")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
+      if (error) {
+        console.error("[FellowshipCheckin] failed to load fellowships", error);
+        setLoadError(true);
+        return;
+      }
       setFellowships((data ?? []).map((d) => d.name));
     })();
   }, []);
@@ -109,6 +115,14 @@ function FellowshipCheckinPage() {
             </Link>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md text-center text-muted-foreground">页面加载失败，请联系管理员。</div>
       </div>
     );
   }

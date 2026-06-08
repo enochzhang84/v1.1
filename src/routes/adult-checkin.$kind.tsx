@@ -26,6 +26,7 @@ function AdultCheckinPage() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -34,11 +35,16 @@ function AdultCheckinPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("fellowships")
         .select("id,name")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
+      if (error) {
+        console.error("[AdultCheckin] failed to load fellowships", error);
+        setLoadError(true);
+        return;
+      }
       setFellowships((data as Fellowship[]) ?? []);
     })();
   }, []);
@@ -84,6 +90,14 @@ function AdultCheckinPage() {
             <Link to="/"><Button className="rounded-full">返回首页 / Home</Button></Link>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md text-center text-muted-foreground">页面加载失败，请联系管理员。</div>
       </div>
     );
   }
