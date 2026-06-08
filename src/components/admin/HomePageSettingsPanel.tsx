@@ -1008,11 +1008,11 @@ export function HomePageSettingsPanel() {
       {dialog}
 
       {/* Top bar with fixed save on right */}
-      <div className="sticky top-0 z-10 backdrop-blur bg-background/80 rounded-t-2xl px-6 py-4 flex items-center justify-between gap-4">
+      <div className="sticky top-0 z-10 backdrop-blur bg-background/80 rounded-t-2xl pl-24 pr-6 py-4 flex items-center justify-between gap-4">
         <div>
           <div className="text-base font-semibold tracking-tight">主页设置</div>
           <div className="text-xs text-muted-foreground mt-0.5">
-            {currentLabel} · {saving
+            管理主页内容与显示设置 · {currentLabel} · {saving
               ? "保存中…"
               : savedAt
               ? `已保存 ${savedAt.toLocaleTimeString()}`

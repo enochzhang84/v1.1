@@ -2795,14 +2795,36 @@ function AdminPage() {
           </div>
         </section>
         )}
-        {/* 主页设置 Dialog */}
-        <Win98Window
-          open={homeSettingsOpen}
-          title="主页设置 - 控制面板"
-          onClose={() => setHomeSettingsOpen(false)}
-        >
-          {homeSettingsOpen && <HomePageSettingsPanel />}
-        </Win98Window>
+        {/* 主页设置 Modal — macOS 风格 */}
+        {homeSettingsOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+            style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(8px)" }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setHomeSettingsOpen(false);
+            }}
+          >
+            <div
+              className="relative w-full max-w-[1400px] max-h-[90vh] bg-white rounded-[20px] shadow-2xl overflow-hidden flex flex-col animate-scale-in"
+            >
+              {/* macOS traffic lights */}
+              <div className="absolute top-4 left-4 flex gap-2 z-10">
+                <button
+                  type="button"
+                  aria-label="关闭"
+                  onClick={() => setHomeSettingsOpen(false)}
+                  className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-95 transition"
+                />
+                <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+              </div>
+              <div className="overflow-y-auto flex-1">
+                <HomePageSettingsPanel />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 备份与恢复 Dialog */}
         <Dialog open={backupOpen} onOpenChange={setBackupOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
