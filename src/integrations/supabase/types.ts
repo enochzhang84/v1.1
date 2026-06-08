@@ -894,6 +894,42 @@ export type Database = {
         }
         Relationships: []
       }
+      home_page_content: {
+        Row: {
+          blocks: Json
+          created_at: string
+          css_content: string | null
+          html_content: string | null
+          id: string
+          is_published: boolean
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          blocks?: Json
+          created_at?: string
+          css_content?: string | null
+          html_content?: string | null
+          id?: string
+          is_published?: boolean
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          blocks?: Json
+          created_at?: string
+          css_content?: string | null
+          html_content?: string | null
+          id?: string
+          is_published?: boolean
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       home_page_settings: {
         Row: {
           background_image_url: string | null

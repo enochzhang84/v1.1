@@ -11,8 +11,38 @@ import iconExitFullscreen from "@/assets/icon-exit-fullscreen.png";
 import { getPublicOrigin } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: IndexGate,
 });
+
+import { HomeBlocksRenderer } from "@/components/home/HomeBlocksRenderer";
+import type { HomeBlock } from "@/lib/home-content";
+
+function IndexGate() {
+  const [state, setState] = useState<{ kind: "loading" } | { kind: "custom"; blocks: HomeBlock[]; css: string | null } | { kind: "default" }>({ kind: "loading" });
+  useEffect(() => {
+    supabase
+      .from("home_page_content")
+      .select("blocks, css_content, is_published")
+      .eq("slug", "home")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && data.is_published && Array.isArray(data.blocks) && (data.blocks as unknown[]).length > 0) {
+          setState({ kind: "custom", blocks: data.blocks as unknown as HomeBlock[], css: data.css_content });
+        } else {
+          setState({ kind: "default" });
+        }
+      });
+  }, []);
+  if (state.kind === "loading") return <div className="min-h-screen" />;
+  if (state.kind === "custom") {
+    return (
+      <div className="min-h-screen bg-background">
+        <HomeBlocksRenderer blocks={state.blocks} css={state.css} />
+      </div>
+    );
+  }
+  return <Index />;
+}
 
 function Index() {
   const [event, setEvent] = useState<{ name: string; qr_token: string } | null>(null);
