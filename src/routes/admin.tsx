@@ -33,6 +33,7 @@ import { zhCN } from "date-fns/locale";
 import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, updateUserWorkerName, setUserServiceArea, setUserDisabled, setUserPassword, setUserAnalyticsArea } from "@/lib/users.functions";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
+import { SystemHealthCenter } from "@/components/admin/SystemHealthCenter";
 import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
