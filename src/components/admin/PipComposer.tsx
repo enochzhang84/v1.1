@@ -951,6 +951,191 @@ export default function PipComposer() {
           )}
         </div>
       </div>
+
+      {/* ===== 输出设置 Output ===== */}
+      <div className="mt-6 bg-background/60 border border-border/60 rounded-xl p-5 space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <MonitorPlay className="size-4 text-primary" />
+            <h4 className="font-medium">输出设置 (Output)</h4>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">当前输出：</span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                outputStatus === "idle"
+                  ? "bg-muted text-muted-foreground border-border"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-900",
+              )}
+            >
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  outputStatus === "idle" ? "bg-muted-foreground" : "bg-emerald-500 animate-pulse",
+                )}
+              />
+              {outputStatus === "idle" && "未输出"}
+              {outputStatus === "browser" && "浏览器输出中"}
+              {outputStatus === "second" && "第二屏输出中"}
+              {outputStatus === "obs" && "OBS 链接已生成"}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs text-muted-foreground">输出模式</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 mt-2">
+            {([
+              { v: "preview", label: "仅预览", icon: <Monitor className="size-3.5" /> },
+              { v: "second-screen", label: "第二显示器输出", icon: <MonitorPlay className="size-3.5" /> },
+              { v: "fullscreen", label: "浏览器全屏输出", icon: <Maximize2 className="size-3.5" /> },
+              { v: "obs", label: "OBS Browser Source", icon: <ExternalLink className="size-3.5" /> },
+              { v: "ndi", label: "NDI 输出（预留）", icon: <Radio className="size-3.5" /> },
+              { v: "rtmp", label: "RTMP 推流（预留）", icon: <Radio className="size-3.5" /> },
+            ] as { v: OutputMode; label: string; icon: React.ReactNode }[]).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setOutputMode(o.v)}
+                className={cn(
+                  "text-xs py-2 px-2 rounded-md border flex items-center gap-1.5 transition-colors",
+                  outputMode === o.v
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border hover:bg-muted/40",
+                )}
+              >
+                {o.icon}
+                <span className="truncate">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            {outputMode === "fullscreen" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  在新窗口打开合成画面，按 F11 进入全屏，适合投影机 / 电视 / 主屏幕。
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={startBrowserOutput} className="gap-1.5">
+                    <ExternalLink className="size-3.5" /> 开始输出
+                  </Button>
+                  {outputStatus !== "idle" && (
+                    <Button variant="outline" onClick={stopOutput} className="gap-1.5">
+                      <Square className="size-3.5" /> 停止输出
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {outputMode === "second-screen" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  自动检测多显示器并在第二屏全屏输出。需浏览器支持 Window Management。
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={startSecondScreen} className="gap-1.5">
+                    <MonitorPlay className="size-3.5" /> 输出到第二屏
+                  </Button>
+                  {outputStatus !== "idle" && (
+                    <Button variant="outline" onClick={stopOutput} className="gap-1.5">
+                      <Square className="size-3.5" /> 停止输出
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {outputMode === "obs" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  在 OBS 中新增 <b>Browser Source</b>，将下方链接粘贴为 URL 即可接入：
+                </p>
+                <div className="flex gap-2">
+                  <Input readOnly value={outputUrl} className="text-xs font-mono" />
+                  <Button variant="outline" onClick={copyObsLink} className="gap-1.5">
+                    <CopyIcon className="size-3.5" /> 复制
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {outputMode === "preview" && (
+              <p className="text-xs text-muted-foreground">仅在本页面预览，不进行外部输出。</p>
+            )}
+
+            {outputMode === "ndi" && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>NDI 输出（预留），供教会直播设备接收 IP 视频流。</p>
+                <p className="text-[11px] opacity-70">需配合本地 NDI Bridge / NDI Tools 使用，后续版本开放。</p>
+              </div>
+            )}
+
+            {outputMode === "rtmp" && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">推流到直播服务器（预留）。</p>
+                <Input
+                  placeholder="rtmp://your-server/live"
+                  value={rtmpUrl}
+                  onChange={(e) => setRtmpUrl(e.target.value)}
+                  className="text-sm font-mono"
+                />
+                <Input
+                  placeholder="推流码 stream key"
+                  value={rtmpKey}
+                  onChange={(e) => setRtmpKey(e.target.value)}
+                  className="text-sm font-mono"
+                />
+                <Button disabled variant="outline" className="w-full">即将开放</Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">输出分辨率</Label>
+              <div className="grid grid-cols-4 gap-1.5 mt-2">
+                {[
+                  { v: "auto", label: "自动" },
+                  { v: "1280x720", label: "720p" },
+                  { v: "1920x1080", label: "1080p" },
+                  { v: "3840x2160", label: "4K" },
+                ].map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setOutputResolution(o.v)}
+                    className={cn(
+                      "text-xs py-1.5 rounded-md border transition-colors",
+                      outputResolution === o.v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-border hover:bg-muted/40",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">截图</Label>
+              <div className="mt-2">
+                <Button variant="outline" onClick={takeScreenshot} className="gap-1.5 w-full">
+                  <CameraSnap className="size-3.5" /> 保存当前画面为 PNG
+                </Button>
+                <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+                  注意：YouTube / 跨域网页内容因浏览器安全限制无法被截取。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
