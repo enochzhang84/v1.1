@@ -694,6 +694,38 @@ function AdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _setUserDisabledFn = useServerFn(setUserDisabled);
   const setUserAnalyticsAreaFn = useServerFn(setUserAnalyticsArea);
+  const exportDeployPackageFn = useServerFn(
+    (require("@/lib/deploy.functions") as typeof import("@/lib/deploy.functions")).exportDeployPackage,
+  );
+  const [deployExporting, setDeployExporting] = useState(false);
+  async function handleExportDeployPackage() {
+    if (!window.confirm("此操作将生成部署文件，不包含用户隐私数据。是否继续？")) return;
+    setDeployExporting(true);
+    try {
+      const result = await exportDeployPackageFn();
+      const JSZipMod = (await import("jszip")).default;
+      const zip = new JSZipMod();
+      for (const [name, content] of Object.entries(result.files)) {
+        zip.file(name, content as string);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "hoc3_deploy_package.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      try { logAction("导出部署文件 hoc3_deploy_package.zip"); } catch {}
+      toast.success("部署文件已生成，请按 README_DEPLOY.md 顺序部署。");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`导出失败：${msg}`);
+    } finally {
+      setDeployExporting(false);
+    }
+  }
 
   // 默认 tab：worker 必须跳到对应模块；admin 若设置了 service_area 也跳过去
   useEffect(() => {
