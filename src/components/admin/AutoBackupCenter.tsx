@@ -238,7 +238,7 @@ export default function AutoBackupCenter() {
         </div>
         <div className="rounded-md border p-3">
           <div className="text-[11px] text-muted-foreground">最后备份状态</div>
-          <div className="text-sm font-medium">{lastLog ? "✅ 成功" : "—"}</div>
+          <div className="text-sm font-medium">{lastLog ? (lastLog.kind === "simulate" ? "🧪 模拟成功" : "✅ 成功") : "—"}</div>
         </div>
         <div className="rounded-md border p-3">
           <div className="text-[11px] text-muted-foreground">云盘连接</div>
