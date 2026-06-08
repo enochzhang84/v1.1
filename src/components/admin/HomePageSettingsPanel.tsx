@@ -197,8 +197,20 @@ export function HomePageSettingsPanel() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const update = (patch: Partial<Settings>) =>
+  const update = (patch: Partial<Settings>) => {
     setS((cur) => (cur ? { ...cur, ...patch } : cur));
+    setDirty(true);
+  };
+
+  const handleExit = () => {
+    if (dirty) {
+      confirm("退出主页设置", "当前设置尚未保存，确定要退出吗？", () => {
+        navigate({ to: "/admin" });
+      });
+    } else {
+      navigate({ to: "/admin" });
+    }
+  };
 
   async function uploadFile(file: File, fileName: string): Promise<string | null> {
     const path = `home/${fileName}`;
