@@ -23,9 +23,9 @@ import {
   MonitorPlay,
   Radio,
   Copy as CopyIcon,
-  Image as CameraSnap,
   Square,
   ExternalLink,
+  ImageDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
