@@ -875,6 +875,91 @@ export default function PipComposer() {
             pptKind={pptKind}
             compact
           />
+
+          {/* 控制面板：布局模式 + PIP 设置（桌面端显示在预览下方） */}
+          <div className="hidden lg:grid lg:grid-cols-2 gap-4 mt-4">
+            <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-2">
+              <div className="text-sm font-medium mb-1">布局模式</div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {layoutOptions.map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setLayout(o.v)}
+                    className={cn(
+                      "text-xs py-1.5 px-2 rounded-md border text-left transition-colors",
+                      layout === o.v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-border hover:bg-muted/40",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(layout === "ppt-main-video-pip" || layout === "video-main-ppt-pip") && (
+              <div className="bg-background/60 border border-border/60 rounded-xl p-4 space-y-3">
+                <div className="text-sm font-medium">PIP 小窗设置</div>
+
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">快速定位</Label>
+                  <div className="grid grid-cols-4 gap-1.5 mt-1">
+                    <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("tl")}>
+                      <CornerUpLeft className="size-3.5" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("tr")}>
+                      <CornerUpRight className="size-3.5" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("bl")}>
+                      <CornerDownLeft className="size-3.5" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 p-0" onClick={() => setCorner("br")}>
+                      <CornerDownRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] text-muted-foreground">小窗大小</Label>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">{pipSize}%</span>
+                  </div>
+                  <Slider
+                    value={[pipSize]}
+                    min={15}
+                    max={50}
+                    step={1}
+                    onValueChange={(v) => setPipSize(v[0])}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] text-muted-foreground">透明度</Label>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">{pipOpacity}%</span>
+                  </div>
+                  <Slider
+                    value={[pipOpacity]}
+                    min={20}
+                    max={100}
+                    step={5}
+                    onValueChange={(v) => setPipOpacity(v[0])}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <Label className="text-foreground/80">圆角</Label>
+                  <Switch checked={pipRounded} onCheckedChange={setPipRounded} />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <Label className="text-foreground/80">边框</Label>
+                  <Switch checked={pipBorder} onCheckedChange={setPipBorder} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 右侧：布局 / PIP 控制 */}
