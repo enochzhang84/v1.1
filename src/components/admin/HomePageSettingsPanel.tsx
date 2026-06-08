@@ -126,7 +126,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+    <section className="rounded-[20px] bg-white/85 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.09)]">
       <header className="px-7 pt-6 pb-3 flex items-start justify-between gap-4">
         <div>
           <h3 className="text-[15px] font-semibold text-foreground tracking-tight">{title}</h3>
