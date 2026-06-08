@@ -771,6 +771,8 @@ function AdminPage() {
   const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
+  const [opsCenterOpen, setOpsCenterOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
