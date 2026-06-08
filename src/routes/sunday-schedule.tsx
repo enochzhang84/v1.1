@@ -43,6 +43,8 @@ function SundaySchedulePage() {
     return { filterCourseId: p.get("courseId"), filterCourseName: p.get("courseName") ?? "" };
   }, []);
 
+  const [authed, setAuthed] = useState(false);
+
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
@@ -51,8 +53,9 @@ function SundaySchedulePage() {
         navigate({ to: "/login", search: { redirect: "/sunday-schedule" } });
         return;
       }
+      setAuthed(true);
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-      const ok = (roles ?? []).some((r) => r.role === "admin");
+      const ok = (roles ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
       setIsAdmin(ok);
       setChecking(false);
       if (ok) loadAll();
@@ -74,8 +77,9 @@ function SundaySchedulePage() {
   if (checking) return <div className="p-10 text-center text-sm text-muted-foreground">加载中…</div>;
   if (!isAdmin)
     return (
-      <div className="p-10 text-center text-sm">
-        需要管理员权限。<Link to="/login" className="underline">去登录</Link>
+      <div className="p-10 text-center text-sm space-y-2">
+        <p>你没有权限编辑课程，请联系超级管理员。</p>
+        {!authed && <Link to="/login" className="underline">去登录</Link>}
       </div>
     );
 
