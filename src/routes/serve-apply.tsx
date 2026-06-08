@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ const PROJECTS = ["迎宾接待", "厨房事工", "影音播放", "儿童主日"
 function ServeApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [projects, setProjects] = useState<string[]>(PROJECTS);
   const [form, setForm] = useState({
     name: "",
     gender: "",
@@ -25,6 +27,23 @@ function ServeApplyPage() {
     service_project: "",
     notes: "",
   });
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("service_projects")
+        .select("name")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) {
+        console.error("[ServeApply] failed to load service projects", error);
+        setLoadError(true);
+        return;
+      }
+      const names = (data ?? []).map((item) => item.name).filter(Boolean);
+      if (names.length > 0) setProjects(names);
+    })();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +85,14 @@ function ServeApplyPage() {
             <Button variant="outline" className="rounded-full">返回首页</Button>
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md text-center text-muted-foreground">页面加载失败，请联系管理员。</div>
       </div>
     );
   }
@@ -115,7 +142,7 @@ function ServeApplyPage() {
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <option value="">请选择服侍项目</option>
-              {PROJECTS.map((p) => (
+              {projects.map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
