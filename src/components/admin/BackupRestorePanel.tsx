@@ -770,7 +770,10 @@ export function BackupRestorePanel() {
             全部取消
           </Button>
           <Button onClick={onPickFile} disabled={busy || selected.size === 0}>
-            {busy ? "处理中..." : "📥 选择备份文件"}
+            {busy ? "处理中..." : "📥 选择备份文件 (.json)"}
+          </Button>
+          <Button variant="secondary" onClick={onPickZip} disabled={busy || selected.size === 0}>
+            {busy ? "处理中..." : "🚚 选择迁移包 (.zip)"}
           </Button>
         </div>
         <input
@@ -780,6 +783,14 @@ export function BackupRestorePanel() {
           onChange={onFileChange}
           className="hidden"
         />
+        <input
+          ref={zipRef}
+          type="file"
+          accept=".zip,application/zip"
+          onChange={onZipFileChange}
+          className="hidden"
+        />
+
 
         {restorePreview && (
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
