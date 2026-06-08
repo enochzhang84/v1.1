@@ -36,6 +36,7 @@ import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
+import AutoBackupCenter from "@/components/admin/AutoBackupCenter";
 import { QrLibraryManager } from "@/components/admin/QrLibraryManager";
 import { RetreatQrPanel } from "@/components/admin/RetreatQrPanel";
 import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/bootstrap-admin.functions";
