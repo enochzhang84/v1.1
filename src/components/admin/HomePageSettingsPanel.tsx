@@ -19,7 +19,9 @@ import {
   Upload,
   RefreshCw,
   Check,
+  LogOut,
 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -124,7 +126,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+    <section className="rounded-[20px] bg-white/85 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_rgba(0,0,0,0.09)]">
       <header className="px-7 pt-6 pb-3 flex items-start justify-between gap-4">
         <div>
           <h3 className="text-[15px] font-semibold text-foreground tracking-tight">{title}</h3>
@@ -144,9 +146,11 @@ export function HomePageSettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [s, setS] = useState<Settings | null>(null);
   const [section, setSection] = useState<SectionKey>("basic");
   const { alert, confirm, dialog } = useWin98Dialog();
+  const navigate = useNavigate();
 
   const origin = useMemo(() => getPublicOrigin(), []);
 
@@ -193,8 +197,20 @@ export function HomePageSettingsPanel() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const update = (patch: Partial<Settings>) =>
+  const update = (patch: Partial<Settings>) => {
     setS((cur) => (cur ? { ...cur, ...patch } : cur));
+    setDirty(true);
+  };
+
+  const handleExit = () => {
+    if (dirty) {
+      confirm("退出主页设置", "当前设置尚未保存，确定要退出吗？", () => {
+        navigate({ to: "/admin" });
+      });
+    } else {
+      navigate({ to: "/admin" });
+    }
+  };
 
   async function uploadFile(file: File, fileName: string): Promise<string | null> {
     const path = `home/${fileName}`;
@@ -251,7 +267,7 @@ export function HomePageSettingsPanel() {
     if (error) alert("保存失败", error.message, "error");
     else {
       setSavedAt(new Date());
-      alert("系统提示", "主页设置已保存。", "success");
+      setDirty(false);
     }
   }
 
@@ -1017,46 +1033,100 @@ export function HomePageSettingsPanel() {
   const currentLabel = SECTIONS.find((x) => x.key === section)?.label ?? "";
 
   return (
-    <div className="min-h-[640px] bg-muted/30 rounded-2xl">
+    <div
+      className="apple-home-settings min-h-[640px] rounded-[20px] animate-fade-in"
+      style={{ background: "#F5F5F7" }}
+    >
+      <style>{`
+        .apple-home-settings input,
+        .apple-home-settings textarea {
+          height: 48px;
+          border-radius: 14px !important;
+          border: 1px solid rgba(0,0,0,0.06) !important;
+          background: rgba(255,255,255,0.9) !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+          transition: box-shadow .2s, border-color .2s;
+        }
+        .apple-home-settings textarea { height: auto; min-height: 96px; padding-top: 12px; }
+        .apple-home-settings input:focus,
+        .apple-home-settings textarea:focus {
+          outline: none !important;
+          border-color: rgba(52,199,89,0.55) !important;
+          box-shadow: 0 0 0 4px rgba(52,199,89,0.18) !important;
+        }
+        .apple-home-settings .apple-btn {
+          height: 40px;
+          border-radius: 999px;
+          padding: 0 18px;
+          font-weight: 500;
+          transition: transform .15s ease, box-shadow .2s ease, background-color .2s;
+        }
+        .apple-home-settings .apple-btn:active { transform: scale(0.96); }
+        .apple-btn-primary {
+          background: #34c759;
+          color: #fff;
+          box-shadow: 0 6px 16px rgba(52,199,89,0.35);
+        }
+        .apple-btn-primary:hover { background: #2fb851; }
+        .apple-btn-primary:disabled { opacity: .6; }
+        .apple-btn-outline {
+          background: rgba(255,255,255,0.7);
+          color: #1d1d1f;
+          border: 1px solid rgba(0,0,0,0.08);
+        }
+        .apple-btn-outline:hover { background: #fff; }
+        .apple-btn-ghost {
+          background: rgba(0,0,0,0.04);
+          color: #1d1d1f;
+        }
+        .apple-btn-ghost:hover { background: rgba(0,0,0,0.07); }
+      `}</style>
       {dialog}
 
-      {/* Top bar with fixed save on right */}
-      <div className="sticky top-0 z-10 backdrop-blur bg-background/80 rounded-t-2xl pl-24 pr-6 py-4 flex items-center justify-between gap-4">
+      {/* Top bar */}
+      <div className="sticky top-0 z-10 backdrop-blur-xl bg-[rgba(245,245,247,0.8)] rounded-t-[20px] pl-8 pr-6 py-4 flex items-center justify-between gap-4 border-b border-black/5">
         <div>
-          <div className="text-base font-semibold tracking-tight">主页设置</div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            管理主页内容与显示设置 · {currentLabel} · {saving
+          <div className="text-[17px] font-semibold tracking-tight text-[#1d1d1f]">主页设置</div>
+          <div className="text-xs text-[#6e6e73] mt-0.5">
+            {currentLabel} · {saving
               ? "保存中…"
               : savedAt
-              ? `已保存 ${savedAt.toLocaleTimeString()}`
-              : "未保存"}
+              ? `已保存 ${savedAt.toLocaleTimeString("zh-CN", { hour12: false })}`
+              : dirty ? "有未保存修改" : "未修改"}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-full"
+          <button
+            type="button"
+            className="apple-btn apple-btn-outline inline-flex items-center text-sm"
             onClick={() => window.open(origin, "_blank")}
           >
             <ExternalLink className="w-4 h-4 mr-1.5" /> 查看主页
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={save}
             disabled={saving}
-            className="rounded-full px-5 shadow-sm"
+            className="apple-btn apple-btn-primary inline-flex items-center text-sm disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4 mr-1.5" />
             {saving ? "保存中…" : "保存设置"}
-          </Button>
+          </button>
+          <button
+            type="button"
+            onClick={handleExit}
+            className="apple-btn apple-btn-ghost inline-flex items-center text-sm"
+          >
+            <LogOut className="w-4 h-4 mr-1.5" /> 退出
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 p-6 pt-2">
+      <div className="flex flex-col lg:flex-row gap-6 p-6 pt-4 max-w-[1280px] mx-auto">
         {/* LEFT nav */}
-        <nav className="w-full lg:w-[240px] shrink-0">
-          <div className="rounded-2xl bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-2 lg:sticky lg:top-24">
-            <ul className="space-y-0.5">
+        <nav className="w-full lg:w-[248px] shrink-0">
+          <div className="rounded-[20px] bg-white/85 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] p-2 lg:sticky lg:top-24">
+            <ul className="space-y-1">
               {SECTIONS.map((it) => {
                 const Icon = it.icon;
                 const active = section === it.key;
@@ -1064,10 +1134,10 @@ export function HomePageSettingsPanel() {
                   <li key={it.key}>
                     <button
                       onClick={() => setSection(it.key)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-full text-left transition-all duration-200 hover:-translate-y-px ${
                         active
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-muted/70"
+                          ? "bg-[#e8f7ec] text-[#1f7a3a] shadow-[0_2px_8px_rgba(52,199,89,0.18)]"
+                          : "text-[#1d1d1f] hover:bg-black/[0.04]"
                       }`}
                     >
                       <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -1075,7 +1145,7 @@ export function HomePageSettingsPanel() {
                         <div className="text-sm font-medium leading-tight">
                           {it.label}
                         </div>
-                        <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                        <div className={`text-[11px] truncate mt-0.5 ${active ? "text-[#2fb851]" : "text-[#86868b]"}`}>
                           {it.hint}
                         </div>
                       </div>
@@ -1088,7 +1158,7 @@ export function HomePageSettingsPanel() {
         </nav>
 
         {/* MAIN content */}
-        <main className="flex-1 min-w-0">{middle}</main>
+        <main className="flex-1 min-w-0 space-y-5">{middle}</main>
       </div>
     </div>
   );
