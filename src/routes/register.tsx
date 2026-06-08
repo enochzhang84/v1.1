@@ -147,12 +147,6 @@ function RegisterPage() {
     const cleanCompanions = companions
       .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
       .filter((c) => c.name);
-    for (const c of cleanCompanions) {
-      if (!c.relationship_to_primary) {
-        toast.error(`请选择「${c.name}」与主要登记人的关系`);
-        return;
-      }
-    }
     setSubmitting(true);
     const isBackfill =
       isAdmin && !eventToken && entryDate && entryDate !== todayStr();
