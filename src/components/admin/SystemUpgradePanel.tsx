@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import JSZip from "jszip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { emitAdminLogoUpdated } from "@/hooks/useAdminLogo";
 import {
   AlertDialog,
   AlertDialogAction,
