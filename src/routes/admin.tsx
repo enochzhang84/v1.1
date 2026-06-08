@@ -2844,7 +2844,7 @@ function AdminPage() {
                 <span className="w-3 h-3 rounded-full bg-[#28c840]" />
               </div>
               <div className="overflow-y-auto flex-1">
-                <HomePageSettingsPanel />
+                <HomePageSettingsPanel onClose={() => setHomeSettingsOpen(false)} />
               </div>
             </div>
           </div>

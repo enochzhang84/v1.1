@@ -142,7 +142,7 @@ function Card({
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
-export function HomePageSettingsPanel() {
+export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -203,12 +203,14 @@ export function HomePageSettingsPanel() {
   };
 
   const handleExit = () => {
+    const go = () => {
+      if (onClose) onClose();
+      else navigate({ to: "/admin" });
+    };
     if (dirty) {
-      confirm("退出主页设置", "当前设置尚未保存，确定要退出吗？", () => {
-        navigate({ to: "/admin" });
-      });
+      confirm("退出主页设置", "当前设置尚未保存，确定要退出吗？", go);
     } else {
-      navigate({ to: "/admin" });
+      go();
     }
   };
 
