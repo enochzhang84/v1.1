@@ -66,10 +66,12 @@ export default function AutoBackupCenter() {
   const [saving, setSaving] = useState(false);
   const [runningNow, setRunningNow] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
+  const [simulating, setSimulating] = useState(false);
   const isLovable = useMemo(() => detectIsLovableEnv(), []);
 
   const exportBackupFn = useServerFn(exportBackup);
   const listLogsFn = useServerFn(listBackupLogs);
+  const simulateBackupFn = useServerFn(simulateBackup);
 
   const loadConfig = async () => {
     setLoading(true);
