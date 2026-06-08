@@ -134,6 +134,7 @@ function PreviewPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [pageSize, setPageSize] = useState<number>(() => {
     if (typeof window === "undefined") return 5;
     const v = Number(localStorage.getItem("today-preview:pageSize"));
@@ -148,6 +149,24 @@ function PreviewPage() {
     if (typeof window === "undefined") return FONT_OPTIONS[0].value;
     return localStorage.getItem("today-preview:fontFamily") || FONT_OPTIONS[0].value;
   });
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem("today-preview:pageSize", String(pageSize));
