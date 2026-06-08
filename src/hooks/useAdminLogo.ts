@@ -1,13 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const ADMIN_LOGO_DEFAULTS = {
+export type AdminLogo = {
+  admin_logo_title_zh: string;
+  admin_logo_title_en: string;
+  admin_logo_version: string;
+};
+
+export const ADMIN_LOGO_DEFAULTS: AdminLogo = {
   admin_logo_title_zh: "基督三家事工中心",
   admin_logo_title_en: "The Home of Christ Church III",
   admin_logo_version: "Version 2.0",
-} as const;
-
-export type AdminLogo = typeof ADMIN_LOGO_DEFAULTS;
+};
 
 const TEXT_KEYS = Object.keys(ADMIN_LOGO_DEFAULTS) as (keyof AdminLogo)[];
 // system_version 由「系统升级」流程维护，作为版本号的权威来源
