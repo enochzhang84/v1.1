@@ -2890,109 +2890,209 @@ function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* 系统运维中心 Dialog —— 数据 / 版本 / 危险操作 分组 */}
+        {/* 系统运维中心 Dialog —— Apple Design 风格 */}
         <Dialog
           open={opsCenterOpen}
           onOpenChange={(o) => { setOpsCenterOpen(o); if (!o) setResetConfirmText(""); }}
         >
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>⚙️ 系统运维中心</DialogTitle>
-              <DialogDescription>
-                HOC3 系统级运维工具。仅超级管理员可见。请谨慎操作，危险操作不可撤销。
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 py-2">
-              {/* 0. 系统状态 */}
-              <section className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground">🩺 系统状态</h3>
-                <p className="text-xs text-muted-foreground">查看系统健康检查、用户统计、数据库 / Auth / Storage 状态。</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => { setOpsCenterOpen(false); setHealthOpen(true); }}
-                  >
-                    🩺 系统状态 / 健康检查
-                  </Button>
-                </div>
-              </section>
-
-              {/* 1. 数据管理 */}
-              <section className="space-y-2 border-t border-border/50 pt-4">
-                <h3 className="text-sm font-semibold text-foreground">📦 数据管理</h3>
-                <p className="text-xs text-muted-foreground">备份、恢复、导出部署文件。</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => { setOpsCenterOpen(false); setBackupOpen(true); }}
-                  >
-                    💾 备份与恢复
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleExportDeployPackage}
-                    disabled={deployExporting}
-                  >
-                    {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => { setOpsCenterOpen(false); setAutoBackupOpen(true); }}
-                  >
-                    ☁️ 自动备份中心
-                  </Button>
-                </div>
-              </section>
-
-              {/* 2. 版本管理 */}
-              <section className="space-y-2 border-t border-border/50 pt-4">
-                <h3 className="text-sm font-semibold text-foreground">🆙 版本管理</h3>
-                <p className="text-xs text-muted-foreground">查看版本、导入升级包、执行升级。</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => { setOpsCenterOpen(false); setVersionOpen(true); }}
-                  >
-                    🆙 系统升级
-                  </Button>
-                </div>
-              </section>
-
-              {/* 3. 危险操作 */}
-              <section className="space-y-2 border-t-2 border-destructive/40 pt-4">
-                <h3 className="text-sm font-semibold text-destructive">⚠️ 危险操作</h3>
-                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
-                  <p className="text-xs text-destructive font-medium">
-                    此操作可能清空或重置系统数据，请先备份！操作不可撤销。
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    请在下方输入 <span className="font-mono font-bold text-destructive">RESET</span> 以解锁「系统初始化」按钮。
-                  </p>
-                  <Input
-                    value={resetConfirmText}
-                    onChange={(e) => setResetConfirmText(e.target.value)}
-                    placeholder="输入 RESET 解锁"
-                    className="font-mono"
-                  />
-                  <Button
-                    variant="destructive"
-                    disabled={resetConfirmText !== "RESET"}
-                    onClick={() => {
-                      setOpsCenterOpen(false);
-                      setResetConfirmText("");
-                      setInitOpen(true);
+          <DialogContent
+            className="max-w-[1100px] w-[96vw] max-h-[92vh] overflow-y-auto p-0 border-0 rounded-[24px] bg-[#F5F5F7] animate-in fade-in-0 zoom-in-95 duration-200"
+            style={{ boxShadow: "0 30px 80px -20px rgba(0,0,0,0.25), 0 10px 30px -10px rgba(0,0,0,0.15)" }}
+          >
+            {/* 标题区 */}
+            <div
+              className="relative px-8 pt-8 pb-6 rounded-t-[24px] bg-white/70 backdrop-blur-xl"
+              style={{ boxShadow: "0 1px 0 rgba(0,0,0,0.04)" }}
+            >
+              <DialogHeader className="space-y-0 text-left">
+                <div className="flex items-start gap-4">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, #e9efff 0%, #f5e8ff 100%)",
+                      boxShadow: "0 8px 24px -8px rgba(99,102,241,0.35)",
                     }}
                   >
-                    🗑️ 系统初始化
-                  </Button>
+                    ⚙️
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <DialogTitle className="text-[22px] font-semibold tracking-tight text-foreground">
+                      系统运维中心
+                    </DialogTitle>
+                    <DialogDescription className="text-[13px] text-muted-foreground mt-1">
+                      HOC3 系统级运维工具 · 仅超级管理员可见
+                    </DialogDescription>
+                  </div>
                 </div>
-              </section>
+              </DialogHeader>
             </div>
 
-            <DialogFooter>
-              <Button variant="secondary" onClick={() => setOpsCenterOpen(false)}>关闭</Button>
-            </DialogFooter>
+            {/* 内容区 */}
+            <div className="px-8 py-6 space-y-5">
+              <div className="grid gap-4 md:grid-cols-3">
+                {/* 系统状态 - 蓝 */}
+                <button
+                  type="button"
+                  onClick={() => { setOpsCenterOpen(false); setHealthOpen(true); }}
+                  className="group text-left rounded-[20px] bg-white p-5 transition-all duration-200 hover:-translate-y-1 active:scale-[0.98]"
+                  style={{ boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
+                >
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl mb-3"
+                    style={{ background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)" }}
+                  >
+                    🩺
+                  </div>
+                  <div className="text-[15px] font-semibold text-foreground">系统状态</div>
+                  <div className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                    健康检查 · 数据库 · Auth · Storage
+                  </div>
+                  <div className="text-[12px] mt-3 font-medium text-[#0a84ff] group-hover:translate-x-0.5 transition-transform">
+                    打开 →
+                  </div>
+                </button>
+
+                {/* 数据管理 - 绿 */}
+                <div
+                  className="rounded-[20px] bg-white p-5 transition-all duration-200 hover:-translate-y-1"
+                  style={{ boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
+                >
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl mb-3"
+                    style={{ background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)" }}
+                  >
+                    📦
+                  </div>
+                  <div className="text-[15px] font-semibold text-foreground">数据管理</div>
+                  <div className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                    备份、恢复、导出部署文件
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <button
+                      onClick={() => { setOpsCenterOpen(false); setBackupOpen(true); }}
+                      className="h-9 px-3 rounded-full bg-[#34c759] hover:bg-[#28a745] text-white text-[12px] font-medium transition-all hover:scale-[1.03] active:scale-95"
+                      style={{ boxShadow: "0 2px 8px rgba(52,199,89,0.25)" }}
+                    >
+                      💾 备份恢复
+                    </button>
+                    <button
+                      onClick={handleExportDeployPackage}
+                      disabled={deployExporting}
+                      className="h-9 px-3 rounded-full bg-white border border-[#e5e5ea] text-[#1d1d1f] text-[12px] font-medium transition-all hover:bg-[#f5f5f7] hover:scale-[1.03] active:scale-95 disabled:opacity-50"
+                    >
+                      {deployExporting ? "生成中…" : "📦 部署导出"}
+                    </button>
+                    <button
+                      onClick={() => { setOpsCenterOpen(false); setAutoBackupOpen(true); }}
+                      className="h-9 px-3 rounded-full bg-white border border-[#e5e5ea] text-[#1d1d1f] text-[12px] font-medium transition-all hover:bg-[#f5f5f7] hover:scale-[1.03] active:scale-95"
+                    >
+                      ☁️ 自动备份
+                    </button>
+                  </div>
+                </div>
+
+                {/* 版本管理 - 紫 */}
+                <button
+                  type="button"
+                  onClick={() => { setOpsCenterOpen(false); setVersionOpen(true); }}
+                  className="group text-left rounded-[20px] bg-white p-5 transition-all duration-200 hover:-translate-y-1 active:scale-[0.98]"
+                  style={{ boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
+                >
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl mb-3"
+                    style={{ background: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)" }}
+                  >
+                    🆙
+                  </div>
+                  <div className="text-[15px] font-semibold text-foreground">版本管理</div>
+                  <div className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                    查看版本 · 导入升级包 · 执行升级
+                  </div>
+                  <div className="text-[12px] mt-3 font-medium text-[#7c3aed] group-hover:translate-x-0.5 transition-transform">
+                    系统升级 →
+                  </div>
+                </button>
+              </div>
+
+              {/* 危险操作卡片 */}
+              <div
+                className="rounded-[20px] p-5 flex gap-4"
+                style={{
+                  background: "linear-gradient(135deg, #fff5f5 0%, #ffe9e9 100%)",
+                  boxShadow: "0 8px 30px rgba(220,38,38,0.08)",
+                }}
+              >
+                <div className="w-1 rounded-full bg-[#ff3b30] shrink-0" />
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚠️</span>
+                    <div>
+                      <div className="text-[15px] font-semibold text-[#c0392b]">危险操作</div>
+                      <div className="text-[12px] text-[#a8201a]/80 mt-0.5">
+                        此操作可能清空系统数据 · 操作不可撤销
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                    <Input
+                      value={resetConfirmText}
+                      onChange={(e) => setResetConfirmText(e.target.value)}
+                      placeholder="输入 RESET 解锁"
+                      className="font-mono h-[52px] rounded-[14px] border-[#fecaca] bg-white/80 focus-visible:ring-2 focus-visible:ring-[#ff3b30]/30 focus-visible:border-[#ff3b30] flex-1"
+                    />
+                    <button
+                      disabled={resetConfirmText !== "RESET"}
+                      onClick={() => {
+                        setOpsCenterOpen(false);
+                        setResetConfirmText("");
+                        setInitOpen(true);
+                      }}
+                      className="h-[52px] px-6 rounded-full font-medium text-[13px] transition-all active:scale-95 disabled:cursor-not-allowed shrink-0"
+                      style={
+                        resetConfirmText === "RESET"
+                          ? {
+                              background: "#ff3b30",
+                              color: "#fff",
+                              boxShadow: "0 4px 14px rgba(255,59,48,0.35)",
+                            }
+                          : { background: "#f1f1f3", color: "#a1a1a6" }
+                      }
+                    >
+                      🗑️ 系统初始化
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 温馨提示 */}
+              <div className="flex items-start justify-between gap-4 rounded-[16px] bg-white/60 backdrop-blur-sm px-5 py-4">
+                <div className="flex gap-3 text-[12px] text-muted-foreground">
+                  <span className="text-base">💡</span>
+                  <div className="leading-relaxed">
+                    建议定期备份数据库。<br />
+                    重要操作请在充分了解后执行。
+                  </div>
+                </div>
+                <a
+                  href="https://lioneapps.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="h-9 px-4 rounded-full bg-white border border-[#e5e5ea] text-[12px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-all hover:scale-[1.03] active:scale-95 inline-flex items-center shrink-0"
+                >
+                  操作指南 ↗
+                </a>
+              </div>
+            </div>
+
+            {/* 底部 */}
+            <div className="px-8 py-5 border-t border-black/[0.04] flex justify-end">
+              <button
+                onClick={() => setOpsCenterOpen(false)}
+                className="h-11 px-6 rounded-full bg-white border border-[#e5e5ea] text-[13px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-all hover:scale-[1.02] active:scale-95"
+              >
+                关闭
+              </button>
+            </div>
           </DialogContent>
         </Dialog>
 
