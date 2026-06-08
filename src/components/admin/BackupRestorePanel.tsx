@@ -720,7 +720,7 @@ export function BackupRestorePanel() {
       <section className="space-y-3">
         <h3 className="font-medium">📥 一键恢复</h3>
         <p className="text-xs text-muted-foreground">
-          选择恢复模式与要恢复的模块，上传 JSON 备份文件后会先做预检查，确认无误再恢复。
+          选择恢复模式与要恢复的模块，可上传 <b>JSON 备份文件</b>、<b>历史数据包 (.zip)</b> 或 <b>完整迁移包 (.zip)</b>，会先做预检查，确认无误再恢复。
         </p>
 
         <div className="rounded-md border p-3 space-y-2">
