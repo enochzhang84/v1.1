@@ -2,15 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { useWin98Dialog } from "./Win98Dialog";
-import logoDefault from "@/assets/logo.png";
 import { getPublicOrigin } from "@/lib/public-origin";
 import {
-  Info,
-  Type,
-  Image as ImageIcon,
+  Settings as SettingsIcon,
+  Images,
   QrCode,
-  Link as LinkIcon,
-  Eye,
+  HandHeart,
+  Tent,
+  Monitor,
+  Palette,
   Save,
   ExternalLink,
   Copy,
@@ -63,15 +63,23 @@ type Settings = {
 
 const BUCKET = "site-assets";
 
-type SectionKey = "basic" | "text" | "media" | "qr" | "buttons" | "preview";
+type SectionKey =
+  | "basic"
+  | "carousel"
+  | "qr"
+  | "welcome"
+  | "retreat"
+  | "display"
+  | "theme";
 
 const SECTIONS: { key: SectionKey; label: string; hint: string; icon: any }[] = [
-  { key: "basic", label: "基本信息", hint: "教会名称 · 联系方式", icon: Info },
-  { key: "text", label: "首页文字", hint: "标题 · 经文 · 主日时间", icon: Type },
-  { key: "media", label: "图片与背景", hint: "Logo · 左侧背景 · 页面背景", icon: ImageIcon },
-  { key: "qr", label: "二维码管理", hint: "生成 · 上传 · 替换", icon: QrCode },
-  { key: "buttons", label: "按钮与链接", hint: "主按钮 · 次按钮 · 底部", icon: LinkIcon },
-  { key: "preview", label: "预览与发布", hint: "查看效果 · 保存设置", icon: Eye },
+  { key: "basic", label: "基本设置", hint: "教会信息 · 联系方式", icon: SettingsIcon },
+  { key: "carousel", label: "首页轮播", hint: "Logo · 背景图", icon: Images },
+  { key: "qr", label: "二维码管理", hint: "主页二维码", icon: QrCode },
+  { key: "welcome", label: "迎宾页面", hint: "欢迎语 · 经文 · 主日时间", icon: HandHeart },
+  { key: "retreat", label: "退修会页面", hint: "登记链接 · 二维码", icon: Tent },
+  { key: "display", label: "显示屏内容", hint: "按钮 · 跳转链接", icon: Monitor },
+  { key: "theme", label: "主题样式", hint: "主题文字 · 页面背景 · 底部", icon: Palette },
 ];
 
 function publicUrl(path: string): string {
@@ -79,7 +87,7 @@ function publicUrl(path: string): string {
   return `${data.publicUrl}?t=${Date.now()}`;
 }
 
-/* ───── Apple-style field primitives ───────────────────────────────────── */
+/* ───── primitives ─────────────────────────────────────────────────────── */
 function Field({
   label,
   hint,
@@ -98,24 +106,29 @@ function Field({
   );
 }
 
-function SectionCard({
+function Card({
   title,
   description,
+  action,
   children,
 }: {
   title: string;
   description?: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-card border border-border/60 shadow-sm">
-      <header className="px-6 pt-5 pb-2">
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        )}
+    <section className="rounded-2xl bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+      <header className="px-7 pt-6 pb-3 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-[15px] font-semibold text-foreground tracking-tight">{title}</h3>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          )}
+        </div>
+        {action}
       </header>
-      <div className="px-6 pb-6 pt-2 space-y-4">{children}</div>
+      <div className="px-7 pb-7 pt-2 space-y-5">{children}</div>
     </section>
   );
 }
@@ -136,6 +149,7 @@ export function HomePageSettingsPanel() {
   );
   const [qrCustom, setQrCustom] = useState("");
   const qrSvgRef = useRef<HTMLDivElement>(null);
+  const retreatQrRef = useRef<HTMLDivElement>(null);
 
   const qrValue =
     qrType === "newcomer"
@@ -236,17 +250,15 @@ export function HomePageSettingsPanel() {
   }
 
   /* ─── QR helpers ────────────────────────────────────────────────────── */
-  function getQrSvgString(): string | null {
-    const svg = qrSvgRef.current?.querySelector("svg");
+  function getSvgString(container: HTMLDivElement | null): string | null {
+    const svg = container?.querySelector("svg");
     if (!svg) return null;
     const clone = svg.cloneNode(true) as SVGElement;
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     return new XMLSerializer().serializeToString(clone);
   }
 
-  async function qrSvgToPngBlob(size = 512): Promise<Blob | null> {
-    const svgStr = getQrSvgString();
-    if (!svgStr) return null;
+  async function svgToPngBlob(svgStr: string, size = 512): Promise<Blob | null> {
     return new Promise((resolve) => {
       const img = new Image();
       const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
@@ -271,13 +283,18 @@ export function HomePageSettingsPanel() {
     });
   }
 
-  async function downloadPng() {
-    const blob = await qrSvgToPngBlob(640);
+  async function downloadPngFrom(
+    container: HTMLDivElement | null,
+    name: string,
+  ) {
+    const svgStr = getSvgString(container);
+    if (!svgStr) return alert("下载失败", "无法生成二维码图片。", "error");
+    const blob = await svgToPngBlob(svgStr, 640);
     if (!blob) return alert("下载失败", "无法生成二维码图片。", "error");
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `qr-${qrType}-${Date.now()}.png`;
+    a.download = `${name}-${Date.now()}.png`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -291,22 +308,22 @@ export function HomePageSettingsPanel() {
     }
   }
 
-  function printQr() {
-    const svgStr = getQrSvgString();
+  function printQrFrom(container: HTMLDivElement | null, link: string) {
+    const svgStr = getSvgString(container);
     if (!svgStr) return;
     const w = window.open("", "_blank", "width=480,height=560");
     if (!w) return;
     w.document.write(`<!doctype html><html><head><title>打印二维码</title></head>
       <body style="margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
         <div>${svgStr}</div>
-        <p style="margin-top:16px;font-size:14px;color:#333;">${qrValue}</p>
+        <p style="margin-top:16px;font-size:14px;color:#333;">${link}</p>
         <script>window.onload=()=>{setTimeout(()=>window.print(),200);}</script>
       </body></html>`);
     w.document.close();
   }
 
   async function persistQrChange(patch: Partial<Settings>) {
-    if (!s) return;
+    if (!s) return false;
     const payload = { ...patch, home_qr_updated_at: new Date().toISOString() };
     const { error } = await (supabase as any)
       .from("home_page_settings")
@@ -375,12 +392,10 @@ export function HomePageSettingsPanel() {
   }
 
   if (loading)
-    return (
-      <div className="p-8 text-sm text-muted-foreground">加载中…</div>
-    );
+    return <div className="p-10 text-sm text-muted-foreground">加载中…</div>;
   if (!s)
     return (
-      <div className="p-8 text-sm text-muted-foreground">未找到主页设置记录</div>
+      <div className="p-10 text-sm text-muted-foreground">未找到主页设置记录</div>
     );
 
   const previewQrLink = s.qr_newcomer_url?.trim() || `${origin}/register`;
@@ -388,106 +403,74 @@ export function HomePageSettingsPanel() {
   const qrUpdatedLabel = s.home_qr_updated_at
     ? new Date(s.home_qr_updated_at).toLocaleString()
     : "尚未替换";
+  const retreatLink = s.qr_retreat_url?.trim() || `${origin}/retreat-register`;
 
-  /* ─── Right preview pane ────────────────────────────────────────────── */
-  const RightPreview = (
-    <aside className="w-full lg:w-[360px] shrink-0">
-      <div className="lg:sticky lg:top-4 space-y-4">
-        <SectionCard title="主页预览" description="实时显示主页效果">
-          <div className="rounded-xl bg-muted/40 p-4 border border-border/40">
-            <div className="flex items-center gap-2 pb-3 border-b border-border/40 mb-3">
-              <img
-                src={s.logo_url || logoDefault}
-                onError={(e) =>
-                  ((e.currentTarget as HTMLImageElement).src = logoDefault)
-                }
-                alt=""
-                className="h-7 w-7 object-contain"
-              />
-              <span className="font-serif text-sm">
-                {s.site_title || s.logo_title || "基督之家第三家"}
+  /* ─── Image uploader (compact, borderless) ──────────────────────────── */
+  const ImageUploader = ({
+    label,
+    value,
+    nameHint,
+    onChange,
+    aspect = "h-24 w-40",
+  }: {
+    label: string;
+    value: string | null;
+    nameHint: string;
+    onChange: (url: string | null) => void;
+    aspect?: string;
+  }) => (
+    <Field label={label}>
+      <div className="flex items-center gap-4">
+        <div
+          className={`${aspect} rounded-xl overflow-hidden bg-muted/50 grid place-items-center`}
+        >
+          {value ? (
+            <img src={value} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-xs text-muted-foreground">未设置</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                const url = await uploadFile(
+                  f,
+                  `${nameHint}.${f.name.split(".").pop() || "jpg"}`,
+                );
+                if (url) onChange(url);
+              }}
+            />
+            <Button asChild size="sm" variant="outline" className="rounded-full">
+              <span>
+                <Upload className="w-4 h-4 mr-1.5" /> 上传
               </span>
-            </div>
-            <div
-              className="rounded-lg p-3 mb-3"
-              style={
-                s.welcome_image_url
-                  ? {
-                      backgroundImage: `linear-gradient(rgba(255,255,255,0.85),rgba(255,255,255,0.85)),url(${s.welcome_image_url})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }
-                  : { background: "hsl(var(--background))" }
-              }
-            >
-              <div className="text-base font-semibold leading-tight">
-                {s.welcome_title || "基督之家"}
-              </div>
-              <div className="text-xs text-muted-foreground mb-1">
-                {s.welcome_subtitle || "第三家"}
-              </div>
-              <div className="text-[11px] text-foreground/70 whitespace-pre-line">
-                {s.welcome_description || "这家就是永生神的教会，真理的柱石和根基。"}
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              {previewQrImage ? (
-                <img
-                  src={previewQrImage}
-                  alt="主页二维码"
-                  className="w-[150px] h-[150px] object-contain bg-white rounded"
-                />
-              ) : (
-                <div className="p-2 bg-white rounded">
-                  <QRCodeSVG value={previewQrLink} size={140} level="H" />
-                </div>
-              )}
-              <div className="text-xs text-foreground">
-                {s.qr_title || "扫码登记"}
-              </div>
-              <div className="text-[10px] text-muted-foreground break-all text-center px-1">
-                {previewQrImage ? "(使用上传的二维码图片)" : previewQrLink}
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="发布状态">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">保存状态</span>
-            <span className="font-medium">
-              {saving ? "保存中…" : savedAt ? `已保存 · ${savedAt.toLocaleTimeString()}` : "未保存"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">二维码更新</span>
-            <span className="font-medium">{qrUpdatedLabel}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(origin, "_blank")}
-            >
-              <ExternalLink className="w-4 h-4 mr-1" /> 查看主页
             </Button>
+          </label>
+          {value && (
             <Button
-              variant="outline"
               size="sm"
-              onClick={() => copyLink(previewQrLink)}
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => onChange(null)}
             >
-              <Copy className="w-4 h-4 mr-1" /> 复制链接
+              清除
             </Button>
-          </div>
-        </SectionCard>
+          )}
+        </div>
       </div>
-    </aside>
+    </Field>
   );
 
-  /* ─── Middle: section forms ─────────────────────────────────────────── */
-  const MiddleBasic = (
-    <SectionCard title="基本信息" description="网站、教会与联系方式">
-      <div className="grid sm:grid-cols-2 gap-4">
+  /* ─── Sections ──────────────────────────────────────────────────────── */
+  const SectionBasic = (
+    <Card title="基本设置" description="网站标题、教会名称与联系方式">
+      <div className="grid sm:grid-cols-2 gap-5">
         <Field label="网站主标题">
           <Input
             value={s.site_title ?? ""}
@@ -530,144 +513,30 @@ export function HomePageSettingsPanel() {
             placeholder="contact@hoc3.org"
           />
         </Field>
-        <Field label="地址(中文)">
+        <Field label="地址（中文）">
           <Input
             value={s.church_address ?? ""}
             onChange={(e) => update({ church_address: e.target.value })}
           />
         </Field>
-        <Field label="地址(英文)">
+        <Field label="地址（英文）">
           <Input
             value={s.church_address_en ?? ""}
             onChange={(e) => update({ church_address_en: e.target.value })}
           />
         </Field>
       </div>
-    </SectionCard>
+    </Card>
   );
 
-  const MiddleText = (
-    <>
-      <SectionCard title="首页文字" description="Logo 标题、欢迎语和经文">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Logo 主标题">
-            <Input
-              value={s.logo_title ?? ""}
-              onChange={(e) => update({ logo_title: e.target.value })}
-            />
-          </Field>
-          <Field label="Logo 副标题">
-            <Input
-              value={s.logo_subtitle ?? ""}
-              onChange={(e) => update({ logo_subtitle: e.target.value })}
-            />
-          </Field>
-          <Field label="欢迎标题">
-            <Input
-              value={s.welcome_title ?? ""}
-              onChange={(e) => update({ welcome_title: e.target.value })}
-              placeholder="基督之家"
-            />
-          </Field>
-          <Field label="欢迎副标题">
-            <Input
-              value={s.welcome_subtitle ?? ""}
-              onChange={(e) => update({ welcome_subtitle: e.target.value })}
-              placeholder="第三家"
-            />
-          </Field>
-        </div>
-        <Field label="欢迎说明">
-          <Textarea
-            rows={3}
-            value={s.welcome_description ?? ""}
-            onChange={(e) => update({ welcome_description: e.target.value })}
-          />
-        </Field>
-        <Field label="首页经文">
-          <Textarea
-            rows={2}
-            value={s.bible_verse ?? ""}
-            onChange={(e) => update({ bible_verse: e.target.value })}
-            placeholder="凡劳苦担重担的人，可以到我这里来…(马太 11:28)"
-          />
-        </Field>
-        <Field label="今年主题">
-          <Input
-            value={s.theme_text ?? ""}
-            onChange={(e) => update({ theme_text: e.target.value })}
-            placeholder="信靠顺服 活出基督"
-          />
-        </Field>
-        <Field label="主日崇拜时间" hint="每行一条">
-          <Textarea
-            rows={5}
-            value={s.worship_schedule ?? ""}
-            onChange={(e) => update({ worship_schedule: e.target.value })}
-            placeholder={"成人主日学 中文 9:30 am\n成人主日学 英文 9:30 am\n主日敬拜 中文 11:00 am"}
-          />
-        </Field>
-      </SectionCard>
-    </>
-  );
-
-  const ImageUploader = ({
-    label,
-    value,
-    nameHint,
-    onChange,
-  }: {
-    label: string;
-    value: string | null;
-    nameHint: string;
-    onChange: (url: string | null) => void;
-  }) => (
-    <Field label={label}>
-      <div className="flex items-center gap-3">
-        <div className="h-20 w-32 rounded-lg overflow-hidden bg-muted/40 border border-border/60 grid place-items-center">
-          {value ? (
-            <img src={value} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-xs text-muted-foreground">未设置</span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (!f) return;
-                const url = await uploadFile(
-                  f,
-                  `${nameHint}.${f.name.split(".").pop() || "jpg"}`,
-                );
-                if (url) onChange(url);
-              }}
-            />
-            <Button asChild size="sm" variant="outline">
-              <span>
-                <Upload className="w-4 h-4 mr-1" /> 上传
-              </span>
-            </Button>
-          </label>
-          <Button size="sm" variant="ghost" onClick={() => onChange(null)}>
-            清除
-          </Button>
-        </div>
-      </div>
-    </Field>
-  );
-
-  const MiddleMedia = (
-    <SectionCard title="图片与背景" description="Logo、欢迎区背景和整体页面背景">
+  const SectionCarousel = (
+    <Card title="首页轮播" description="Logo 与首页背景图片">
       <ImageUploader
         label="Logo"
         value={s.logo_url}
         nameHint="logo"
         onChange={(url) => update({ logo_url: url })}
+        aspect="h-20 w-20"
       />
       <ImageUploader
         label="欢迎区背景图"
@@ -681,53 +550,91 @@ export function HomePageSettingsPanel() {
         nameHint="page-bg"
         onChange={(url) => update({ background_image_url: url })}
       />
-    </SectionCard>
+    </Card>
   );
 
-  const MiddleQr = (
-    <>
-      <SectionCard
-        title="当前主页二维码"
-        description="主页/电视/欢迎页都将同步显示该二维码"
+  const SectionQr = (
+    <div className="space-y-5">
+      <Card
+        title="主页二维码"
+        description="主页、欢迎页、电视显示页将同步显示该二维码"
+        action={
+          <Button
+            size="sm"
+            variant="ghost"
+            className="rounded-full"
+            onClick={restoreDefaultQr}
+          >
+            <RefreshCw className="w-4 h-4 mr-1.5" /> 恢复默认
+          </Button>
+        }
       >
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="rounded-xl p-4 bg-white border border-border/60">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* 预览卡 */}
+          <div className="rounded-2xl bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] self-start">
             {previewQrImage ? (
               <img
                 src={previewQrImage}
                 alt="当前二维码"
-                className="w-[160px] h-[160px] object-contain"
+                className="w-[180px] h-[180px] object-contain"
               />
             ) : (
-              <QRCodeSVG value={previewQrLink} size={160} level="H" />
+              <QRCodeSVG value={previewQrLink} size={180} level="H" />
             )}
           </div>
-          <div className="flex-1 space-y-3 min-w-0">
-            <Field label="当前跳转链接">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-muted/50 rounded-md px-3 py-2 break-all">
-                  {previewQrImage ? "(使用上传图片，链接以图片实际编码为准)" : previewQrLink}
+
+          <div className="flex-1 space-y-4 min-w-0">
+            <div>
+              <Label className="text-sm font-medium">链接地址</Label>
+              <div className="mt-1.5 flex items-center gap-2">
+                <code className="flex-1 text-xs bg-muted/60 rounded-xl px-4 py-2.5 break-all">
+                  {previewQrImage
+                    ? "（使用上传图片，链接以图片实际编码为准）"
+                    : previewQrLink}
                 </code>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyLink(previewQrLink)}
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
               </div>
-            </Field>
-            <div className="text-xs text-muted-foreground">
-              更新时间：{qrUpdatedLabel}
             </div>
-            <Button size="sm" variant="ghost" onClick={restoreDefaultQr}>
-              <RefreshCw className="w-4 h-4 mr-1" /> 恢复默认二维码
-            </Button>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => copyLink(previewQrLink)}
+              >
+                <Copy className="w-4 h-4 mr-1.5" /> 复制链接
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => downloadPngFrom(qrSvgRef.current, "home-qr")}
+              >
+                <Download className="w-4 h-4 mr-1.5" /> 下载 PNG
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => printQrFrom(qrSvgRef.current, previewQrLink)}
+              >
+                <Printer className="w-4 h-4 mr-1.5" /> 打印二维码
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              更新时间：{qrUpdatedLabel}
+            </p>
           </div>
         </div>
-      </SectionCard>
 
-      <SectionCard title="生成新二维码" description="输入链接或选择用途，立即生成">
+        {/* 隐藏 svg 用作下载/打印源（与预览同步） */}
+        <div ref={qrSvgRef} className="hidden">
+          <QRCodeSVG value={previewQrLink} size={512} level="H" />
+        </div>
+      </Card>
+
+      <Card title="生成新二维码" description="选择用途或输入自定义链接，生成后可一键替换主页">
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -740,10 +647,10 @@ export function HomePageSettingsPanel() {
             <button
               key={t.k}
               onClick={() => setQrType(t.k)}
-              className={`px-3.5 h-8 text-sm rounded-full border transition-colors ${
+              className={`px-4 h-9 text-sm rounded-full transition-colors ${
                 qrType === t.k
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-foreground border-border/60 hover:bg-muted"
+                  ? "bg-foreground text-background"
+                  : "bg-muted/60 text-foreground hover:bg-muted"
               }`}
             >
               {t.label}
@@ -779,46 +686,78 @@ export function HomePageSettingsPanel() {
           </Field>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start pt-1">
-          <div
-            ref={qrSvgRef}
-            className="rounded-xl bg-white p-4 border border-border/60"
-          >
-            <QRCodeSVG value={qrValue} size={160} level="H" />
+        <div className="flex flex-col md:flex-row gap-6 pt-1">
+          <div className="rounded-2xl bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] self-start">
+            <div ref={null as any}>
+              <QRCodeSVG value={qrValue} size={160} level="H" />
+            </div>
           </div>
           <div className="flex-1 space-y-3 min-w-0">
-            <code className="block text-xs bg-muted/50 rounded-md px-3 py-2 break-all">
+            <code className="block text-xs bg-muted/60 rounded-xl px-4 py-2.5 break-all">
               {qrValue}
             </code>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => copyLink(qrValue)}>
-                <Copy className="w-4 h-4 mr-1" /> 复制链接
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => copyLink(qrValue)}
+              >
+                <Copy className="w-4 h-4 mr-1.5" /> 复制链接
               </Button>
-              <Button size="sm" variant="outline" onClick={downloadPng}>
-                <Download className="w-4 h-4 mr-1" /> 下载 PNG
-              </Button>
-              <Button size="sm" variant="outline" onClick={printQr}>
-                <Printer className="w-4 h-4 mr-1" /> 打印
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={async () => {
+                  // generate from qrValue directly
+                  const tmp = document.createElement("div");
+                  document.body.appendChild(tmp);
+                  const { createRoot } = await import("react-dom/client");
+                  const root = createRoot(tmp);
+                  root.render(<QRCodeSVG value={qrValue} size={640} level="H" />);
+                  setTimeout(async () => {
+                    const svgStr = getSvgString(tmp as any);
+                    if (svgStr) {
+                      const blob = await svgToPngBlob(svgStr, 640);
+                      if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `qr-${qrType}-${Date.now()}.png`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }
+                    }
+                    root.unmount();
+                    tmp.remove();
+                  }, 50);
+                }}
+              >
+                <Download className="w-4 h-4 mr-1.5" /> 下载 PNG
               </Button>
             </div>
-            <Button onClick={applyGeneratedToHome} className="w-full sm:w-auto">
-              <Check className="w-4 h-4 mr-1" /> 替换当前主页二维码
+            <Button
+              onClick={applyGeneratedToHome}
+              className="rounded-full"
+            >
+              <Check className="w-4 h-4 mr-1.5" /> 替换为主页二维码
             </Button>
           </div>
         </div>
-      </SectionCard>
+      </Card>
 
-      <SectionCard title="上传二维码图片" description="上传 PNG/JPG 二维码，一键替换主页">
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="rounded-xl p-4 bg-white border border-border/60 grid place-items-center min-w-[120px]">
+      <Card title="上传二维码图片" description="上传 PNG/JPG 二维码，直接作为主页二维码显示">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="rounded-2xl bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] grid place-items-center self-start">
             {s.qr_image_url ? (
               <img
                 src={s.qr_image_url}
                 alt="已上传二维码"
-                className="w-[120px] h-[120px] object-contain"
+                className="w-[140px] h-[140px] object-contain"
               />
             ) : (
-              <span className="text-xs text-muted-foreground w-[120px] h-[120px] grid place-items-center">
+              <span className="text-xs text-muted-foreground w-[140px] h-[140px] grid place-items-center">
                 未上传
               </span>
             )}
@@ -836,32 +775,35 @@ export function HomePageSettingsPanel() {
                     await handleUploadQrImage(f);
                   }}
                 />
-                <Button asChild size="sm" variant="outline">
+                <Button asChild size="sm" variant="outline" className="rounded-full">
                   <span>
-                    <Upload className="w-4 h-4 mr-1" /> 上传二维码
+                    <Upload className="w-4 h-4 mr-1.5" /> 上传二维码
                   </span>
                 </Button>
               </label>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => update({ qr_image_url: null })}
-              >
-                清除
-              </Button>
+              {s.qr_image_url && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full"
+                  onClick={() => update({ qr_image_url: null })}
+                >
+                  清除
+                </Button>
+              )}
             </div>
-            <Button onClick={applyUploadedToHome}>
-              <Check className="w-4 h-4 mr-1" /> 替换为主页二维码
+            <Button onClick={applyUploadedToHome} className="rounded-full">
+              <Check className="w-4 h-4 mr-1.5" /> 替换为主页二维码
             </Button>
             <p className="text-xs text-muted-foreground">
-              上传图片后，主页直接显示该图片；清除后回到根据「登记链接」实时生成的二维码。
+              上传图片后主页直接显示该图片；清除后回到根据「登记链接」实时生成的二维码。
             </p>
           </div>
         </div>
-      </SectionCard>
+      </Card>
 
-      <SectionCard title="二维码文字" description="显示在主页二维码下方">
-        <div className="grid sm:grid-cols-2 gap-4">
+      <Card title="二维码文字" description="显示在主页二维码下方">
+        <div className="grid sm:grid-cols-2 gap-5">
           <Field label="标题">
             <Input
               value={s.qr_title ?? ""}
@@ -877,13 +819,124 @@ export function HomePageSettingsPanel() {
             />
           </Field>
         </div>
-      </SectionCard>
-    </>
+      </Card>
+    </div>
   );
 
-  const MiddleButtons = (
-    <SectionCard title="按钮与链接" description="主页 CTA 按钮与底部版权">
-      <div className="grid sm:grid-cols-2 gap-4">
+  const SectionWelcome = (
+    <Card title="迎宾页面" description="欢迎语、经文、主题与主日时间">
+      <div className="grid sm:grid-cols-2 gap-5">
+        <Field label="Logo 主标题">
+          <Input
+            value={s.logo_title ?? ""}
+            onChange={(e) => update({ logo_title: e.target.value })}
+          />
+        </Field>
+        <Field label="Logo 副标题">
+          <Input
+            value={s.logo_subtitle ?? ""}
+            onChange={(e) => update({ logo_subtitle: e.target.value })}
+          />
+        </Field>
+        <Field label="欢迎标题">
+          <Input
+            value={s.welcome_title ?? ""}
+            onChange={(e) => update({ welcome_title: e.target.value })}
+            placeholder="基督之家"
+          />
+        </Field>
+        <Field label="欢迎副标题">
+          <Input
+            value={s.welcome_subtitle ?? ""}
+            onChange={(e) => update({ welcome_subtitle: e.target.value })}
+            placeholder="第三家"
+          />
+        </Field>
+      </div>
+      <Field label="欢迎说明">
+        <Textarea
+          rows={3}
+          value={s.welcome_description ?? ""}
+          onChange={(e) => update({ welcome_description: e.target.value })}
+        />
+      </Field>
+      <Field label="首页经文">
+        <Textarea
+          rows={2}
+          value={s.bible_verse ?? ""}
+          onChange={(e) => update({ bible_verse: e.target.value })}
+          placeholder="凡劳苦担重担的人，可以到我这里来…（马太 11:28）"
+        />
+      </Field>
+      <Field label="主日崇拜时间" hint="每行一条">
+        <Textarea
+          rows={5}
+          value={s.worship_schedule ?? ""}
+          onChange={(e) => update({ worship_schedule: e.target.value })}
+          placeholder={"成人主日学 中文 9:30 am\n成人主日学 英文 9:30 am\n主日敬拜 中文 11:00 am"}
+        />
+      </Field>
+    </Card>
+  );
+
+  const SectionRetreat = (
+    <Card
+      title="退修会页面"
+      description="设置退修会登记链接及对应二维码"
+    >
+      <Field label="退修会登记链接">
+        <Input
+          value={s.qr_retreat_url ?? ""}
+          onChange={(e) => update({ qr_retreat_url: e.target.value })}
+          placeholder={`${origin}/retreat-register`}
+        />
+      </Field>
+
+      <div className="flex flex-col md:flex-row gap-6 pt-1">
+        <div className="rounded-2xl bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] self-start">
+          <div ref={retreatQrRef}>
+            <QRCodeSVG value={retreatLink} size={180} level="H" />
+          </div>
+        </div>
+        <div className="flex-1 space-y-3 min-w-0">
+          <Label className="text-sm font-medium">链接地址</Label>
+          <code className="block text-xs bg-muted/60 rounded-xl px-4 py-2.5 break-all">
+            {retreatLink}
+          </code>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => copyLink(retreatLink)}
+            >
+              <Copy className="w-4 h-4 mr-1.5" /> 复制链接
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => downloadPngFrom(retreatQrRef.current, "retreat-qr")}
+            >
+              <Download className="w-4 h-4 mr-1.5" /> 下载 PNG
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => printQrFrom(retreatQrRef.current, retreatLink)}
+            >
+              <Printer className="w-4 h-4 mr-1.5" /> 打印二维码
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
+  const SectionDisplay = (
+    <Card title="显示屏内容" description="主页按钮文字与跳转链接">
+      <div className="grid sm:grid-cols-2 gap-5">
         <Field label="主按钮文字">
           <Input
             value={s.primary_button_text ?? ""}
@@ -911,6 +964,24 @@ export function HomePageSettingsPanel() {
           />
         </Field>
       </div>
+    </Card>
+  );
+
+  const SectionTheme = (
+    <Card title="主题样式" description="年度主题、整体背景与底部文字">
+      <Field label="今年主题">
+        <Input
+          value={s.theme_text ?? ""}
+          onChange={(e) => update({ theme_text: e.target.value })}
+          placeholder="信靠顺服 活出基督"
+        />
+      </Field>
+      <ImageUploader
+        label="页面整体背景图"
+        value={s.background_image_url}
+        nameHint="page-bg"
+        onChange={(url) => update({ background_image_url: url })}
+      />
       <Field label="底部版权信息">
         <Input
           value={s.footer_text ?? ""}
@@ -918,47 +989,60 @@ export function HomePageSettingsPanel() {
           placeholder="© 基督之家第三家"
         />
       </Field>
-    </SectionCard>
-  );
-
-  const MiddlePreview = (
-    <SectionCard title="预览与发布" description="保存后所有显示位会立即更新">
-      <p className="text-sm text-muted-foreground">
-        点击下方「保存」即可发布主页内容，主页、欢迎页、电视显示页会立刻读取最新设置。
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => window.open(origin, "_blank")}>
-          <ExternalLink className="w-4 h-4 mr-1" /> 在新窗口打开主页
-        </Button>
-        <Button onClick={save} disabled={saving}>
-          <Save className="w-4 h-4 mr-1" /> {saving ? "保存中…" : "保存设置"}
-        </Button>
-      </div>
-    </SectionCard>
+    </Card>
   );
 
   const middle =
-    section === "basic" ? MiddleBasic
-    : section === "text" ? MiddleText
-    : section === "media" ? MiddleMedia
-    : section === "qr" ? MiddleQr
-    : section === "buttons" ? MiddleButtons
-    : MiddlePreview;
+    section === "basic" ? SectionBasic
+    : section === "carousel" ? SectionCarousel
+    : section === "qr" ? SectionQr
+    : section === "welcome" ? SectionWelcome
+    : section === "retreat" ? SectionRetreat
+    : section === "display" ? SectionDisplay
+    : SectionTheme;
+
+  const currentLabel = SECTIONS.find((x) => x.key === section)?.label ?? "";
 
   return (
-    <div className="min-h-[600px] bg-muted/30 rounded-xl">
+    <div className="min-h-[640px] bg-muted/30 rounded-2xl">
       {dialog}
 
-      <div className="flex flex-col lg:flex-row gap-4 p-4">
-        {/* ───── LEFT: section nav ───── */}
-        <nav className="w-full lg:w-[220px] shrink-0">
-          <div className="rounded-2xl bg-card border border-border/60 shadow-sm p-2 lg:sticky lg:top-4">
-            <div className="px-3 py-2">
-              <div className="text-base font-semibold">主页设置</div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Home Page Settings
-              </div>
-            </div>
+      {/* Top bar with fixed save on right */}
+      <div className="sticky top-0 z-10 backdrop-blur bg-background/80 rounded-t-2xl px-6 py-4 flex items-center justify-between gap-4">
+        <div>
+          <div className="text-base font-semibold tracking-tight">主页设置</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {currentLabel} · {saving
+              ? "保存中…"
+              : savedAt
+              ? `已保存 ${savedAt.toLocaleTimeString()}`
+              : "未保存"}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-full"
+            onClick={() => window.open(origin, "_blank")}
+          >
+            <ExternalLink className="w-4 h-4 mr-1.5" /> 查看主页
+          </Button>
+          <Button
+            onClick={save}
+            disabled={saving}
+            className="rounded-full px-5 shadow-sm"
+          >
+            <Save className="w-4 h-4 mr-1.5" />
+            {saving ? "保存中…" : "保存设置"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 p-6 pt-2">
+        {/* LEFT nav */}
+        <nav className="w-full lg:w-[240px] shrink-0">
+          <div className="rounded-2xl bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-2 lg:sticky lg:top-24">
             <ul className="space-y-0.5">
               {SECTIONS.map((it) => {
                 const Icon = it.icon;
@@ -967,16 +1051,18 @@ export function HomePageSettingsPanel() {
                   <li key={it.key}>
                     <button
                       onClick={() => setSection(it.key)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
                         active
                           ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-muted"
+                          : "text-foreground hover:bg-muted/70"
                       }`}
                     >
-                      <Icon className="w-4 h-4 shrink-0" />
+                      <Icon className="w-[18px] h-[18px] shrink-0" />
                       <div className="min-w-0">
-                        <div className="text-sm font-medium">{it.label}</div>
-                        <div className="text-[11px] text-muted-foreground truncate">
+                        <div className="text-sm font-medium leading-tight">
+                          {it.label}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate mt-0.5">
                           {it.hint}
                         </div>
                       </div>
@@ -988,31 +1074,8 @@ export function HomePageSettingsPanel() {
           </div>
         </nav>
 
-        {/* ───── MIDDLE: form ───── */}
-        <main className="flex-1 min-w-0 space-y-4">{middle}</main>
-
-        {/* ───── RIGHT: preview ───── */}
-        {RightPreview}
-      </div>
-
-      {/* ───── Sticky save bar ───── */}
-      <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 rounded-b-xl px-4 py-3 flex items-center justify-between gap-4">
-        <div className="text-xs text-muted-foreground">
-          {saving
-            ? "正在保存…"
-            : savedAt
-            ? `上次保存：${savedAt.toLocaleTimeString()}`
-            : "未保存"}
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open(origin, "_blank")}>
-            <ExternalLink className="w-4 h-4 mr-1" /> 查看主页
-          </Button>
-          <Button onClick={save} disabled={saving}>
-            <Save className="w-4 h-4 mr-1" />
-            {saving ? "保存中…" : "保存设置"}
-          </Button>
-        </div>
+        {/* MAIN content */}
+        <main className="flex-1 min-w-0">{middle}</main>
       </div>
     </div>
   );
