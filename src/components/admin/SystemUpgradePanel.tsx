@@ -34,6 +34,9 @@ type PackageInfo = {
   databaseVersion?: string;
   releaseDate?: string;
   released_at?: string;
+  release_date?: string;
+  build_number?: string;
+  title?: string;
   description?: string[] | string;
   notes?: string;
   name?: string;
