@@ -336,6 +336,9 @@ export default function AutoBackupCenter() {
         <Button variant="outline" onClick={handleBackupNow} disabled={runningNow}>
           {runningNow ? "备份中…" : "⚡ 立即备份"}
         </Button>
+        <Button variant="secondary" onClick={handleSimulateBackup} disabled={simulating}>
+          {simulating ? "模拟中…" : "🧪 模拟备份"}
+        </Button>
         <Button variant="ghost" onClick={loadLogs}>🔄 刷新记录</Button>
       </section>
 
