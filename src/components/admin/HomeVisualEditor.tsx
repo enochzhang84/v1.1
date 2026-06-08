@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import TextStyle from "@tiptap/extension-text-style";
+import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import TextAlign from "@tiptap/extension-text-align";
 import {
@@ -355,7 +355,7 @@ export function HomeVisualEditor() {
       const user = (await supabase.auth.getUser()).data.user;
       const payload = {
         slug: "home",
-        blocks: cleaned as unknown as object,
+        blocks: cleaned as unknown as import("@/integrations/supabase/types").Json,
         updated_by: user?.id ?? null,
         updated_at: new Date().toISOString(),
       };
