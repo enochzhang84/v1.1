@@ -184,6 +184,20 @@ export default function AutoBackupCenter() {
     }
   };
 
+  const handleSimulateBackup = async () => {
+    if (!confirm("生成一条模拟备份记录用于测试 UI？")) return;
+    setSimulating(true);
+    try {
+      await simulateBackupFn();
+      toast.success("模拟备份成功：已生成测试记录");
+      await loadLogs();
+    } catch (e: any) {
+      toast.error(`模拟备份失败：${e?.message || "未知错误"}`);
+    } finally {
+      setSimulating(false);
+    }
+  };
+
   const lastLog = logs[0];
   const formatSize = (b?: number | null) => {
     if (!b) return "—";
