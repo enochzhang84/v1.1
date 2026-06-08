@@ -133,7 +133,7 @@ function useTrackMute(stream: MediaStream | null) {
 }
 
 export default function PipAudioMonitor(props: PipAudioMonitorProps) {
-  const { cameraStream, videoCaptureStream, pptCaptureStream, layout, videoKind, pptKind } = props;
+  const { cameraStream, videoCaptureStream, pptCaptureStream, layout, videoKind, pptKind, compact } = props;
 
   const cameraCh = useStreamAnalyser(cameraStream);
   const videoCapCh = useStreamAnalyser(videoCaptureStream);
