@@ -242,6 +242,17 @@ function PreviewPage() {
         </header>
 
         <div className="flex items-center justify-end gap-2 mb-4 print:hidden">
+          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+            {isFullscreen ? (
+              <>
+                <Minimize className="h-4 w-4 mr-1" /> 退出全屏
+              </>
+            ) : (
+              <>
+                <Maximize className="h-4 w-4 mr-1" /> 全屏显示
+              </>
+            )}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
             <SettingsIcon className="h-4 w-4 mr-1" /> 设置
           </Button>
