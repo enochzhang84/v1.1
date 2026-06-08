@@ -24,6 +24,7 @@ export type PipAudioMonitorProps = {
   layout: Layout;
   videoKind: "youtube" | "url" | "camera" | "capture";
   pptKind: "image" | "url" | "capture";
+  compact?: boolean;
 };
 
 type Channel = { peak: number; rms: number };
