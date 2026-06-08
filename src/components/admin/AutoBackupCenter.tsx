@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { exportBackup, listBackupLogs } from "@/lib/backup.functions";
+import { exportBackup, listBackupLogs, simulateBackup } from "@/lib/backup.functions";
 
 // 备份内容模块
 const CONTENT_MODULES = [
