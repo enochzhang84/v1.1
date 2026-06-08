@@ -2809,28 +2809,9 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setBackupOpen(true)}
+              onClick={() => setOpsCenterOpen(true)}
             >
-              💾 备份与恢复
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setVersionOpen(true)}
-            >
-              🆙 系统升级
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportDeployPackage}
-              disabled={deployExporting}
-            >
-              {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setInitOpen(true)}
-            >
-              系统初始化
+              ⚙️ 系统运维中心
             </Button>
           </div>
         </section>
