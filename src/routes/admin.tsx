@@ -771,6 +771,8 @@ function AdminPage() {
   const [homeSettingsOpen, setHomeSettingsOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
+  const [opsCenterOpen, setOpsCenterOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
   const [initLoading, setInitLoading] = useState(false);
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
@@ -2807,28 +2809,9 @@ function AdminPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setBackupOpen(true)}
+              onClick={() => setOpsCenterOpen(true)}
             >
-              💾 备份与恢复
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setVersionOpen(true)}
-            >
-              🆙 系统升级
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportDeployPackage}
-              disabled={deployExporting}
-            >
-              {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setInitOpen(true)}
-            >
-              系统初始化
+              ⚙️ 系统运维中心
             </Button>
           </div>
         </section>
@@ -2887,7 +2870,94 @@ function AdminPage() {
             {versionOpen && <SystemUpgradePanel isSuperAdmin={isSuperAdmin} />}
           </DialogContent>
         </Dialog>
+
+        {/* 系统运维中心 Dialog —— 数据 / 版本 / 危险操作 分组 */}
+        <Dialog
+          open={opsCenterOpen}
+          onOpenChange={(o) => { setOpsCenterOpen(o); if (!o) setResetConfirmText(""); }}
+        >
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>⚙️ 系统运维中心</DialogTitle>
+              <DialogDescription>
+                HOC3 系统级运维工具。仅超级管理员可见。请谨慎操作，危险操作不可撤销。
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-2">
+              {/* 1. 数据管理 */}
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">📦 数据管理</h3>
+                <p className="text-xs text-muted-foreground">备份、恢复、导出部署文件。</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setOpsCenterOpen(false); setBackupOpen(true); }}
+                  >
+                    💾 备份与恢复
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportDeployPackage}
+                    disabled={deployExporting}
+                  >
+                    {deployExporting ? "📦 生成中..." : "📦 一键导出部署文件"}
+                  </Button>
+                </div>
+              </section>
+
+              {/* 2. 版本管理 */}
+              <section className="space-y-2 border-t border-border/50 pt-4">
+                <h3 className="text-sm font-semibold text-foreground">🆙 版本管理</h3>
+                <p className="text-xs text-muted-foreground">查看版本、导入升级包、执行升级。</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setOpsCenterOpen(false); setVersionOpen(true); }}
+                  >
+                    🆙 系统升级
+                  </Button>
+                </div>
+              </section>
+
+              {/* 3. 危险操作 */}
+              <section className="space-y-2 border-t-2 border-destructive/40 pt-4">
+                <h3 className="text-sm font-semibold text-destructive">⚠️ 危险操作</h3>
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-3">
+                  <p className="text-xs text-destructive font-medium">
+                    此操作可能清空或重置系统数据，请先备份！操作不可撤销。
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    请在下方输入 <span className="font-mono font-bold text-destructive">RESET</span> 以解锁「系统初始化」按钮。
+                  </p>
+                  <Input
+                    value={resetConfirmText}
+                    onChange={(e) => setResetConfirmText(e.target.value)}
+                    placeholder="输入 RESET 解锁"
+                    className="font-mono"
+                  />
+                  <Button
+                    variant="destructive"
+                    disabled={resetConfirmText !== "RESET"}
+                    onClick={() => {
+                      setOpsCenterOpen(false);
+                      setResetConfirmText("");
+                      setInitOpen(true);
+                    }}
+                  >
+                    🗑️ 系统初始化
+                  </Button>
+                </div>
+              </section>
+            </div>
+
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setOpsCenterOpen(false)}>关闭</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
             </TabsContent>
+
 
             <TabsContent value="welcome" className="space-y-8 mt-0">
         {/* Chrome-style sub-tabs — 自适应列数 */}
