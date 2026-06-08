@@ -4355,7 +4355,17 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                 </div>
               );
             })}
-            {/* 退修会登记 — 与新人登记并排 */}
+          </div>
+        </section>
+            </TabsContent>
+
+            <TabsContent value="retreat" className="space-y-8 mt-0">
+        <section className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <h2 className="font-serif text-xl">退修会</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* 退修会登记 */}
             <div className="border border-border/50 rounded-xl p-4 flex flex-col items-center gap-3">
               <p className="font-medium text-center">退修会登记</p>
               {publicBase && <QRCodeSVG value={`${publicBase}/retreat`} size={180} level="H" />}
@@ -4375,6 +4385,12 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
             <RetreatQrPanel />
           </div>
         </section>
+            </TabsContent>
+
+            <TabsContent value="events-removed-placeholder" className="hidden">
+        <section className="hidden">
+          <div className="hidden">
+
         <section className="bg-card border border-border/50 rounded-2xl p-6">
           <h2 className="font-serif text-xl mb-4">教会服侍</h2>
           <div className="grid sm:grid-cols-2 gap-6">
