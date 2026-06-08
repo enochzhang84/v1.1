@@ -377,7 +377,7 @@ export default function AutoBackupCenter() {
                       <td className="px-2 py-1.5">{formatSize(l.file_size_bytes)}</td>
                       <td className="px-2 py-1.5">{l.total_tables ?? "—"}</td>
                       <td className="px-2 py-1.5">{l.total_records ?? "—"}</td>
-                      <td className="px-2 py-1.5"><Badge variant="secondary">成功</Badge></td>
+                      <td className="px-2 py-1.5">{l.kind === "simulate" ? <Badge variant="outline">模拟成功</Badge> : <Badge variant="secondary">成功</Badge>}</td>
                     </tr>
                   );
                 })
