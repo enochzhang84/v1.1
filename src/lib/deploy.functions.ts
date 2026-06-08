@@ -380,14 +380,56 @@ VITE_BUILD_TIME=
 - 第一个登录的账号将自动成为超级管理员（由 handle_new_user 触发器处理）。
 `;
 
+    // ========== 6. version.json (升级包/部署包通用版本元数据) ==========
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const buildNumber = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}-001`;
+    const versionJson = JSON.stringify(
+      {
+        version: systemVersion.replace(/^v/i, ""),
+        systemVersion,
+        databaseVersion,
+        release_date: now.toISOString().slice(0, 10),
+        released_at: now.toISOString(),
+        build_number: buildNumber,
+        title: `HOC3 ${systemVersion}`,
+        description: "由当前站点导出的部署包，包含数据库结构、种子数据与 RLS 初始化脚本。",
+      },
+      null,
+      2,
+    ) + "\n";
+
+    const releaseNotes = `# HOC3 ${systemVersion} 部署包
+
+- 构建编号：${buildNumber}
+- 生成时间：${now.toISOString()}
+- 数据库版本：${databaseVersion}
+
+## 文件清单
+- version.json — 版本元数据（导入升级时自动读取）
+- hoc3_database_init_v1.sql — 数据库结构
+- hoc3_seed_data_v1.sql — 默认配置数据
+- hoc3_rls_dev_open.sql — 开发阶段 RLS
+- .env.example — 环境变量模板
+- README_DEPLOY.md — 部署步骤
+`;
+
     return {
       files: {
+        "version.json": versionJson,
+        "release_notes.md": releaseNotes,
         "hoc3_database_init_v1.sql": databaseInitSql,
         "hoc3_seed_data_v1.sql": seedSql,
         "hoc3_rls_dev_open.sql": rlsDevSql,
         ".env.example": envExample,
         "README_DEPLOY.md": readme,
       },
-      generatedAt: new Date().toISOString(),
+      version: {
+        systemVersion,
+        databaseVersion,
+        buildNumber,
+      },
+      generatedAt: now.toISOString(),
     };
   });
+
