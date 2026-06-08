@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon } from "lucide-react";
+import { Settings as SettingsIcon, Maximize, Minimize } from "lucide-react";
 
 type Reg = {
   id: string;
@@ -134,6 +134,7 @@ function PreviewPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [pageSize, setPageSize] = useState<number>(() => {
     if (typeof window === "undefined") return 5;
     const v = Number(localStorage.getItem("today-preview:pageSize"));
@@ -148,6 +149,24 @@ function PreviewPage() {
     if (typeof window === "undefined") return FONT_OPTIONS[0].value;
     return localStorage.getItem("today-preview:fontFamily") || FONT_OPTIONS[0].value;
   });
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem("today-preview:pageSize", String(pageSize));
@@ -223,6 +242,17 @@ function PreviewPage() {
         </header>
 
         <div className="flex items-center justify-end gap-2 mb-4 print:hidden">
+          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+            {isFullscreen ? (
+              <>
+                <Minimize className="h-4 w-4 mr-1" /> 退出全屏
+              </>
+            ) : (
+              <>
+                <Maximize className="h-4 w-4 mr-1" /> 全屏显示
+              </>
+            )}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
             <SettingsIcon className="h-4 w-4 mr-1" /> 设置
           </Button>
