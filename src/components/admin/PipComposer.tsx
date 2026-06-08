@@ -961,14 +961,6 @@ export default function PipComposer() {
             </div>
           )}
 
-          <PipAudioMonitor
-            cameraStream={cameraStream}
-            videoCaptureStream={videoCaptureStream}
-            pptCaptureStream={pptCaptureStream}
-            layout={layout}
-            videoKind={videoKind}
-            pptKind={pptKind}
-          />
         </div>
       </div>
 
