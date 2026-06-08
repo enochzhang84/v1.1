@@ -41,7 +41,7 @@ function FeedbackPage() {
         continue;
       }
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const path = `feedback/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await supabase.storage.from("feedback-images").upload(path, file);
       if (error) {
         toast.error("图片上传失败: " + error.message);
