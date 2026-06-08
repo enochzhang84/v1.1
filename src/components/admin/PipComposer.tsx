@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 import { cn } from "@/lib/utils";
+import PipAudioMonitor from "./PipAudioMonitor";
 
 type OutputMode = "preview" | "second-screen" | "fullscreen" | "obs" | "ndi" | "rtmp";
 type OutputStatus = "idle" | "browser" | "second" | "obs";
