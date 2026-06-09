@@ -783,6 +783,11 @@ function AdminPage() {
   const [healthOpen, setHealthOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [initLoading, setInitLoading] = useState(false);
+  const previewFactoryResetFn = useServerFn(previewFactoryReset);
+  const runFactoryResetFn = useServerFn(runFactoryReset);
+  const [initPreview, setInitPreview] = useState<Awaited<ReturnType<typeof previewFactoryReset>> | null>(null);
+  const [initResult, setInitResult] = useState<Awaited<ReturnType<typeof runFactoryReset>> | null>(null);
+  const [initFinalConfirm, setInitFinalConfirm] = useState("");
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
   const [page, setPage] = useState(1);
