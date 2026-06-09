@@ -854,6 +854,11 @@ export function BackupRestorePanel() {
                   : "—"}
               </div>
             </div>
+            {restorePreview.identityNotice && (
+              <div className="rounded border border-sky-300 bg-sky-50 p-2 text-xs text-sky-900">
+                ℹ {restorePreview.identityNotice}
+              </div>
+            )}
             <div className="max-h-60 overflow-y-auto rounded border bg-background">
               <table className="w-full text-xs">
                 <thead className="bg-muted/50 sticky top-0">
