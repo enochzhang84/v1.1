@@ -230,23 +230,24 @@ function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label>6 位验证码</Label>
+              <Label>邮箱验证码</Label>
               <Input
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
+                inputMode="text"
+                autoComplete="one-time-code"
+                maxLength={12}
                 required
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="••••••"
-                className="h-14 rounded-xl text-center text-2xl tracking-[0.5em] font-mono"
+                onChange={(e) => setCode(e.target.value.replace(/\s+/g, "").slice(0, 12))}
+                placeholder="请输入邮箱验证码"
+                className="h-14 rounded-xl text-center text-xl tracking-[0.3em] font-mono"
                 autoFocus
               />
+              <p className="text-xs text-muted-foreground">支持 4-12 位验证码，请以邮件中的内容为准。</p>
             </div>
             <Button
               type="submit"
-              disabled={loading || code.length !== 6}
+              disabled={loading || code.trim().length < 4}
               className="w-full rounded-full h-12"
               size="lg"
             >
