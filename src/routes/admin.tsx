@@ -45,6 +45,7 @@ import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
+import { previewFactoryReset, runFactoryReset } from "@/lib/factory-reset.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { FaithFollowupCRM as FaithFollowupSection } from "@/components/admin/FaithFollowupCRM";
