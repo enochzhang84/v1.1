@@ -131,8 +131,9 @@ function LoginPage() {
       return;
     }
     setLoading(true);
+    const { getPublicOrigin } = await import("@/lib/public-origin");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getPublicOrigin()}/reset-password`,
     });
     setLoading(false);
     if (error) {

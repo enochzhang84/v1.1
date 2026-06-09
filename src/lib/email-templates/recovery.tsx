@@ -20,22 +20,20 @@ export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
 }: RecoveryEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="zh-CN" dir="ltr">
     <Head />
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>重置您的 {siteName} 管理员密码</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Heading style={h1}>重置管理员密码</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          您正在重置 {siteName} 管理后台密码。请点击下方按钮设置新密码。
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Reset Password
+          重置密码
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          如果不是您本人操作，请忽略此邮件，您的密码不会被更改。
         </Text>
       </Container>
     </Body>
@@ -59,7 +57,7 @@ const text = {
   margin: '0 0 25px',
 }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#059669',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',
