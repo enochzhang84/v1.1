@@ -1131,8 +1131,10 @@ function AdminPage() {
           }
           setChecking(false);
           if (!canAccessAdmin(role)) {
-            toast.error("您没有访问后台的权限");
-            navigate({ to: "/" });
+            // 无管理员权限：登出当前 session 并回到登录页（提示而非跳首页）
+            toast.error("无管理员权限：该账号未被授权进入后台");
+            try { await supabase.auth.signOut(); } catch { /* ignore */ }
+            navigate({ to: "/login" });
             return;
           }
           loadAuthorizedData();
