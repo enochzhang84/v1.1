@@ -287,12 +287,15 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
           label="YouTube"
           present={videoKind === "youtube"}
           chs={[{ peak: 0, rms: 0 }, { peak: 0, rms: 0 }]}
-          mute
-          onMute={() => { /* iframe always muted in preview */ }}
+          mute={false}
+          onMute={() => { /* iframe controls own playback */ }}
           vol={youtubeVol}
           setVol={setYoutubeVol}
           note="iframe 沙箱内无法检测电平"
           compact={compact}
+          levelUnavailable
+          status="已加载"
+          hideMuteButton
         />
       </div>
 
