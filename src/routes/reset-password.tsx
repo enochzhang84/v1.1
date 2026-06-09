@@ -59,9 +59,9 @@ function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">← 返回登录</Link>
         <div className="mt-6 mb-8 text-center">
-          <h1 className="font-serif text-4xl text-foreground">设置新密码</h1>
+          <h1 className="font-serif text-4xl text-foreground">重置管理员密码</h1>
           <p className="text-muted-foreground text-sm mt-2">
-            请输入您的新密码
+            请输入并确认您的新密码
           </p>
         </div>
 
