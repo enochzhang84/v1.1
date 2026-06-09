@@ -785,6 +785,8 @@ function AdminPage() {
   const [initLoading, setInitLoading] = useState(false);
   const previewFactoryResetFn = useServerFn(previewFactoryReset);
   const runFactoryResetFn = useServerFn(runFactoryReset);
+  const exportMasterSqlFn = useServerFn(exportMasterSql);
+  const [exportingMaster, setExportingMaster] = useState(false);
   const [initPreview, setInitPreview] = useState<Awaited<ReturnType<typeof previewFactoryReset>> | null>(null);
   const [initResult, setInitResult] = useState<Awaited<ReturnType<typeof runFactoryReset>> | null>(null);
   const [initFinalConfirm, setInitFinalConfirm] = useState("");
