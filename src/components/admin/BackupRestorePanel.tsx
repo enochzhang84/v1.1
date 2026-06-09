@@ -63,6 +63,7 @@ export function BackupRestorePanel() {
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [logs, setLogs] = useState<any[]>([]);
   const [deployBusy, setDeployBusy] = useState<null | "system" | "history" | "full">(null);
+  const [includeUserAccounts, setIncludeUserAccounts] = useState(false);
   const [lastDeployDownload, setLastDeployDownload] = useState<{ name: string; url: string; size: number; createdAt: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
@@ -122,7 +123,7 @@ export function BackupRestorePanel() {
   const onBackup = async () => {
     setBusy(true);
     try {
-      const data: any = await doExport();
+      const data: any = await doExport({ data: { includeUserAccounts: false } });
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -400,13 +401,16 @@ export function BackupRestorePanel() {
     summary: Record<string, number>;
     total: number;
   }> {
-    const payload: any = await doExport();
+    const payload: any = await doExport({ data: { includeUserAccounts } });
     const files: Record<string, string> = {};
     files["manifest.json"] = JSON.stringify(payload, null, 2);
+    const idNote = includeUserAccounts
+      ? "⚠ 本包含用户账户数据（user_profiles / user_roles / user_preferences 等）。"
+      : "本包不含用户身份表，新教会请用首位注册用户自动成为超级管理员的机制。";
     files["README_DATA.md"] =
-      `# HOC3 历史数据包\n\n导出时间：${payload.created_at}\n总记录数：${
+      `# HOC3 历史数据包\n\n导出时间：${payload.created_at}\n包含用户账户：${includeUserAccounts ? "是" : "否（默认）"}\n总记录数：${
         Object.values(payload.summary || {}).reduce((s: number, v: any) => s + Number(v || 0), 0)
-      }\n\n根目录的 manifest.json 是完整可恢复的备份文件；data/<table>.json 是按表拆分的副本，便于阅读。\n\n恢复方式：在备份与恢复模块上传本 zip（推荐），或直接上传 manifest.json。\n`;
+      }\n\n${idNote}\n\n根目录的 manifest.json 是完整可恢复的备份文件；data/<table>.json 是按表拆分的副本，便于阅读。\n\n恢复方式：在备份与恢复模块上传本 zip（推荐），或直接上传 manifest.json。\n恢复时无论是否勾选「包含用户账户」，系统都会自动跳过用户身份表，防止覆盖现有管理员。\n`;
     for (const [t, rows] of Object.entries(payload.tables || {})) {
       files[`data/${t}.json`] = JSON.stringify(rows ?? [], null, 2);
     }
@@ -613,6 +617,22 @@ export function BackupRestorePanel() {
               {deployBusy === "full" ? "生成中..." : "🚚 导出完整迁移包"}
             </Button>
           </div>
+        </div>
+        <div className="rounded-md border border-sky-300 bg-white p-3">
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <Checkbox
+              checked={includeUserAccounts}
+              onCheckedChange={(v) => setIncludeUserAccounts(v === true)}
+            />
+            <span>
+              <span className="font-medium">完整迁移包包含用户账户数据</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                默认<b>不包含</b>。新教会副本应让首位注册用户自动成为超级管理员（推荐）。
+                仅在同一教会内迁移服务器、需要保留旧管理员/同工账号时勾选。
+                <br />影响的表：user_profiles、user_roles、user_preferences、user_module_analytics、user_notification_reads。
+              </span>
+            </span>
+          </label>
         </div>
         {lastDeployDownload && (
           <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
@@ -834,6 +854,11 @@ export function BackupRestorePanel() {
                   : "—"}
               </div>
             </div>
+            {restorePreview.identityNotice && (
+              <div className="rounded border border-sky-300 bg-sky-50 p-2 text-xs text-sky-900">
+                ℹ {restorePreview.identityNotice}
+              </div>
+            )}
             <div className="max-h-60 overflow-y-auto rounded border bg-background">
               <table className="w-full text-xs">
                 <thead className="bg-muted/50 sticky top-0">
@@ -882,6 +907,11 @@ export function BackupRestorePanel() {
             <p className="text-sm text-amber-700">
               缺少表：{results.missing.join(", ")}
             </p>
+          )}
+          {results.identityNotice && (
+            <div className="rounded border border-sky-300 bg-sky-50 p-2 text-xs text-sky-900">
+              ℹ {results.identityNotice}
+            </div>
           )}
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">

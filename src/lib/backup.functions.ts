@@ -174,20 +174,51 @@ async function assertSuperAdmin(userId: string) {
 }
 
 function pkColumn(table: string): string {
-  if (table === "user_preferences" || table === "user_presence") return "user_id";
+  if (
+    table === "user_preferences" ||
+    table === "user_presence" ||
+    table === "user_profiles"
+  )
+    return "user_id";
   if (table === "user_module_analytics") return "id";
   if (table === "app_settings") return "key";
   return "id";
 }
 
+// 用户身份相关表：系统安装包绝不导出；历史/迁移恢复时强制跳过。
+// 新教会的超级管理员通过「第一个注册用户」触发器自动产生。
+export const USER_IDENTITY_TABLES: readonly string[] = [
+  "user_profiles",
+  "user_roles",
+  "user_preferences",
+  "user_module_analytics",
+  "user_notification_reads",
+];
+
+function isIdentityTable(t: string) {
+  return USER_IDENTITY_TABLES.includes(t);
+}
+
 // ---------- Backup preview ----------
+const BackupOptionsInput = z
+  .object({
+    includeUserAccounts: z.boolean().optional(),
+  })
+  .optional();
+
 export const previewBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => BackupOptionsInput.parse(input))
+  .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.userId);
-    const tables: Array<{ table: string; count: number; error?: string }> = [];
+    const includeUserAccounts = data?.includeUserAccounts ?? false;
+    const tables: Array<{ table: string; count: number; error?: string; skipped?: boolean }> = [];
     let total = 0;
     for (const t of BACKUP_TABLES) {
+      if (!includeUserAccounts && isIdentityTable(t)) {
+        tables.push({ table: t, count: 0, skipped: true });
+        continue;
+      }
       const { count, error } = await supabaseAdmin
         .from(t)
         .select("*", { count: "exact", head: true });
@@ -199,34 +230,54 @@ export const previewBackup = createServerFn({ method: "POST" })
         total += c;
       }
     }
-    return { tables, total, tableCount: BACKUP_TABLES.length };
+    return {
+      tables,
+      total,
+      tableCount: BACKUP_TABLES.length,
+      includeUserAccounts,
+      skippedIdentityTables: includeUserAccounts ? [] : [...USER_IDENTITY_TABLES],
+    };
   });
 
 // ---------- Backup ----------
 export const exportBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => BackupOptionsInput.parse(input))
+  .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.userId);
+    const includeUserAccounts = data?.includeUserAccounts ?? false;
     const tables: Record<string, any[]> = {};
     const warnings: string[] = [];
     const summary: Record<string, number> = {};
     let total = 0;
     for (const t of BACKUP_TABLES) {
-      const { data, error } = await supabaseAdmin.from(t).select("*");
+      if (!includeUserAccounts && isIdentityTable(t)) {
+        // 不导出用户身份表
+        continue;
+      }
+      const { data: rows, error } = await supabaseAdmin.from(t).select("*");
       if (error) {
         warnings.push(`${t}: ${error.message}`);
         tables[t] = [];
         summary[t] = 0;
       } else {
-        tables[t] = data ?? [];
-        summary[t] = (data ?? []).length;
-        total += (data ?? []).length;
+        tables[t] = rows ?? [];
+        summary[t] = (rows ?? []).length;
+        total += (rows ?? []).length;
       }
+    }
+    const skippedIdentityTables = includeUserAccounts ? [] : [...USER_IDENTITY_TABLES];
+    if (skippedIdentityTables.length) {
+      warnings.push(
+        `已跳过用户身份表（不导出用户账户）：${skippedIdentityTables.join(", ")}`,
+      );
     }
     const payload: any = {
       backup_version: 1,
       created_at: new Date().toISOString(),
       project_name: "HOC3 Ministry Center",
+      includeUserAccounts,
+      skippedIdentityTables,
       tables,
       summary,
       warnings,
@@ -335,7 +386,7 @@ export const previewRestore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.userId);
     const { payload } = data;
-    const tableCounts: Array<{ table: string; count: number; known: boolean; module?: string }> =
+    const tableCounts: Array<{ table: string; count: number; known: boolean; module?: string; identitySkipped?: boolean }> =
       [];
     const moduleMap: Record<string, string> = {};
     for (const [group, tables] of Object.entries(RESTORE_GROUPS)) {
@@ -343,12 +394,15 @@ export const previewRestore = createServerFn({ method: "POST" })
     }
     let total = 0;
     const modulesSeen = new Set<string>();
+    const skippedIdentityTables: string[] = [];
     for (const [table, rows] of Object.entries(payload.tables)) {
       const count = Array.isArray(rows) ? rows.length : 0;
       const known = (BACKUP_TABLES as readonly string[]).includes(table);
       const mod = moduleMap[table];
       if (mod) modulesSeen.add(mod);
-      tableCounts.push({ table, count, known, module: mod });
+      const identity = isIdentityTable(table);
+      if (identity && count > 0) skippedIdentityTables.push(table);
+      tableCounts.push({ table, count, known, module: mod, identitySkipped: identity });
       total += count;
     }
     tableCounts.sort((a, b) => a.table.localeCompare(b.table));
@@ -360,6 +414,11 @@ export const previewRestore = createServerFn({ method: "POST" })
       project_name: payload.project_name ?? null,
       created_at: payload.created_at ?? null,
       backup_version: payload.backup_version ?? null,
+      skippedIdentityTables,
+      identityNotice:
+        skippedIdentityTables.length > 0
+          ? `恢复时将自动跳过用户身份表（${skippedIdentityTables.join(", ")}），新教会请使用「第一个注册用户自动成为超级管理员」机制。`
+          : null,
     };
   });
 
@@ -487,8 +546,24 @@ export const importBackup = createServerFn({ method: "POST" })
     }
 
     const missing: string[] = [];
+    const skippedIdentity: string[] = [];
     const results: TableResult[] = [];
     for (const t of targetTables) {
+      if (isIdentityTable(t)) {
+        // 强制跳过用户身份表：新教会通过首位注册用户自动成为超级管理员
+        const count = Array.isArray((payload.tables as any)[t])
+          ? (payload.tables as any)[t].length
+          : 0;
+        if (count > 0) skippedIdentity.push(`${t}(${count})`);
+        results.push({
+          table: t,
+          inserted: 0,
+          skipped: count,
+          failed: 0,
+          warnings: ["已跳过用户身份表（防止覆盖现有管理员/权限）"],
+        });
+        continue;
+      }
       if (!(t in payload.tables)) {
         missing.push(t);
         continue;
@@ -496,7 +571,16 @@ export const importBackup = createServerFn({ method: "POST" })
       const r = await restoreTable(t, payload.tables[t], restoreMode);
       results.push(r);
     }
-    return { results, missing, mode: restoreMode };
+    return {
+      results,
+      missing,
+      mode: restoreMode,
+      skippedIdentity,
+      identityNotice:
+        skippedIdentity.length > 0
+          ? `已跳过用户身份表：${skippedIdentity.join(", ")}。新教会请使用首位注册用户自动成为超级管理员的机制。`
+          : "已自动跳过用户身份表（user_profiles/user_roles/user_preferences/user_module_analytics/user_notification_reads）",
+    };
   });
 
 // ---------- Database schema documentation ----------
