@@ -39,6 +39,7 @@ import { Route as DisplaySlugRouteImport } from './routes/display.$slug'
 import { Route as AdultCheckinKindRouteImport } from './routes/adult-checkin.$kind'
 import { Route as DisplayPosterIdRouteImport } from './routes/display.poster.$id'
 import { Route as ApiAdminInstallPackageRouteImport } from './routes/api/admin/install-package'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
@@ -190,6 +191,12 @@ const ApiAdminInstallPackageRoute = ApiAdminInstallPackageRouteImport.update({
   path: '/api/admin/install-package',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/today-public/$token': typeof TodayPublicTokenRoute
   '/api/admin/install-package': typeof ApiAdminInstallPackageRoute
   '/display/poster/$id': typeof DisplayPosterIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -254,6 +262,7 @@ export interface FileRoutesByTo {
   '/today-public/$token': typeof TodayPublicTokenRoute
   '/api/admin/install-package': typeof ApiAdminInstallPackageRoute
   '/display/poster/$id': typeof DisplayPosterIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -287,6 +296,7 @@ export interface FileRoutesById {
   '/today-public/$token': typeof TodayPublicTokenRoute
   '/api/admin/install-package': typeof ApiAdminInstallPackageRoute
   '/display/poster/$id': typeof DisplayPosterIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/today-public/$token'
     | '/api/admin/install-package'
     | '/display/poster/$id'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/today-public/$token'
     | '/api/admin/install-package'
     | '/display/poster/$id'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -385,6 +397,7 @@ export interface FileRouteTypes {
     | '/today-public/$token'
     | '/api/admin/install-package'
     | '/display/poster/$id'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -418,6 +431,7 @@ export interface RootRouteChildren {
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
   ApiAdminInstallPackageRoute: typeof ApiAdminInstallPackageRoute
   DisplayPosterIdRoute: typeof DisplayPosterIdRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -632,6 +646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminInstallPackageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -666,6 +687,7 @@ const rootRouteChildren: RootRouteChildren = {
   TodayPublicTokenRoute: TodayPublicTokenRoute,
   ApiAdminInstallPackageRoute: ApiAdminInstallPackageRoute,
   DisplayPosterIdRoute: DisplayPosterIdRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
