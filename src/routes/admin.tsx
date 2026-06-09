@@ -3048,10 +3048,19 @@ function AdminPage() {
                     />
                     <button
                       disabled={resetConfirmText !== "RESET"}
-                      onClick={() => {
+                      onClick={async () => {
                         setOpsCenterOpen(false);
                         setResetConfirmText("");
+                        setInitPreview(null);
+                        setInitResult(null);
+                        setInitFinalConfirm("");
                         setInitOpen(true);
+                        try {
+                          const p = await previewFactoryResetFn();
+                          setInitPreview(p);
+                        } catch (e: any) {
+                          toast.error("读取预览失败: " + (e?.message || e));
+                        }
                       }}
                       className="h-[52px] px-6 rounded-full font-medium text-[13px] transition-all active:scale-95 disabled:cursor-not-allowed shrink-0"
                       style={
