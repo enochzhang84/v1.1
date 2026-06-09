@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,51 +15,93 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const doHasSuper = useServerFn(checkSuperAdminExists);
   const doInitSuper = useServerFn(initializeCurrentUserAsSuperAdmin);
+  const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [needsFirstAdmin, setNeedsFirstAdmin] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) window.location.assign("/admin");
     });
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function startCooldown(sec = 60) {
+    setCooldown(sec);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCooldown((s) => {
+        if (s <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }
+
+  function friendlyError(msg: string): string {
+    if (/rate limit|too many|frequen/i.test(msg)) return "发送过于频繁，请稍后再试。";
+    if (/invalid|expired|otp/i.test(msg)) return "验证码错误或已过期，请重新获取。";
+    if (/network|fetch/i.test(msg)) return "无法连接到后台服务，请检查网络。";
+    return msg;
+  }
+
+  async function handleSendCode(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!email) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    setLoading(false);
     if (error) {
-      const msg = error.message || "";
-      let friendly = msg;
-      if (/invalid login credentials/i.test(msg)) {
-        friendly = "邮箱或密码错误。请确认账号是否已注册，或使用「忘记密码」重置。";
-      } else if (/email not confirmed/i.test(msg)) {
-        friendly = "邮箱尚未验证，请先到邮箱完成验证后再登录。";
-      } else if (/network|fetch/i.test(msg)) {
-        friendly = "无法连接到后台服务，请检查 Supabase 配置或网络。";
-      }
-      console.error("[login] signIn failed:", msg);
-      toast.error(friendly);
-      setLoading(false);
+      toast.error(friendlyError(error.message));
       return;
     }
-    // Check approval: user must have at least one role assigned
+    toast.success("验证码已发送，请查收邮箱（含垃圾箱）");
+    setStep("code");
+    startCooldown(60);
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (code.length !== 6) {
+      toast.error("请输入 6 位验证码");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: "email",
+    });
+    if (error) {
+      setLoading(false);
+      toast.error(friendlyError(error.message));
+      return;
+    }
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
     if (uid) {
+      const superStatus = await doHasSuper();
+      if (!superStatus.hasSuperAdmin) {
+        setNeedsFirstAdmin(true);
+        toast.info("系统尚未初始化管理员，请将当前用户设为首位超级管理员。");
+        setLoading(false);
+        return;
+      }
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", uid);
-      const superStatus = await doHasSuper();
-      if (!superStatus.hasSuperAdmin) {
-        setNeedsFirstAdmin(true);
-        toast.info("系统尚未初始化管理员，请先将当前用户设为首位超级管理员。");
-        setLoading(false);
-        return;
-      }
       if (!roles || roles.length === 0) {
         await supabase.auth.signOut();
         toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
@@ -68,9 +110,7 @@ function LoginPage() {
       }
     }
     toast.success("登录成功，正在进入管理后台...");
-    setTimeout(() => {
-      window.location.assign("/admin");
-    }, 3000);
+    setTimeout(() => window.location.assign("/admin"), 1200);
   }
 
   async function handleInitFirstAdmin() {
@@ -86,47 +126,98 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← 返回首页</Link>
         <div className="mt-6 mb-8 text-center">
           <h1 className="font-serif text-4xl text-foreground">管理后台</h1>
-          <p className="text-muted-foreground text-sm mt-2">登录以查看登记名单</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            {step === "email" ? "输入邮箱获取验证码登录" : `验证码已发送至 ${email}`}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-8 space-y-4 shadow-sm">
-          {needsFirstAdmin && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-3">
-              <p>系统尚未初始化管理员，是否将当前用户设为首位超级管理员？</p>
-              <Button type="button" size="sm" onClick={handleInitFirstAdmin} disabled={loading}>
-                初始化为首位超级管理员
-              </Button>
+        {step === "email" ? (
+          <form
+            onSubmit={handleSendCode}
+            className="bg-white rounded-3xl p-8 space-y-5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.12)]"
+          >
+            <div className="space-y-2">
+              <Label>邮箱</Label>
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="h-12 rounded-xl"
+              />
             </div>
-          )}
-          <div className="space-y-2">
-            <Label>邮箱</Label>
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>密码</Label>
-            <Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <Button type="submit" disabled={loading} className="w-full rounded-full" size="lg">
-            {loading ? "处理中..." : "登录"}
-          </Button>
-          <Link
-            to="/forgot-password"
-            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            <Button type="submit" disabled={loading || !email} className="w-full rounded-full h-12" size="lg">
+              {loading ? "发送中..." : "发送验证码"}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              首次登录的邮箱会自动创建账号，仍需管理员授权才能进入系统。
+            </p>
+          </form>
+        ) : (
+          <form
+            onSubmit={handleVerify}
+            className="bg-white rounded-3xl p-8 space-y-5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.12)]"
           >
-            忘记密码?
-          </Link>
-          <Link
-            to="/signup"
-            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            还没有账号? 注册
-          </Link>
-        </form>
+            {needsFirstAdmin && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-3">
+                <p>系统尚未初始化管理员，是否将当前用户设为首位超级管理员？</p>
+                <Button type="button" size="sm" onClick={handleInitFirstAdmin} disabled={loading}>
+                  初始化为首位超级管理员
+                </Button>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>6 位验证码</Label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="••••••"
+                className="h-14 rounded-xl text-center text-2xl tracking-[0.5em] font-mono"
+                autoFocus
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading || code.length !== 6}
+              className="w-full rounded-full h-12"
+              size="lg"
+            >
+              {loading ? "验证中..." : "验证并登录"}
+            </Button>
+            <div className="flex items-center justify-between text-sm">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("email");
+                  setCode("");
+                  setNeedsFirstAdmin(false);
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                ← 换个邮箱
+              </button>
+              <button
+                type="button"
+                disabled={cooldown > 0 || loading}
+                onClick={() => handleSendCode()}
+                className="text-primary disabled:text-muted-foreground disabled:cursor-not-allowed"
+              >
+                {cooldown > 0 ? `${cooldown}s 后可重发` : "重新发送验证码"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
