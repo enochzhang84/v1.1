@@ -546,8 +546,24 @@ export const importBackup = createServerFn({ method: "POST" })
     }
 
     const missing: string[] = [];
+    const skippedIdentity: string[] = [];
     const results: TableResult[] = [];
     for (const t of targetTables) {
+      if (isIdentityTable(t)) {
+        // 强制跳过用户身份表：新教会通过首位注册用户自动成为超级管理员
+        const count = Array.isArray((payload.tables as any)[t])
+          ? (payload.tables as any)[t].length
+          : 0;
+        if (count > 0) skippedIdentity.push(`${t}(${count})`);
+        results.push({
+          table: t,
+          inserted: 0,
+          skipped: count,
+          failed: 0,
+          warnings: ["已跳过用户身份表（防止覆盖现有管理员/权限）"],
+        });
+        continue;
+      }
       if (!(t in payload.tables)) {
         missing.push(t);
         continue;
@@ -555,7 +571,16 @@ export const importBackup = createServerFn({ method: "POST" })
       const r = await restoreTable(t, payload.tables[t], restoreMode);
       results.push(r);
     }
-    return { results, missing, mode: restoreMode };
+    return {
+      results,
+      missing,
+      mode: restoreMode,
+      skippedIdentity,
+      identityNotice:
+        skippedIdentity.length > 0
+          ? `已跳过用户身份表：${skippedIdentity.join(", ")}。新教会请使用首位注册用户自动成为超级管理员的机制。`
+          : "已自动跳过用户身份表（user_profiles/user_roles/user_preferences/user_module_analytics/user_notification_reads）",
+    };
   });
 
 // ---------- Database schema documentation ----------
