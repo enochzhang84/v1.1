@@ -12,12 +12,12 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
+  signup: '确认您的邮箱',
+  invite: '您已被邀请',
   magiclink: '登录验证码',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  recovery: '重置您的 LioneApps 管理员密码',
+  email_change: '确认您的新邮箱',
+  reauthentication: '您的验证码',
 }
 
 // Template mapping
@@ -31,7 +31,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "qr-newbie-flow"
+const SITE_NAME = "LioneApps"
 const SENDER_DOMAIN = "notify.lioneapps.com"
 const ROOT_DOMAIN = "lioneapps.com"
 const FROM_DOMAIN = "lioneapps.com"
