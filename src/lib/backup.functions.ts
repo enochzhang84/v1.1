@@ -256,27 +256,21 @@ export const exportBackup = createServerFn({ method: "POST" })
         continue;
       }
       const { data: rows, error } = await supabaseAdmin.from(t).select("*");
-
-// ---------- Backup ----------
-export const exportBackup = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertSuperAdmin(context.userId);
-    const tables: Record<string, any[]> = {};
-    const warnings: string[] = [];
-    const summary: Record<string, number> = {};
-    let total = 0;
-    for (const t of BACKUP_TABLES) {
-      const { data, error } = await supabaseAdmin.from(t).select("*");
       if (error) {
         warnings.push(`${t}: ${error.message}`);
         tables[t] = [];
         summary[t] = 0;
       } else {
-        tables[t] = data ?? [];
-        summary[t] = (data ?? []).length;
-        total += (data ?? []).length;
+        tables[t] = rows ?? [];
+        summary[t] = (rows ?? []).length;
+        total += (rows ?? []).length;
       }
+    }
+    const skippedIdentityTables = includeUserAccounts ? [] : [...USER_IDENTITY_TABLES];
+    if (skippedIdentityTables.length) {
+      warnings.push(
+        `已跳过用户身份表（不导出用户账户）：${skippedIdentityTables.join(", ")}`,
+      );
     }
     const payload: any = {
       backup_version: 1,
