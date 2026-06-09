@@ -209,14 +209,12 @@ function LoginPage() {
               >
                 注册管理员账号
               </button>
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-primary hover:underline disabled:text-muted-foreground"
-                disabled={loading}
+              <Link
+                to="/forgot-password"
+                className="text-primary hover:underline"
               >
                 忘记密码
-              </button>
+              </Link>
             </div>
           </form>
         ) : (
