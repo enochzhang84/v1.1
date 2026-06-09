@@ -702,6 +702,7 @@ function AdminPage() {
   const setUserAnalyticsAreaFn = useServerFn(setUserAnalyticsArea);
   const exportDeployPackageFn = useServerFn(exportDeployPackage);
   const [deployExporting, setDeployExporting] = useState(false);
+  const [lastDeployPackageDownload, setLastDeployPackageDownload] = useState<{ name: string; url: string } | null>(null);
   async function handleExportDeployPackage() {
     if (!window.confirm("此操作将生成部署文件，不包含用户隐私数据。是否继续？")) return;
     setDeployExporting(true);
@@ -719,12 +720,16 @@ function AdminPage() {
       const a = document.createElement("a");
       a.href = url;
       a.download = fname;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => document.body.removeChild(a), 0);
+      setLastDeployPackageDownload((prev) => {
+        if (prev?.url) URL.revokeObjectURL(prev.url);
+        return { name: fname, url };
+      });
       try { logAction(`导出部署/升级包 ${fname}`); } catch {}
-      toast.success(`已生成 ${fname}，包含 version.json，可直接用于系统升级或新站部署。`);
+      toast.success(`已生成 ${fname}。若未自动下载，请点击下方下载文件。`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(`导出失败：${msg}`);
