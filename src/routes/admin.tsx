@@ -45,6 +45,7 @@ import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
+import { previewFactoryReset, runFactoryReset } from "@/lib/factory-reset.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { FaithFollowupCRM as FaithFollowupSection } from "@/components/admin/FaithFollowupCRM";
@@ -782,6 +783,11 @@ function AdminPage() {
   const [healthOpen, setHealthOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [initLoading, setInitLoading] = useState(false);
+  const previewFactoryResetFn = useServerFn(previewFactoryReset);
+  const runFactoryResetFn = useServerFn(runFactoryReset);
+  const [initPreview, setInitPreview] = useState<Awaited<ReturnType<typeof previewFactoryReset>> | null>(null);
+  const [initResult, setInitResult] = useState<Awaited<ReturnType<typeof runFactoryReset>> | null>(null);
+  const [initFinalConfirm, setInitFinalConfirm] = useState("");
   const [logs, setLogs] = useState<{ time: string; actor: string; action: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "未联系" | "已联系">("all");
   const [page, setPage] = useState(1);
@@ -3042,10 +3048,19 @@ function AdminPage() {
                     />
                     <button
                       disabled={resetConfirmText !== "RESET"}
-                      onClick={() => {
+                      onClick={async () => {
                         setOpsCenterOpen(false);
                         setResetConfirmText("");
+                        setInitPreview(null);
+                        setInitResult(null);
+                        setInitFinalConfirm("");
                         setInitOpen(true);
+                        try {
+                          const p = await previewFactoryResetFn();
+                          setInitPreview(p);
+                        } catch (e: any) {
+                          toast.error("读取预览失败: " + (e?.message || e));
+                        }
                       }}
                       className="h-[52px] px-6 rounded-full font-medium text-[13px] transition-all active:scale-95 disabled:cursor-not-allowed shrink-0"
                       style={
@@ -6319,99 +6334,162 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
-        {/* System Init Dialog */}
+        {/* System Init (Factory Reset / 母版) Dialog */}
         <Dialog open={initOpen} onOpenChange={(o) => { if (!initLoading) setInitOpen(o); }}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>系统初始化</DialogTitle>
+              <DialogTitle>系统初始化（母版重置）</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 py-2 text-sm">
-              <p className="text-destructive font-medium">
-                初始化前请先导出录用名单！
-              </p>
-              <p className="text-muted-foreground">
-                此操作将清空所有新人登记记录，并把系统更新为全新状态。该操作不可撤销。
-              </p>
-              <p className="text-muted-foreground">
-                当前共有 <span className="font-semibold text-foreground">{regs.length}</span> 条登记记录。
-              </p>
-            </div>
+
+            {initResult ? (
+              <div className="space-y-3 py-2 text-sm">
+                {initResult.ok ? (
+                  <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-green-800">
+                    ✓ 初始化完成。已清空 <b>{initResult.totalDeleted}</b> 条业务数据，管理员与系统配置完整保留。
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-800">
+                    ✗ 初始化后安全检查失败：{initResult.violations.join("；")}
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded bg-muted/40 p-2">
+                    超级管理员：{initResult.preserved.superAdminBefore} → {initResult.preserved.superAdminAfter}
+                  </div>
+                  <div className="rounded bg-muted/40 p-2">
+                    用户角色总数：{initResult.preserved.rolesBefore} → {initResult.preserved.rolesAfter}
+                  </div>
+                </div>
+                <details className="rounded border p-2 text-xs">
+                  <summary className="cursor-pointer">清空详情 ({initResult.cleared.length} 个表)</summary>
+                  <ul className="mt-2 space-y-0.5 max-h-60 overflow-auto">
+                    {initResult.cleared.map((c) => (
+                      <li key={c.table} className={c.error ? "text-red-600" : ""}>
+                        {c.table}: -{c.deleted}{c.error ? ` (${c.error})` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            ) : (
+              <div className="space-y-3 py-2 text-sm">
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                  <div className="font-medium">⚠️ 强烈建议先导出备份再继续</div>
+                  <div className="mt-1 text-xs">此操作不可撤销。完成后系统将变成"母版"——保留管理员与配置，清空所有业务数据，可复制为新的教会副本。</div>
+                </div>
+
+                {!initPreview ? (
+                  <div className="text-muted-foreground text-xs">正在读取预览…</div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+                        <div className="font-medium text-emerald-800 mb-2">✓ 将保留 ({initPreview.preserve.length})</div>
+                        <ul className="space-y-0.5 text-xs text-emerald-900/80 max-h-56 overflow-auto">
+                          {initPreview.preserve.map((r) => (
+                            <li key={r.table}>
+                              {r.table} <span className="text-emerald-700/60">({r.count ?? "?"})</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-2 text-[11px] text-emerald-700">
+                          管理员账号 · 用户权限 · 系统/主页设置 · 二维码 · 屏幕配置 · 配置型档案
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-red-200 bg-red-50/50 p-3">
+                        <div className="font-medium text-red-800 mb-2">
+                          ✗ 将清空 ({initPreview.clear.length}) · 共 {initPreview.totalClear} 条
+                        </div>
+                        <ul className="space-y-0.5 text-xs text-red-900/80 max-h-56 overflow-auto">
+                          {initPreview.clear.map((r) => (
+                            <li key={r.table}>
+                              {r.table} <span className="text-red-700/60">({r.count ?? "?"})</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-2 text-[11px] text-red-700">
+                          新人/退修会登记 · 签到 · 聊天 · 留言 · 反馈 · 服侍/接待历史 · 统计
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-muted/40 p-3 text-xs">
+                      预检：检测到 <b>{initPreview.superAdminCount}</b> 个超级管理员。
+                      {initPreview.superAdminCount < 1 && (
+                        <span className="text-red-600 font-medium"> 系统中没有超级管理员，初始化被禁止。</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">最终确认：请输入 <b>初始化母版</b> 以解锁执行按钮</div>
+                      <Input
+                        value={initFinalConfirm}
+                        onChange={(e) => setInitFinalConfirm(e.target.value)}
+                        placeholder="初始化母版"
+                        disabled={initLoading}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                disabled={initLoading}
-                onClick={() => exportAllExcel()}
-              >
-                导出全部名单 Excel
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={initLoading}
-                onClick={async () => {
-                  setInitLoading(true);
-                  const { error } = await supabase
-                    .from("registrations")
-                    .delete()
-                    .not("id", "is", null);
-                  if (error) {
-                    setInitLoading(false);
-                    toast.error("初始化失败: " + error.message);
-                    return;
-                  }
-                  const { error: evErr } = await supabase
-                    .from("events")
-                    .delete()
-                    .not("id", "is", null);
-                  if (evErr) {
-                    setInitLoading(false);
-                    toast.error("清空活动失败: " + evErr.message);
-                    return;
-                  }
-                  const { error: msgErr } = await supabase
-                    .from("messages")
-                    .delete()
-                    .not("id", "is", null);
-                  if (msgErr) {
-                    setInitLoading(false);
-                    toast.error("清空留言板失败: " + msgErr.message);
-                    return;
-                  }
-                  const { error: svcErr } = await supabase
-                    .from("service_applications")
-                    .delete()
-                    .not("id", "is", null);
-                  if (svcErr) {
-                    setInitLoading(false);
-                    toast.error("清空服侍申请失败: " + svcErr.message);
-                    return;
-                  }
-                  const { error: fbErr } = await supabase
-                    .from("feedbacks")
-                    .delete()
-                    .not("id", "is", null);
-                  setInitLoading(false);
-                  if (fbErr) {
-                    toast.error("清空问题反馈失败: " + fbErr.message);
-                    return;
-                  }
-                  logAction(`系统初始化（清空了 ${regs.length} 条登记）`);
-                  toast.success("系统已初始化");
-                  setInitOpen(false);
-                  loadData();
-                }}
-              >
-                {initLoading ? "正在初始化..." : "确定初始化"}
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={initLoading}
-                onClick={() => setInitOpen(false)}
-              >
-                取消初始化
-              </Button>
+              {initResult ? (
+                <Button onClick={() => { setInitOpen(false); loadData(); }}>
+                  关闭
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={initLoading}
+                    onClick={() => exportAllExcel()}
+                  >
+                    导出全部名单 Excel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={
+                      initLoading ||
+                      !initPreview ||
+                      initPreview.superAdminCount < 1 ||
+                      initFinalConfirm !== "初始化母版"
+                    }
+                    onClick={async () => {
+                      setInitLoading(true);
+                      try {
+                        const r = await runFactoryResetFn();
+                        setInitResult(r);
+                        if (r.ok) {
+                          toast.success(`已重置为母版 (清空 ${r.totalDeleted} 条)`);
+                          logAction(`系统初始化母版（清空 ${r.totalDeleted} 条业务数据）`);
+                        } else {
+                          toast.error("初始化后安全检查未通过");
+                        }
+                      } catch (e: any) {
+                        toast.error("初始化失败: " + (e?.message || e));
+                      } finally {
+                        setInitLoading(false);
+                      }
+                    }}
+                  >
+                    {initLoading ? "正在初始化..." : "确定初始化为母版"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={initLoading}
+                    onClick={() => setInitOpen(false)}
+                  >
+                    取消
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+
 
         {/* QR Library - Windows 11 style slide-in panel (no overlay, below floating chat) */}
         {qrLibOpen && (
