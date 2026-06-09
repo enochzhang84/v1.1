@@ -107,14 +107,15 @@ function LoginPage() {
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
-    if (code.length !== 6) {
-      toast.error("请输入 6 位验证码");
+    const token = code.trim();
+    if (token.length < 4) {
+      toast.error("请输入邮箱验证码");
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({
       email,
-      token: code,
+      token,
       type: "email",
     });
     if (error) {
