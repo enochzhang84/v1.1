@@ -386,7 +386,7 @@ export const previewRestore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.userId);
     const { payload } = data;
-    const tableCounts: Array<{ table: string; count: number; known: boolean; module?: string }> =
+    const tableCounts: Array<{ table: string; count: number; known: boolean; module?: string; identitySkipped?: boolean }> =
       [];
     const moduleMap: Record<string, string> = {};
     for (const [group, tables] of Object.entries(RESTORE_GROUPS)) {
