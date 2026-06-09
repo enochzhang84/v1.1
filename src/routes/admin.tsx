@@ -1120,8 +1120,10 @@ function AdminPage() {
             );
           } catch { /* ignore */ }
           if (!canAccessAdmin(role)) {
+            // 仅当 user_roles 完全为空时，才允许把当前用户提升为首位 super_admin。
+            // 否则一律视为「无管理员权限」，避免把已有管理员系统误判为首次初始化。
             const status = await checkSuperAdminFn();
-            if (!status.hasSuperAdmin) {
+            if (!status.hasAnyRoles) {
               setNoSuperAdminDetected(true);
               setChecking(false);
               return;
