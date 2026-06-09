@@ -174,10 +174,29 @@ async function assertSuperAdmin(userId: string) {
 }
 
 function pkColumn(table: string): string {
-  if (table === "user_preferences" || table === "user_presence") return "user_id";
+  if (
+    table === "user_preferences" ||
+    table === "user_presence" ||
+    table === "user_profiles"
+  )
+    return "user_id";
   if (table === "user_module_analytics") return "id";
   if (table === "app_settings") return "key";
   return "id";
+}
+
+// 用户身份相关表：系统安装包绝不导出；历史/迁移恢复时强制跳过。
+// 新教会的超级管理员通过「第一个注册用户」触发器自动产生。
+export const USER_IDENTITY_TABLES: readonly string[] = [
+  "user_profiles",
+  "user_roles",
+  "user_preferences",
+  "user_module_analytics",
+  "user_notification_reads",
+];
+
+function isIdentityTable(t: string) {
+  return USER_IDENTITY_TABLES.includes(t);
 }
 
 // ---------- Backup preview ----------
