@@ -614,6 +614,21 @@ export function BackupRestorePanel() {
             </Button>
           </div>
         </div>
+        {lastDeployDownload && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <div className="font-medium">✅ 文件已生成：{lastDeployDownload.name}</div>
+            <div className="mt-1 text-xs">
+              大小：{fmtBytes(lastDeployDownload.size)} ｜ 生成时间：{fmtDate(lastDeployDownload.createdAt)}
+            </div>
+            <a
+              className="mt-2 inline-flex rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
+              href={lastDeployDownload.url}
+              download={lastDeployDownload.name}
+            >
+              点击下载文件
+            </a>
+          </div>
+        )}
         <div className="text-[11px] text-muted-foreground border-t pt-2">
           仅超级管理员可导出。生成的文件均不包含 Service Role Key、密码、JWT Secret 或 API Secret。
         </div>
