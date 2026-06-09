@@ -908,6 +908,11 @@ export function BackupRestorePanel() {
               缺少表：{results.missing.join(", ")}
             </p>
           )}
+          {results.identityNotice && (
+            <div className="rounded border border-sky-300 bg-sky-50 p-2 text-xs text-sky-900">
+              ℹ {results.identityNotice}
+            </div>
+          )}
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
