@@ -200,13 +200,25 @@ function isIdentityTable(t: string) {
 }
 
 // ---------- Backup preview ----------
+const BackupOptionsInput = z
+  .object({
+    includeUserAccounts: z.boolean().optional(),
+  })
+  .optional();
+
 export const previewBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => BackupOptionsInput.parse(input))
+  .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.userId);
-    const tables: Array<{ table: string; count: number; error?: string }> = [];
+    const includeUserAccounts = data?.includeUserAccounts ?? false;
+    const tables: Array<{ table: string; count: number; error?: string; skipped?: boolean }> = [];
     let total = 0;
     for (const t of BACKUP_TABLES) {
+      if (!includeUserAccounts && isIdentityTable(t)) {
+        tables.push({ table: t, count: 0, skipped: true });
+        continue;
+      }
       const { count, error } = await supabaseAdmin
         .from(t)
         .select("*", { count: "exact", head: true });
@@ -218,8 +230,32 @@ export const previewBackup = createServerFn({ method: "POST" })
         total += c;
       }
     }
-    return { tables, total, tableCount: BACKUP_TABLES.length };
+    return {
+      tables,
+      total,
+      tableCount: BACKUP_TABLES.length,
+      includeUserAccounts,
+      skippedIdentityTables: includeUserAccounts ? [] : [...USER_IDENTITY_TABLES],
+    };
   });
+
+// ---------- Backup ----------
+export const exportBackup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => BackupOptionsInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertSuperAdmin(context.userId);
+    const includeUserAccounts = data?.includeUserAccounts ?? false;
+    const tables: Record<string, any[]> = {};
+    const warnings: string[] = [];
+    const summary: Record<string, number> = {};
+    let total = 0;
+    for (const t of BACKUP_TABLES) {
+      if (!includeUserAccounts && isIdentityTable(t)) {
+        // 不导出用户身份表
+        continue;
+      }
+      const { data: rows, error } = await supabaseAdmin.from(t).select("*");
 
 // ---------- Backup ----------
 export const exportBackup = createServerFn({ method: "POST" })
