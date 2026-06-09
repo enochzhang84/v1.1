@@ -394,12 +394,15 @@ export const previewRestore = createServerFn({ method: "POST" })
     }
     let total = 0;
     const modulesSeen = new Set<string>();
+    const skippedIdentityTables: string[] = [];
     for (const [table, rows] of Object.entries(payload.tables)) {
       const count = Array.isArray(rows) ? rows.length : 0;
       const known = (BACKUP_TABLES as readonly string[]).includes(table);
       const mod = moduleMap[table];
       if (mod) modulesSeen.add(mod);
-      tableCounts.push({ table, count, known, module: mod });
+      const identity = isIdentityTable(table);
+      if (identity && count > 0) skippedIdentityTables.push(table);
+      tableCounts.push({ table, count, known, module: mod, identitySkipped: identity });
       total += count;
     }
     tableCounts.sort((a, b) => a.table.localeCompare(b.table));
@@ -411,6 +414,11 @@ export const previewRestore = createServerFn({ method: "POST" })
       project_name: payload.project_name ?? null,
       created_at: payload.created_at ?? null,
       backup_version: payload.backup_version ?? null,
+      skippedIdentityTables,
+      identityNotice:
+        skippedIdentityTables.length > 0
+          ? `恢复时将自动跳过用户身份表（${skippedIdentityTables.join(", ")}），新教会请使用「第一个注册用户自动成为超级管理员」机制。`
+          : null,
     };
   });
 
