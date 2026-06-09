@@ -618,6 +618,22 @@ export function BackupRestorePanel() {
             </Button>
           </div>
         </div>
+        <div className="rounded-md border border-sky-300 bg-white p-3">
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <Checkbox
+              checked={includeUserAccounts}
+              onCheckedChange={(v) => setIncludeUserAccounts(v === true)}
+            />
+            <span>
+              <span className="font-medium">完整迁移包包含用户账户数据</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                默认<b>不包含</b>。新教会副本应让首位注册用户自动成为超级管理员（推荐）。
+                仅在同一教会内迁移服务器、需要保留旧管理员/同工账号时勾选。
+                <br />影响的表：user_profiles、user_roles、user_preferences、user_module_analytics、user_notification_reads。
+              </span>
+            </span>
+          </label>
+        </div>
         {lastDeployDownload && (
           <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
             <div className="font-medium">✅ 文件已生成：{lastDeployDownload.name}</div>
