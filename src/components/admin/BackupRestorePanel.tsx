@@ -63,6 +63,7 @@ export function BackupRestorePanel() {
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [logs, setLogs] = useState<any[]>([]);
   const [deployBusy, setDeployBusy] = useState<null | "system" | "history" | "full">(null);
+  const [includeUserAccounts, setIncludeUserAccounts] = useState(false);
   const [lastDeployDownload, setLastDeployDownload] = useState<{ name: string; url: string; size: number; createdAt: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
