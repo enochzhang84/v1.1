@@ -63,8 +63,10 @@ export function BackupRestorePanel() {
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [logs, setLogs] = useState<any[]>([]);
   const [deployBusy, setDeployBusy] = useState<null | "system" | "history" | "full">(null);
+  const [lastDeployDownload, setLastDeployDownload] = useState<{ name: string; url: string; size: number; createdAt: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const zipRef = useRef<HTMLInputElement>(null);
+  const lastDeployDownloadUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -82,6 +84,12 @@ export function BackupRestorePanel() {
       }
     })();
   }, [doHasSuper, doListLogs]);
+
+  useEffect(() => {
+    return () => {
+      if (lastDeployDownloadUrlRef.current) URL.revokeObjectURL(lastDeployDownloadUrlRef.current);
+    };
+  }, []);
 
   const refreshLogs = async () => {
     try {
@@ -369,14 +377,17 @@ export function BackupRestorePanel() {
   }
 
   function downloadBlob(blob: Blob, name: string) {
+    if (lastDeployDownloadUrlRef.current) URL.revokeObjectURL(lastDeployDownloadUrlRef.current);
     const url = URL.createObjectURL(blob);
+    lastDeployDownloadUrlRef.current = url;
+    setLastDeployDownload({ name, url, size: blob.size, createdAt: new Date().toISOString() });
     const a = document.createElement("a");
     a.href = url;
     a.download = name;
+    a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => a.remove(), 0);
   }
 
   async function buildSystemInstallFiles(): Promise<Record<string, string>> {
@@ -408,7 +419,7 @@ export function BackupRestorePanel() {
     for (const [name, content] of Object.entries(files)) {
       zip.file(name, content);
     }
-    return zip.generateAsync({ type: "blob" });
+    return zip.generateAsync({ type: "blob", mimeType: "application/zip" });
   }
 
   const onExportSystemInstall = async () => {
@@ -418,7 +429,7 @@ export function BackupRestorePanel() {
       const files = await buildSystemInstallFiles();
       const blob = await zipFiles(files);
       downloadBlob(blob, `hoc3_system_package_${dateStamp()}.zip`);
-      toast.success("系统安装包：用于安装 HOC3");
+      toast.success("系统安装包已生成。若未自动下载，请点击下方下载文件。");
     } catch (e: any) {
       toast.error(`导出失败：${e?.message || e}`);
     } finally {
@@ -433,7 +444,7 @@ export function BackupRestorePanel() {
       const { files } = await buildHistoryDataFiles();
       const blob = await zipFiles(files);
       downloadBlob(blob, `hoc3_data_backup_${dateStamp()}.zip`);
-      toast.success("历史数据包：用于恢复历史记录");
+      toast.success("历史数据包已生成。若未自动下载，请点击下方下载文件。");
       await refreshLogs();
     } catch (e: any) {
       toast.error(`导出失败：${e?.message || e}`);
@@ -457,7 +468,7 @@ export function BackupRestorePanel() {
         `# HOC3 完整迁移包\n\n本包含「系统安装包」+「历史数据包」。\n\n## 迁移步骤\n\n1. 新建 Supabase 项目\n2. 执行 system/hoc3_database_init_v1.sql\n3. 执行 system/hoc3_seed_data_v1.sql\n4. 执行 system/hoc3_rls_dev_open.sql\n5. 在 VPS 上按 system/.env.example 配置 .env\n6. git pull && npm install && npm run build && pm2 restart hoc3\n7. 第一个登录的账号自动成为超级管理员\n8. 在「备份与恢复」上传 data/ 子目录（或整个本 zip），选择「合并模式」恢复历史数据\n\n## 安全说明\n\n本包不包含 SUPABASE_SERVICE_ROLE_KEY、密码、JWT Secret、API Secret。\n`;
       const blob = await zipFiles(files);
       downloadBlob(blob, `hoc3_full_migration_package_${dateStamp()}.zip`);
-      toast.success("完整迁移包：用于完整迁移到新服务器");
+      toast.success("完整迁移包已生成。若未自动下载，请点击下方下载文件。");
       await refreshLogs();
     } catch (e: any) {
       toast.error(`导出失败：${e?.message || e}`);
@@ -603,6 +614,21 @@ export function BackupRestorePanel() {
             </Button>
           </div>
         </div>
+        {lastDeployDownload && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <div className="font-medium">✅ 文件已生成：{lastDeployDownload.name}</div>
+            <div className="mt-1 text-xs">
+              大小：{fmtBytes(lastDeployDownload.size)} ｜ 生成时间：{fmtDate(lastDeployDownload.createdAt)}
+            </div>
+            <a
+              className="mt-2 inline-flex rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
+              href={lastDeployDownload.url}
+              download={lastDeployDownload.name}
+            >
+              点击下载文件
+            </a>
+          </div>
+        )}
         <div className="text-[11px] text-muted-foreground border-t pt-2">
           仅超级管理员可导出。生成的文件均不包含 Service Role Key、密码、JWT Secret 或 API Secret。
         </div>
