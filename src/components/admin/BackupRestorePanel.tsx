@@ -401,13 +401,16 @@ export function BackupRestorePanel() {
     summary: Record<string, number>;
     total: number;
   }> {
-    const payload: any = await doExport();
+    const payload: any = await doExport({ data: { includeUserAccounts } });
     const files: Record<string, string> = {};
     files["manifest.json"] = JSON.stringify(payload, null, 2);
+    const idNote = includeUserAccounts
+      ? "⚠ 本包含用户账户数据（user_profiles / user_roles / user_preferences 等）。"
+      : "本包不含用户身份表，新教会请用首位注册用户自动成为超级管理员的机制。";
     files["README_DATA.md"] =
-      `# HOC3 历史数据包\n\n导出时间：${payload.created_at}\n总记录数：${
+      `# HOC3 历史数据包\n\n导出时间：${payload.created_at}\n包含用户账户：${includeUserAccounts ? "是" : "否（默认）"}\n总记录数：${
         Object.values(payload.summary || {}).reduce((s: number, v: any) => s + Number(v || 0), 0)
-      }\n\n根目录的 manifest.json 是完整可恢复的备份文件；data/<table>.json 是按表拆分的副本，便于阅读。\n\n恢复方式：在备份与恢复模块上传本 zip（推荐），或直接上传 manifest.json。\n`;
+      }\n\n${idNote}\n\n根目录的 manifest.json 是完整可恢复的备份文件；data/<table>.json 是按表拆分的副本，便于阅读。\n\n恢复方式：在备份与恢复模块上传本 zip（推荐），或直接上传 manifest.json。\n恢复时无论是否勾选「包含用户账户」，系统都会自动跳过用户身份表，防止覆盖现有管理员。\n`;
     for (const [t, rows] of Object.entries(payload.tables || {})) {
       files[`data/${t}.json`] = JSON.stringify(rows ?? [], null, 2);
     }
