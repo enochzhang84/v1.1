@@ -12,6 +12,22 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+/**
+ * 管理员登录页（母本统一实现）
+ *
+ * 关键规范：
+ *  - 进入页面先查询 user_roles 状态：
+ *      hasAnyRoles=true  → 严格管理员登录模式
+ *                          · 文案：「请输入管理员邮箱登录」「仅已授权管理员可以进入系统」
+ *                          · 不显示「首次登录自动创建账号」
+ *                          · OTP 使用 shouldCreateUser: false，禁止隐式注册
+ *      hasAnyRoles=false → 首次系统初始化模式（仅在 user_roles 完全为空时）
+ *                          · 允许自动创建账号并提升为首位 super_admin
+ *  - 登录成功后：
+ *      · 是管理员（super_admin / admin / worker） → 进入 /admin
+ *      · 非管理员 → 立即 signOut 并提示「无管理员权限」，停留在登录页
+ *      · 绝不跳回首页，绝不卡在验证码页
+ */
 function LoginPage() {
   const doHasSuper = useServerFn(checkSuperAdminExists);
   const doInitSuper = useServerFn(initializeCurrentUserAsSuperAdmin);
@@ -20,6 +36,7 @@ function LoginPage() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [needsFirstAdmin, setNeedsFirstAdmin] = useState(false);
+  const [bootstrapMode, setBootstrapMode] = useState<"unknown" | "strict" | "bootstrap">("unknown");
   const [cooldown, setCooldown] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -27,10 +44,14 @@ function LoginPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) window.location.assign("/admin");
     });
+    // 加载引导状态，决定是「严格管理员登录」还是「首次系统初始化」
+    doHasSuper()
+      .then((s) => setBootstrapMode(s.hasAnyRoles ? "strict" : "bootstrap"))
+      .catch(() => setBootstrapMode("strict")); // 失败时按严格模式处理，更安全
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [doHasSuper]);
 
   function startCooldown(sec = 60) {
     setCooldown(sec);
@@ -50,16 +71,29 @@ function LoginPage() {
     if (/rate limit|too many|frequen/i.test(msg)) return "发送过于频繁，请稍后再试。";
     if (/invalid|expired|otp/i.test(msg)) return "验证码错误或已过期，请重新获取。";
     if (/network|fetch/i.test(msg)) return "无法连接到后台服务，请检查网络。";
+    if (/signups? (not allowed|disabled)|user not found|not exist/i.test(msg)) {
+      return "该邮箱未被授权为管理员账户，请联系系统管理员。";
+    }
     return msg;
   }
 
   async function handleSendCode(e?: React.FormEvent) {
     e?.preventDefault();
     if (!email) return;
+    // 再次确认引导状态（防止页面停留过久后状态变化）
+    let allowCreate = false;
+    try {
+      const s = await doHasSuper();
+      allowCreate = !s.hasAnyRoles;
+      setBootstrapMode(allowCreate ? "bootstrap" : "strict");
+    } catch {
+      allowCreate = false;
+      setBootstrapMode("strict");
+    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: allowCreate },
     });
     setLoading(false);
     if (error) {
@@ -90,27 +124,41 @@ function LoginPage() {
     }
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
-    if (uid) {
-      const superStatus = await doHasSuper();
-      if (!superStatus.hasSuperAdmin) {
-        setNeedsFirstAdmin(true);
-        toast.info("系统尚未初始化管理员，请将当前用户设为首位超级管理员。");
-        setLoading(false);
-        return;
-      }
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
-      if (!roles || roles.length === 0) {
-        await supabase.auth.signOut();
-        toast.error("您的账号尚未审核，请联系主管理员授权后再登录");
-        setLoading(false);
-        return;
-      }
+    if (!uid) {
+      setLoading(false);
+      toast.error("登录失败：未获取到会话，请重试。");
+      return;
+    }
+
+    // 首次系统初始化：仅当 user_roles 完全为空时允许
+    const status = await doHasSuper();
+    if (!status.hasAnyRoles) {
+      setNeedsFirstAdmin(true);
+      toast.info("系统尚未初始化任何账户，请将当前邮箱设为首位超级管理员。");
+      setLoading(false);
+      return;
+    }
+
+    // 严格模式：必须已是管理员（super_admin / admin / worker）
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", uid);
+    const roleList = (roles ?? []).map((r) => r.role) as string[];
+    const isAdmin =
+      roleList.includes("super_admin") ||
+      roleList.includes("admin") ||
+      roleList.includes("worker");
+    if (!isAdmin) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setStep("email");
+      setCode("");
+      toast.error("无管理员权限：该账号未被授权进入后台，请联系超级管理员。");
+      return;
     }
     toast.success("登录成功，正在进入管理后台...");
-    setTimeout(() => window.location.assign("/admin"), 1200);
+    setTimeout(() => window.location.assign("/admin"), 800);
   }
 
   async function handleInitFirstAdmin() {
@@ -125,15 +173,26 @@ function LoginPage() {
     }
   }
 
+  const isBootstrap = bootstrapMode === "bootstrap";
+
   return (
     <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← 返回首页</Link>
         <div className="mt-6 mb-8 text-center">
-          <h1 className="font-serif text-4xl text-foreground">管理后台</h1>
+          <h1 className="font-serif text-4xl text-foreground">
+            {isBootstrap ? "系统首次初始化" : "管理员登录"}
+          </h1>
           <p className="text-muted-foreground text-sm mt-2">
-            {step === "email" ? "输入邮箱获取验证码登录" : `验证码已发送至 ${email}`}
+            {step === "email"
+              ? isBootstrap
+                ? "尚未初始化任何账户，首位登录用户将自动成为超级管理员。"
+                : "请输入管理员邮箱登录"
+              : `验证码已发送至 ${email}`}
           </p>
+          {step === "email" && !isBootstrap && (
+            <p className="text-xs text-muted-foreground mt-1">仅已授权管理员可以进入系统</p>
+          )}
         </div>
 
         {step === "email" ? (
@@ -142,22 +201,19 @@ function LoginPage() {
             className="bg-white rounded-3xl p-8 space-y-5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.12)]"
           >
             <div className="space-y-2">
-              <Label>邮箱</Label>
+              <Label>管理员邮箱</Label>
               <Input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="admin@example.com"
                 className="h-12 rounded-xl"
               />
             </div>
-            <Button type="submit" disabled={loading || !email} className="w-full rounded-full h-12" size="lg">
+            <Button type="submit" disabled={loading || !email || bootstrapMode === "unknown"} className="w-full rounded-full h-12" size="lg">
               {loading ? "发送中..." : "发送验证码"}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
-              首次登录的邮箱会自动创建账号，仍需管理员授权才能进入系统。
-            </p>
           </form>
         ) : (
           <form
@@ -166,7 +222,7 @@ function LoginPage() {
           >
             {needsFirstAdmin && (
               <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-3">
-                <p>系统尚未初始化管理员，是否将当前用户设为首位超级管理员？</p>
+                <p>系统尚未初始化任何账户，是否将当前用户设为首位超级管理员？</p>
                 <Button type="button" size="sm" onClick={handleInitFirstAdmin} disabled={loading}>
                   初始化为首位超级管理员
                 </Button>

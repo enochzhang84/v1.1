@@ -1120,8 +1120,10 @@ function AdminPage() {
             );
           } catch { /* ignore */ }
           if (!canAccessAdmin(role)) {
+            // 仅当 user_roles 完全为空时，才允许把当前用户提升为首位 super_admin。
+            // 否则一律视为「无管理员权限」，避免把已有管理员系统误判为首次初始化。
             const status = await checkSuperAdminFn();
-            if (!status.hasSuperAdmin) {
+            if (!status.hasAnyRoles) {
               setNoSuperAdminDetected(true);
               setChecking(false);
               return;
@@ -1129,8 +1131,10 @@ function AdminPage() {
           }
           setChecking(false);
           if (!canAccessAdmin(role)) {
-            toast.error("您没有访问后台的权限");
-            navigate({ to: "/" });
+            // 无管理员权限：登出当前 session 并回到登录页（提示而非跳首页）
+            toast.error("无管理员权限：该账号未被授权进入后台");
+            try { await supabase.auth.signOut(); } catch { /* ignore */ }
+            navigate({ to: "/login" });
             return;
           }
           loadAuthorizedData();
