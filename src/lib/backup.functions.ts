@@ -276,6 +276,8 @@ export const exportBackup = createServerFn({ method: "POST" })
       backup_version: 1,
       created_at: new Date().toISOString(),
       project_name: "HOC3 Ministry Center",
+      includeUserAccounts,
+      skippedIdentityTables,
       tables,
       summary,
       warnings,
