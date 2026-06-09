@@ -287,12 +287,15 @@ export default function PipAudioMonitor(props: PipAudioMonitorProps) {
           label="YouTube"
           present={videoKind === "youtube"}
           chs={[{ peak: 0, rms: 0 }, { peak: 0, rms: 0 }]}
-          mute
-          onMute={() => { /* iframe always muted in preview */ }}
+          mute={false}
+          onMute={() => { /* iframe controls own playback */ }}
           vol={youtubeVol}
           setVol={setYoutubeVol}
           note="iframe 沙箱内无法检测电平"
           compact={compact}
+          levelUnavailable
+          status="已加载"
+          hideMuteButton
         />
       </div>
 
@@ -355,6 +358,9 @@ function SourceRow({
   setVol,
   note,
   compact,
+  levelUnavailable,
+  status,
+  hideMuteButton,
 }: {
   label: string;
   present: boolean;
@@ -365,31 +371,53 @@ function SourceRow({
   setVol: (n: number) => void;
   note?: string;
   compact?: boolean;
+  levelUnavailable?: boolean;
+  status?: string;
+  hideMuteButton?: boolean;
 }) {
   return (
     <div className={cn(compact ? "space-y-1" : "space-y-1.5", !present && "opacity-40")}>
-      <div className="flex items-center justify-between">
-        <span className={cn("font-medium truncate", compact ? "text-[10px]" : "text-[11px]")}>{label}</span>
-        <button
-          type="button"
-          onClick={onMute}
-          disabled={!present}
-          className={cn(
-            "inline-flex items-center gap-1 rounded border",
-            compact ? "text-[9px] px-1 py-0.5" : "text-[10px] px-1.5 py-0.5",
-            mute
-              ? "bg-muted text-muted-foreground border-border"
-              : "bg-background border-border hover:bg-muted/40",
+      <div className="flex items-center justify-between gap-1">
+        <span className={cn("font-medium truncate flex items-center gap-1", compact ? "text-[10px]" : "text-[11px]")}>
+          {label}
+          {present && status && (
+            <span className="inline-flex items-center gap-0.5 text-emerald-600">
+              <span className="size-1.5 rounded-full bg-emerald-500" />
+              {!compact && status}
+            </span>
           )}
-        >
-          {mute ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
-          {!compact && (mute ? "已静音" : "静音")}
-        </button>
+        </span>
+        {!hideMuteButton && (
+          <button
+            type="button"
+            onClick={onMute}
+            disabled={!present}
+            className={cn(
+              "inline-flex items-center gap-1 rounded border",
+              compact ? "text-[9px] px-1 py-0.5" : "text-[10px] px-1.5 py-0.5",
+              mute
+                ? "bg-muted text-muted-foreground border-border"
+                : "bg-background border-border hover:bg-muted/40",
+            )}
+          >
+            {mute ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
+            {!compact && (mute ? "已静音" : "静音")}
+          </button>
+        )}
       </div>
-      <div className="space-y-0.5">
-        <Meter ch={chs[0]} mute={mute || !present} compact={compact} />
-        <Meter ch={chs[1]} mute={mute || !present} compact={compact} />
-      </div>
+      {levelUnavailable ? (
+        <div className={cn(
+          "rounded border border-dashed border-border/60 bg-muted/30 text-center text-muted-foreground",
+          compact ? "text-[9px] py-1" : "text-[10px] py-1.5",
+        )}>
+          电平无法检测（浏览器限制）
+        </div>
+      ) : (
+        <div className="space-y-0.5">
+          <Meter ch={chs[0]} mute={mute || !present} compact={compact} />
+          <Meter ch={chs[1]} mute={mute || !present} compact={compact} />
+        </div>
+      )}
       <div className="flex items-center gap-1.5">
         {!compact && <span className="text-[10px] text-muted-foreground w-8">音量</span>}
         <Slider
