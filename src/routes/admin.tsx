@@ -45,7 +45,7 @@ import { checkSuperAdminExists, initializeCurrentUserAsSuperAdmin } from "@/lib/
 import { SERVICE_AREAS, SERVICE_AREA_LABELS, ROLE_LABELS, type Role, type ServiceArea, canAccessAdmin, canAccessModuleAnalytics } from "@/lib/permissions";
 import { useCurrentPermissions } from "@/hooks/useCurrentPermissions";
 import { updateRegistration } from "@/lib/registrations.functions";
-import { previewFactoryReset, runFactoryReset } from "@/lib/factory-reset.functions";
+import { previewFactoryReset, runFactoryReset, exportMasterSql } from "@/lib/factory-reset.functions";
 import { HospitalityCalendarSection } from "@/components/HospitalityCalendar";
 import { HospitalityRankingSection } from "@/components/HospitalityRanking";
 import { FaithFollowupCRM as FaithFollowupSection } from "@/components/admin/FaithFollowupCRM";
@@ -785,6 +785,8 @@ function AdminPage() {
   const [initLoading, setInitLoading] = useState(false);
   const previewFactoryResetFn = useServerFn(previewFactoryReset);
   const runFactoryResetFn = useServerFn(runFactoryReset);
+  const exportMasterSqlFn = useServerFn(exportMasterSql);
+  const [exportingMaster, setExportingMaster] = useState(false);
   const [initPreview, setInitPreview] = useState<Awaited<ReturnType<typeof previewFactoryReset>> | null>(null);
   const [initResult, setInitResult] = useState<Awaited<ReturnType<typeof runFactoryReset>> | null>(null);
   const [initFinalConfirm, setInitFinalConfirm] = useState("");
@@ -3076,8 +3078,39 @@ function AdminPage() {
                       🗑️ 系统初始化
                     </button>
                   </div>
+                  <div className="pt-2 mt-2 border-t border-[#fecaca]/60">
+                    <button
+                      disabled={exportingMaster}
+                      onClick={async () => {
+                        setExportingMaster(true);
+                        try {
+                          const r = await exportMasterSqlFn();
+                          const dl = (name: string, content: string) => {
+                            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = name;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          };
+                          dl(r.schemaFilename, r.schemaSql);
+                          dl(r.seedFilename, r.seedSql);
+                          toast.success(`已导出母版 v${r.version}（${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed）`);
+                        } catch (e: any) {
+                          toast.error("导出失败: " + (e?.message || e));
+                        } finally {
+                          setExportingMaster(false);
+                        }
+                      }}
+                      className="h-9 px-4 rounded-full text-[12px] font-medium bg-white border border-[#fecaca] text-[#a8201a] hover:bg-[#fff5f5] disabled:opacity-50"
+                    >
+                      {exportingMaster ? "正在导出..." : "📦 导出母版 SQL (schema + seed)"}
+                    </button>
+                  </div>
                 </div>
               </div>
+
 
               {/* 温馨提示 */}
               <div className="flex items-start justify-between gap-4 rounded-[16px] bg-white/60 backdrop-blur-sm px-5 py-4">
@@ -6370,6 +6403,72 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                     ))}
                   </ul>
                 </details>
+
+                {/* 母版状态检查 */}
+                {initResult.health && (
+                  <div className="rounded-lg border p-3 bg-muted/30">
+                    <div className="font-medium text-sm mb-2">
+                      母版状态检查{" "}
+                      {initResult.health.ok ? (
+                        <span className="text-green-700">✓ 全部通过</span>
+                      ) : (
+                        <span className="text-red-700">✗ 有未通过项</span>
+                      )}
+                    </div>
+                    <ul className="space-y-1 text-xs">
+                      {initResult.health.checks.map((c) => (
+                        <li key={c.name} className="flex items-start gap-2">
+                          <span className={c.ok ? "text-green-700" : "text-red-700"}>
+                            {c.ok ? "✓" : "✗"}
+                          </span>
+                          <span className="flex-1">
+                            {c.name}
+                            {c.detail && <span className="text-muted-foreground"> — {c.detail}</span>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 导出母版 SQL */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50/40 p-3 space-y-2">
+                  <div className="text-sm font-medium text-blue-900">📦 导出母版 SQL</div>
+                  <div className="text-xs text-blue-800/80">
+                    导出当前数据库结构与默认配置，作为新副本的初始化基线。
+                    文件名包含版本号（hoc3_database_init_vX.sql / hoc3_seed_data_vX.sql）。
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={exportingMaster}
+                    onClick={async () => {
+                      setExportingMaster(true);
+                      try {
+                        const r = await exportMasterSqlFn();
+                        const dl = (name: string, content: string) => {
+                          const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = name;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        };
+                        dl(r.schemaFilename, r.schemaSql);
+                        dl(r.seedFilename, r.seedSql);
+                        toast.success(`已导出 v${r.version}：${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed`);
+                      } catch (e: any) {
+                        toast.error("导出失败: " + (e?.message || e));
+                      } finally {
+                        setExportingMaster(false);
+                      }
+                    }}
+                  >
+                    {exportingMaster ? "正在导出..." : "导出 schema.sql + seed.sql"}
+                  </Button>
+                </div>
+
               </div>
             ) : (
               <div className="space-y-3 py-2 text-sm">
