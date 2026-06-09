@@ -123,7 +123,7 @@ export function BackupRestorePanel() {
   const onBackup = async () => {
     setBusy(true);
     try {
-      const data: any = await doExport();
+      const data: any = await doExport({ data: { includeUserAccounts: false } });
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
