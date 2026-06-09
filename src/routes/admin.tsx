@@ -3078,8 +3078,39 @@ function AdminPage() {
                       🗑️ 系统初始化
                     </button>
                   </div>
+                  <div className="pt-2 mt-2 border-t border-[#fecaca]/60">
+                    <button
+                      disabled={exportingMaster}
+                      onClick={async () => {
+                        setExportingMaster(true);
+                        try {
+                          const r = await exportMasterSqlFn();
+                          const dl = (name: string, content: string) => {
+                            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = name;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          };
+                          dl(r.schemaFilename, r.schemaSql);
+                          dl(r.seedFilename, r.seedSql);
+                          toast.success(`已导出母版 v${r.version}（${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed）`);
+                        } catch (e: any) {
+                          toast.error("导出失败: " + (e?.message || e));
+                        } finally {
+                          setExportingMaster(false);
+                        }
+                      }}
+                      className="h-9 px-4 rounded-full text-[12px] font-medium bg-white border border-[#fecaca] text-[#a8201a] hover:bg-[#fff5f5] disabled:opacity-50"
+                    >
+                      {exportingMaster ? "正在导出..." : "📦 导出母版 SQL (schema + seed)"}
+                    </button>
+                  </div>
                 </div>
               </div>
+
 
               {/* 温馨提示 */}
               <div className="flex items-start justify-between gap-4 rounded-[16px] bg-white/60 backdrop-blur-sm px-5 py-4">
