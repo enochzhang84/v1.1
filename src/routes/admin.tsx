@@ -3002,6 +3002,15 @@ function AdminPage() {
                       ☁️ 自动备份
                     </button>
                   </div>
+                  {lastDeployPackageDownload && (
+                    <a
+                      href={lastDeployPackageDownload.url}
+                      download={lastDeployPackageDownload.name}
+                      className="mt-3 inline-flex text-[12px] font-medium text-[#007aff] hover:underline"
+                    >
+                      下载文件：{lastDeployPackageDownload.name}
+                    </a>
+                  )}
                 </div>
 
                 {/* 版本管理 - 紫 */}
