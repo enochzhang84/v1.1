@@ -703,6 +703,11 @@ function AdminPage() {
   const exportDeployPackageFn = useServerFn(exportDeployPackage);
   const [deployExporting, setDeployExporting] = useState(false);
   const [lastDeployPackageDownload, setLastDeployPackageDownload] = useState<{ name: string; url: string } | null>(null);
+  useEffect(() => {
+    return () => {
+      if (lastDeployPackageDownload?.url) URL.revokeObjectURL(lastDeployPackageDownload.url);
+    };
+  }, [lastDeployPackageDownload?.url]);
   async function handleExportDeployPackage() {
     if (!window.confirm("此操作将生成部署文件，不包含用户隐私数据。是否继续？")) return;
     setDeployExporting(true);
