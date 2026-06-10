@@ -170,15 +170,20 @@ function SetupWizard() {
       if (rpcErr) throw rpcErr;
 
       clearPublicAppSettingsCache();
-      toast.success("系统开通成功，即将进入管理后台。");
+      // 退出当前会话，强制走标准登录流程
+      try { await supabase.auth.signOut(); } catch { /* noop */ }
+      toast.success("系统初始化成功，请登录管理员账户。");
       setTimeout(() => {
-        window.location.assign("/admin");
-      }, 600);
+        window.location.assign("/login");
+      }, 800);
     } catch (e: any) {
       setSubmitting(false);
-      toast.error(`开通失败：${e?.message || e}`);
+      const msg = e?.message || String(e);
+      toast.error(`开通失败：${msg}`);
+      console.error("[setup] complete failed:", e);
     }
   }
+
 
   if (checking) {
     return (
