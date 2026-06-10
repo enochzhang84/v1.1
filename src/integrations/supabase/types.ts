@@ -2157,6 +2157,10 @@ export type Database = {
         Args: { _area: string; _uid: string }
         Returns: boolean
       }
+      complete_initial_setup: {
+        Args: { admin_user_id: string; settings: Json }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -2167,6 +2171,13 @@ export type Database = {
       }
       expire_display_screen: { Args: { _slug: string }; Returns: undefined }
       get_email_queue_service_role_key: { Args: never; Returns: string }
+      get_public_app_settings: {
+        Args: never
+        Returns: {
+          key: string
+          value: string
+        }[]
+      }
       get_service_area: { Args: { _uid: string }; Returns: string }
       get_table_columns_info: {
         Args: { _tables: string[] }
@@ -2200,6 +2211,7 @@ export type Database = {
       }
       is_admin_or_above: { Args: { _uid: string }; Returns: boolean }
       is_super_admin: { Args: { _uid: string }; Returns: boolean }
+      is_system_initialized: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
