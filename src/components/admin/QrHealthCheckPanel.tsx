@@ -23,6 +23,8 @@ type QrCheckResult = QrItem & {
   level: Level;
   reasons: string[];
   httpStatus?: number | null;
+  qrHost: string;
+  currentHost: string;
 };
 
 function statusIcon(level: Level) {
