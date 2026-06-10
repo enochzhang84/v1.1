@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { clearPublicAppSettingsCache } from "@/lib/auth-base-url";
 import { getPublicOrigin } from "@/lib/public-origin";
+import { rewriteLegacyUrls } from "@/lib/legacy-urls";
 
 export const Route = createFileRoute("/setup")({
   component: SetupWizard,
