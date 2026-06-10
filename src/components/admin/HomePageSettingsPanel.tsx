@@ -30,6 +30,7 @@ import {
   ADMIN_LOGO_DEFAULTS,
   emitAdminLogoUpdated,
 } from "@/hooks/useAdminLogo";
+import { UnifiedQrInspector } from "./UnifiedQrInspector";
 
 type Settings = {
   id: string;
@@ -585,6 +586,7 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
 
   const SectionQr = (
     <div className="space-y-5">
+      <UnifiedQrInspector />
       <Card
         title="主页二维码"
         description="主页、欢迎页、电视显示页将同步显示该二维码"
