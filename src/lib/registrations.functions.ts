@@ -41,13 +41,14 @@ export const updateRegistration = createServerFn({ method: "POST" })
       wants_visit: z.boolean().nullable().optional(),
       wants_info: z.boolean().nullable().optional(),
       notes: z.string().nullable().optional(),
+      transfer_target: z.string().nullable().optional(),
     }).parse(data)
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabase } = context;
     const { id, ...updateData } = data;
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("registrations")
       .update(updateData)
       .eq("id", id);

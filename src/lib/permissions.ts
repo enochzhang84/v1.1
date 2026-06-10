@@ -9,6 +9,7 @@ export const SERVICE_AREAS = [
   "welcome",
   "media",
   "sunday_school",
+  "fellowship",
   "tv_display",
   "chat",
 ] as const;
@@ -21,6 +22,7 @@ export const SERVICE_AREA_LABELS: Record<ServiceArea, string> = {
   welcome: "迎宾接待",
   media: "影音投影",
   sunday_school: "主日学",
+  fellowship: "团契与小组",
   tv_display: "TV 屏幕管理",
   chat: "同工聊天",
 };

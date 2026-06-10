@@ -58,6 +58,7 @@ export const CLEAR_TABLES = [
   "sunday_school_checkins",
   "adult_class_checkins",
   "fellowship_checkins",
+  "group_join_records",
   "kids_class_enrollment_snapshots",
   "kids_promotion_records",
   "attendance_records",

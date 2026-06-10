@@ -34,6 +34,7 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { SystemHealthCenter } from "@/components/admin/SystemHealthCenter";
+import { GroupJoinRecordsPanel } from "@/components/admin/GroupJoinRecordsPanel";
 import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
@@ -108,6 +109,7 @@ type Reg = {
   relationship_to_primary: string | null;
   primary_registration_id: string | null;
   wechat: string | null;
+  transfer_target: string | null;
 };
 
 
@@ -315,6 +317,17 @@ type KidsRow = {
   student_count: number | null;    // 人数（手动录入）
   sort_order: number;
 };
+
+// 新人「转项」可选值 — 用于后续跟进去向
+export const TRANSFER_TARGET_OPTIONS = [
+  { value: "happiness_group", label: "幸福小组" },
+  { value: "grace_tea_group", label: "恩典茶经小组" },
+  { value: "baptism_class", label: "受洗班" },
+  { value: "decision_record", label: "决志记录" },
+] as const;
+export const TRANSFER_TARGET_LABELS: Record<string, string> = Object.fromEntries(
+  TRANSFER_TARGET_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 const KIDS_TRACKS = {
   spring: { key: "kids_spring_2026", title: "2026年春季儿童主日学" },
@@ -593,6 +606,7 @@ function AdminPage() {
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("stats");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
+  const [fellowshipSubTab, setFellowshipSubTab] = useState<string>("happiness");
   const _perms = useCurrentPermissions();
   const _canWelcomeStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "welcome", _perms.analytics);
   const _canMediaStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "media", _perms.analytics);
@@ -752,6 +766,7 @@ function AdminPage() {
       media: "media",
       kitchen: "kitchen",
       sunday_school: "sunday",
+      fellowship: "fellowship",
       newcomer: "stats",
       retreat: "stats",
       tv_display: "stats",
@@ -849,7 +864,7 @@ function AdminPage() {
       supabase.from("feedbacks").select("*").order("created_at", { ascending: false }),
       supabase.from("sunday_school_courses").select("*").order("sort_order", { ascending: true }),
     ]);
-    setRegs(r ?? []);
+    setRegs((r ?? []) as unknown as Reg[]);
     setEvents(e ?? []);
     setServiceApps((s ?? []) as ServiceApp[]);
     setAttendance((a ?? []) as AttendanceRecord[]);
@@ -1424,6 +1439,7 @@ function AdminPage() {
         欢迎探访: r.wants_visit ? "是" : "否",
         需要资料: r.wants_info ? "是" : "否",
         备注: r.notes ?? "",
+        转项: TRANSFER_TARGET_LABELS[(r as any).transfer_target as string] ?? "",
         录入方式: r.source === "qr" ? "扫码" : "手动",
         跟进人: r.follow_up_person ?? "",
         登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
@@ -1617,6 +1633,7 @@ function AdminPage() {
           wants_visit: editForm.wants_visit ?? false,
           wants_info: editForm.wants_info ?? false,
           notes: editForm.notes?.trim() || null,
+          transfer_target: (editForm as any).transfer_target || null,
         },
       });
       setEditOpen(false);
@@ -1658,6 +1675,7 @@ function AdminPage() {
           wants_visit: r.wants_visit ?? false,
           wants_info: r.wants_info ?? false,
           notes: r.notes ?? null,
+          transfer_target: (r as any).transfer_target ?? null,
         },
       });
       logAction(`更新了 ${r.name} 跟进状态: ${status}`);
@@ -1756,13 +1774,14 @@ function AdminPage() {
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full min-w-0">
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-8 gap-1">
               {(([
                 { value: "stats", key: "modReports" as TKey },
                 { value: "welcome", key: "modWelcome" as TKey },
                 { value: "media", key: "modMedia" as TKey },
                 { value: "kitchen", key: "modKitchen" as TKey },
                 { value: "sunday", key: "modSundaySchool" as TKey },
+                { value: "fellowship", key: "modFellowship" as TKey },
                 { value: "events", key: "modEvents" as TKey },
                 { value: "retreat", key: "modRetreat" as TKey },
               ] as { value: string; key: TKey }[]).map((x) => ({ value: x.value, label: t(x.key) })))
@@ -1777,6 +1796,7 @@ function AdminPage() {
                       media: "media",
                       kitchen: "kitchen",
                       sunday: "sunday_school",
+                      fellowship: "fellowship",
                     };
                     const required = map[tab.value];
                     return required ? currentServiceArea === required : false;
@@ -1789,6 +1809,7 @@ function AdminPage() {
                       media: "media",
                       kitchen: "kitchen",
                       sunday: "sunday_school",
+                      fellowship: "fellowship",
                     };
                     const required = map[tab.value];
                     return required ? currentServiceArea === required : false;
@@ -4140,162 +4161,7 @@ img{width:480px;height:480px;}@media print{@page{margin:1cm;}}</style></head>
             </Tabs>
           )}
         </section>
-        {/* 团契签到记录 - moved under 主日学 → 成人 */}
-        <section className="bg-card border border-border/50 rounded-2xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="font-serif text-xl">团契签到记录</h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <DateLevelPicker value={fellowshipFilter} onChange={setFellowshipFilter} />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  const { year, month, day } = fellowshipFilter;
-                  const match = (d: string) => {
-                    if (!d) return false;
-                    if (d.slice(0, 4) !== String(year)) return false;
-                    if (month !== null && d.slice(5, 7) !== _pad2(month)) return false;
-                    if (day !== null && d.slice(8, 10) !== _pad2(day)) return false;
-                    return true;
-                  };
-                  const rows = fellowshipCheckins
-                    .filter((k) => match(k.checkin_date ?? ""))
-                    .map((k) => ({
-                      团契: k.fellowship,
-                      日期: k.checkin_date,
-                      姓名: k.name,
-                      "电话/微信": k.contact ?? "",
-                      邮件: k.email ?? "",
-                      代祷备注: k.prayer_request ?? "",
-                    }));
-                  if (rows.length === 0) { toast.error("当前范围无记录"); return; }
-                  const ws = XLSX.utils.json_to_sheet(rows);
-                  const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "团契签到");
-                  let suffix = String(year);
-                  if (month !== null) suffix += `-${_pad2(month)}`;
-                  if (day !== null) suffix += `-${_pad2(day)}`;
-                  XLSX.writeFile(wb, `团契签到记录_${suffix}.xlsx`);
-                }}
-              >
-                导出 Excel
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
-                刷新
-              </Button>
-            </div>
-          </div>
-          {fellowships.filter((f) => f.is_active).length === 0 ? (
-            <p className="text-sm text-muted-foreground">暂无团契。请在「主日学」页右上角「团契 / 小组设置」中添加。</p>
-          ) : (
-            <Tabs
-              value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
-              onValueChange={setActiveFellowshipTab}
-              className="w-full"
-            >
-              <TabsList className="h-auto w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-[#f5f0e8]/60 p-2 rounded-xl">
-                {fellowships.filter((f) => f.is_active).map((f) => {
-                  const matchDate = (d: string) => {
-                    if (!d) return false;
-                    if (d.slice(0, 4) !== String(fellowshipFilter.year)) return false;
-                    if (fellowshipFilter.month !== null && d.slice(5, 7) !== _pad2(fellowshipFilter.month)) return false;
-                    if (fellowshipFilter.day !== null && d.slice(8, 10) !== _pad2(fellowshipFilter.day)) return false;
-                    return true;
-                  };
-                  const count = fellowshipCheckins.filter(
-                    (k) => k.fellowship === f.name && matchDate(k.checkin_date ?? ""),
-                  ).length;
-                  return (
-                    <TabsTrigger
-                      key={f.id}
-                      value={f.id}
-                      className="w-full justify-center text-xs sm:text-sm py-2 px-3 rounded-lg whitespace-normal text-center leading-tight bg-background/60 hover:bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
-                    >
-                      <span className="truncate">{f.name}</span>
-                      <span className="ml-1 opacity-70">({count})</span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-              {fellowships.filter((f) => f.is_active).map((f) => {
-                const matchDate = (d: string) => {
-                  if (!d) return false;
-                  if (d.slice(0, 4) !== String(fellowshipFilter.year)) return false;
-                  if (fellowshipFilter.month !== null && d.slice(5, 7) !== _pad2(fellowshipFilter.month)) return false;
-                  if (fellowshipFilter.day !== null && d.slice(8, 10) !== _pad2(fellowshipFilter.day)) return false;
-                  return true;
-                };
-                const rows = fellowshipCheckins.filter(
-                  (k) => k.fellowship === f.name && matchDate(k.checkin_date ?? ""),
-                );
-                const pg = fellowshipPages[f.id] ?? 1;
-                const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
-                const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
-                return (
-                  <TabsContent key={f.id} value={f.id} className="mt-4">
-                    <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
-                          <tr className="text-left border-b border-border/60 text-muted-foreground">
-                            <th className="py-2 px-2">日期</th>
-                            <th className="py-2 px-2">姓名</th>
-                            <th className="py-2 px-2">电话/微信</th>
-                            <th className="py-2 px-2">邮件</th>
-                            <th className="py-2 px-2">代祷备注</th>
-                            <th className="py-2 px-2 text-right">操作</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {slice.map((k) => (
-                            <tr key={k.id} className="border-b border-border/30 align-top">
-                              <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
-                              <td className="py-2 px-2 font-medium">{k.name}</td>
-                              <td className="py-2 px-2">{k.contact ?? ""}</td>
-                              <td className="py-2 px-2">{k.email ?? ""}</td>
-                              <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
-                              <td className="py-2 px-2 text-right">
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm(`删除 ${k.name} 的签到?`)) return;
-                                    const { error } = await supabase
-                                      .from("fellowship_checkins")
-                                      .delete()
-                                      .eq("id", k.id);
-                                    if (error) return toast.error(error.message);
-                                    logAction(`删除团契签到: ${k.name}`);
-                                    toast.success("已删除");
-                                    loadFellowshipCheckins();
-                                  }}
-                                  className="text-xs text-destructive hover:underline"
-                                >
-                                  删除
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {rows.length === 0 && (
-                            <tr>
-                              <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                                暂无签到记录
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    {totalPg > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-3 text-sm">
-                        <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
-                        <span>{pg} / {totalPg}</span>
-                        <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
-                      </div>
-                    )}
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
-          )}
-        </section>
+        {/* 团契签到记录已移动到「团契与小组」模块 */}
         {(["summer","fall"] as const).map((kind) => {
           const title = kind === "summer" ? "暑期成人主日学签到" : "秋季成人主日学签到";
           const yearAll = adultCheckins.filter((c) => c.kind === kind);
@@ -4655,6 +4521,199 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           }}
         />
         </>)}
+        </div>
+            </TabsContent>
+
+            <TabsContent value="fellowship" className="space-y-8 mt-0">
+        {/* Sub-tabs: 幸福小组 / 恩典茶经 / 团契签到 */}
+        <div className="grid grid-cols-3 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+          {[
+            { v: "happiness", label: "幸福小组" },
+            { v: "grace_tea", label: "恩典茶经小组" },
+            { v: "checkins", label: "团契签到记录" },
+          ].map((tab) => {
+            const active = fellowshipSubTab === tab.v;
+            return (
+              <button
+                key={tab.v}
+                onClick={() => setFellowshipSubTab(tab.v)}
+                className={cn(
+                  "w-full text-center px-2 sm:px-4 py-2 text-xs sm:text-sm rounded-t-xl border border-b-0 transition-all truncate",
+                  active
+                    ? "bg-card text-foreground border-border shadow-sm font-medium relative -mb-px"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/70"
+                )}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 space-y-8">
+        {fellowshipSubTab === "happiness" && (
+          <GroupJoinRecordsPanel groupType="happiness_group" title="幸福小组加入名单" />
+        )}
+        {fellowshipSubTab === "grace_tea" && (
+          <GroupJoinRecordsPanel groupType="grace_tea_group" title="恩典茶经小组加入名单" />
+        )}
+        {fellowshipSubTab === "checkins" && (
+          <section className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h2 className="font-serif text-xl">团契签到记录</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <DateLevelPicker value={fellowshipFilter} onChange={setFellowshipFilter} />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const { year, month, day } = fellowshipFilter;
+                    const match = (d: string) => {
+                      if (!d) return false;
+                      if (d.slice(0, 4) !== String(year)) return false;
+                      if (month !== null && d.slice(5, 7) !== _pad2(month)) return false;
+                      if (day !== null && d.slice(8, 10) !== _pad2(day)) return false;
+                      return true;
+                    };
+                    const rows = fellowshipCheckins
+                      .filter((k) => match(k.checkin_date ?? ""))
+                      .map((k) => ({
+                        团契: k.fellowship,
+                        日期: k.checkin_date,
+                        姓名: k.name,
+                        "电话/微信": k.contact ?? "",
+                        邮件: k.email ?? "",
+                        代祷备注: k.prayer_request ?? "",
+                      }));
+                    if (rows.length === 0) { toast.error("当前范围无记录"); return; }
+                    const ws = XLSX.utils.json_to_sheet(rows);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "团契签到");
+                    let suffix = String(year);
+                    if (month !== null) suffix += `-${_pad2(month)}`;
+                    if (day !== null) suffix += `-${_pad2(day)}`;
+                    XLSX.writeFile(wb, `团契签到记录_${suffix}.xlsx`);
+                  }}
+                >
+                  导出 Excel
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => loadFellowshipCheckins()}>
+                  刷新
+                </Button>
+              </div>
+            </div>
+            {fellowships.filter((f) => f.is_active).length === 0 ? (
+              <p className="text-sm text-muted-foreground">暂无团契。请在「主日学」页右上角「团契 / 小组设置」中添加。</p>
+            ) : (
+              <Tabs
+                value={activeFellowshipTab || fellowships.find((f) => f.is_active)?.id || ""}
+                onValueChange={setActiveFellowshipTab}
+                className="w-full"
+              >
+                <TabsList className="h-auto w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 bg-[#f5f0e8]/60 p-2 rounded-xl">
+                  {fellowships.filter((f) => f.is_active).map((f) => {
+                    const matchDate = (d: string) => {
+                      if (!d) return false;
+                      if (d.slice(0, 4) !== String(fellowshipFilter.year)) return false;
+                      if (fellowshipFilter.month !== null && d.slice(5, 7) !== _pad2(fellowshipFilter.month)) return false;
+                      if (fellowshipFilter.day !== null && d.slice(8, 10) !== _pad2(fellowshipFilter.day)) return false;
+                      return true;
+                    };
+                    const count = fellowshipCheckins.filter(
+                      (k) => k.fellowship === f.name && matchDate(k.checkin_date ?? ""),
+                    ).length;
+                    return (
+                      <TabsTrigger
+                        key={f.id}
+                        value={f.id}
+                        className="w-full justify-center text-xs sm:text-sm py-2 px-3 rounded-lg whitespace-normal text-center leading-tight bg-background/60 hover:bg-background data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+                      >
+                        <span className="truncate">{f.name}</span>
+                        <span className="ml-1 opacity-70">({count})</span>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+                {fellowships.filter((f) => f.is_active).map((f) => {
+                  const matchDate = (d: string) => {
+                    if (!d) return false;
+                    if (d.slice(0, 4) !== String(fellowshipFilter.year)) return false;
+                    if (fellowshipFilter.month !== null && d.slice(5, 7) !== _pad2(fellowshipFilter.month)) return false;
+                    if (fellowshipFilter.day !== null && d.slice(8, 10) !== _pad2(fellowshipFilter.day)) return false;
+                    return true;
+                  };
+                  const rows = fellowshipCheckins.filter(
+                    (k) => k.fellowship === f.name && matchDate(k.checkin_date ?? ""),
+                  );
+                  const pg = fellowshipPages[f.id] ?? 1;
+                  const totalPg = Math.max(1, Math.ceil(rows.length / TAB_PAGE_SIZE));
+                  const slice = rows.slice((pg - 1) * TAB_PAGE_SIZE, pg * TAB_PAGE_SIZE);
+                  return (
+                    <TabsContent key={f.id} value={f.id} className="mt-4">
+                      <div className="overflow-x-auto max-h-[480px] overflow-y-auto rounded-lg border border-border/50">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+                            <tr className="text-left border-b border-border/60 text-muted-foreground">
+                              <th className="py-2 px-2">日期</th>
+                              <th className="py-2 px-2">姓名</th>
+                              <th className="py-2 px-2">电话/微信</th>
+                              <th className="py-2 px-2">邮件</th>
+                              <th className="py-2 px-2">代祷备注</th>
+                              <th className="py-2 px-2 text-right">操作</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {slice.map((k) => (
+                              <tr key={k.id} className="border-b border-border/30 align-top">
+                                <td className="py-2 px-2 whitespace-nowrap">{k.checkin_date}</td>
+                                <td className="py-2 px-2 font-medium">{k.name}</td>
+                                <td className="py-2 px-2">{k.contact ?? ""}</td>
+                                <td className="py-2 px-2">{k.email ?? ""}</td>
+                                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{k.prayer_request ?? ""}</td>
+                                <td className="py-2 px-2 text-right">
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`删除 ${k.name} 的签到?`)) return;
+                                      const { error } = await supabase
+                                        .from("fellowship_checkins")
+                                        .delete()
+                                        .eq("id", k.id);
+                                      if (error) return toast.error(error.message);
+                                      logAction(`删除团契签到: ${k.name}`);
+                                      toast.success("已删除");
+                                      loadFellowshipCheckins();
+                                    }}
+                                    className="text-xs text-destructive hover:underline"
+                                  >
+                                    删除
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {rows.length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                                  暂无签到记录
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      {totalPg > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-3 text-sm">
+                          <Button size="sm" variant="outline" disabled={pg === 1} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg - 1 })}>上一页</Button>
+                          <span>{pg} / {totalPg}</span>
+                          <Button size="sm" variant="outline" disabled={pg === totalPg} onClick={() => setFellowshipPages({ ...fellowshipPages, [f.id]: pg + 1 })}>下一页</Button>
+                        </div>
+                      )}
+                    </TabsContent>
+                  );
+                })}
+              </Tabs>
+            )}
+          </section>
+        )}
         </div>
             </TabsContent>
 
@@ -6169,6 +6228,20 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                     <Checkbox checked={editForm.wants_info ?? false} onCheckedChange={(v) => setEditForm((prev) => prev ? { ...prev, wants_info: !!v } : prev)} />
                     <span className="text-sm">我需要教会的资料及联络</span>
                   </label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>转项（崇拜后跟进去向）</Label>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={((editForm as any).transfer_target as string) ?? ""}
+                    onChange={(e) => setEditForm((prev) => prev ? ({ ...prev, transfer_target: e.target.value || null } as any) : prev)}
+                  >
+                    <option value="">未设置</option>
+                    {TRANSFER_TARGET_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-2">

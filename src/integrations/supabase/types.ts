@@ -981,6 +981,51 @@ export type Database = {
         }
         Relationships: []
       }
+      group_join_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          faith_status: string | null
+          gender: string | null
+          group_type: string
+          id: string
+          joined_at: string | null
+          name: string
+          notes: string | null
+          record_date: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          faith_status?: string | null
+          gender?: string | null
+          group_type: string
+          id?: string
+          joined_at?: string | null
+          name: string
+          notes?: string | null
+          record_date?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          faith_status?: string | null
+          gender?: string | null
+          group_type?: string
+          id?: string
+          joined_at?: string | null
+          name?: string
+          notes?: string | null
+          record_date?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       home_page_content: {
         Row: {
           blocks: Json
@@ -1516,6 +1561,7 @@ export type Database = {
           source: string
           source_channel: string | null
           spouse_name: string | null
+          transfer_target: string | null
           visitor_group_id: string | null
           wants_followup: boolean | null
           wants_info: boolean | null
@@ -1557,6 +1603,7 @@ export type Database = {
           source?: string
           source_channel?: string | null
           spouse_name?: string | null
+          transfer_target?: string | null
           visitor_group_id?: string | null
           wants_followup?: boolean | null
           wants_info?: boolean | null
@@ -1598,6 +1645,7 @@ export type Database = {
           source?: string
           source_channel?: string | null
           spouse_name?: string | null
+          transfer_target?: string | null
           visitor_group_id?: string | null
           wants_followup?: boolean | null
           wants_info?: boolean | null

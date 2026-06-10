@@ -25,6 +25,7 @@ export const translations = {
   modMedia: { zh: "影音投影", en: "Media Ministry" },
   modKitchen: { zh: "厨房事工", en: "Kitchen Ministry" },
   modSundaySchool: { zh: "主日学", en: "Sunday School" },
+  modFellowship: { zh: "团契与小组", en: "Fellowship & Groups" },
   modEvents: { zh: "活动", en: "Events" },
   modNewcomer: { zh: "新人登记", en: "Newcomer Registration" },
   modRetreat: { zh: "退修会", en: "Retreat" },

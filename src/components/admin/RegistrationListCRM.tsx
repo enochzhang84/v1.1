@@ -72,7 +72,18 @@ export type Reg = {
   relationship_to_primary: string | null;
   primary_registration_id: string | null;
   wechat: string | null;
+  transfer_target: string | null;
 };
+
+const TRANSFER_TARGET_OPTIONS_INLINE = [
+  { value: "happiness_group", label: "幸福小组" },
+  { value: "grace_tea_group", label: "恩典茶经小组" },
+  { value: "baptism_class", label: "受洗班" },
+  { value: "decision_record", label: "决志记录" },
+];
+const TRANSFER_TARGET_LABELS_INLINE: Record<string, string> = Object.fromEntries(
+  TRANSFER_TARGET_OPTIONS_INLINE.map((o) => [o.value, o.label]),
+);
 
 function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
   switch (r.referrer_type) {
@@ -473,6 +484,7 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                   {mode === "full" && <th className="py-2.5 px-3 font-medium">标记</th>}
                   <th className="py-2.5 px-3 font-medium">跟进状态</th>
                   <th className="py-2.5 px-3 font-medium">跟进人</th>
+                  <th className="py-2.5 px-3 font-medium">转项</th>
                   <th className="py-2.5 px-3 font-medium text-right">操作</th>
                 </tr>
               </thead>
@@ -579,6 +591,32 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                       <td className="py-3 px-3 align-middle">
                         <FollowUpEditor r={r} setRegs={setRegs} />
                       </td>
+                      <td className="py-3 px-3 align-middle">
+                        <select
+                          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                          value={r.transfer_target ?? ""}
+                          onChange={async (e) => {
+                            const v = e.target.value || null;
+                            const prev = r.transfer_target;
+                            setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, transfer_target: v } : x)));
+                            const { error } = await (supabase as any)
+                              .from("registrations")
+                              .update({ transfer_target: v })
+                              .eq("id", r.id);
+                            if (error) {
+                              setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, transfer_target: prev } : x)));
+                              toast.error(error.message);
+                            } else {
+                              toast.success("已更新转项");
+                            }
+                          }}
+                        >
+                          <option value="">未设置</option>
+                          {TRANSFER_TARGET_OPTIONS_INLINE.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1">
                           <IconBtn label="详情" onClick={() => setDetailReg(r)}><Eye className="h-4 w-4" /></IconBtn>
@@ -591,7 +629,7 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                 })}
                 {paginated.length === 0 && (
                   <tr>
-                    <td colSpan={mode === "full" ? 12 : 8} className="py-16 text-center text-muted-foreground">
+                    <td colSpan={mode === "full" ? 13 : 9} className="py-16 text-center text-muted-foreground">
                       暂无登记记录
                     </td>
                   </tr>
