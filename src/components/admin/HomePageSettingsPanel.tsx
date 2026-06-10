@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { useWin98Dialog } from "./Win98Dialog";
-import { getPublicOrigin } from "@/lib/public-origin";
+import { getPublicOrigin, isDevOrigin, loadOfficialOrigin, getOfficialOrigin, setOfficialOrigin } from "@/lib/public-origin";
 import {
   Settings as SettingsIcon,
   Images,
@@ -153,7 +153,12 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
   const { alert, confirm, dialog } = useWin98Dialog();
   const navigate = useNavigate();
 
-  const origin = useMemo(() => getPublicOrigin(), []);
+  const [origin, setOrigin] = useState<string>(() => getPublicOrigin());
+  useEffect(() => {
+    loadOfficialOrigin().then(() => setOrigin(getPublicOrigin())).catch(() => {});
+  }, []);
+  const officialOrigin = getOfficialOrigin();
+  const originIsDev = isDevOrigin(origin);
 
   const [qrType, setQrType] = useState<"newcomer" | "retreat" | "chat" | "custom">(
     "newcomer",
