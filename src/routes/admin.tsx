@@ -6393,11 +6393,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
-        {/* System Init (Factory Reset / 母版) Dialog */}
+        {/* System Init (Factory Reset / 新系统状态) Dialog */}
         <Dialog open={initOpen} onOpenChange={(o) => { if (!initLoading) setInitOpen(o); }}>
           <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>系统初始化（母版重置）</DialogTitle>
+              <DialogTitle>系统初始化（恢复为新系统状态）</DialogTitle>
             </DialogHeader>
 
             {initResult ? (
