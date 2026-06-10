@@ -32,6 +32,7 @@ import {
 } from "@/hooks/useAdminLogo";
 import { UnifiedQrInspector } from "./UnifiedQrInspector";
 import { QrAutoTestPanel } from "./QrAutoTestPanel";
+import { LegacyUrlScanPanel } from "./LegacyUrlScanPanel";
 
 type Settings = {
   id: string;
