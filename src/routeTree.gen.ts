@@ -33,6 +33,7 @@ import { Route as FellowshipCheckinRouteImport } from './routes/fellowship-check
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DataPreviewRouteImport } from './routes/data-preview'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AdminSettingsRouteImport } from './routes/admin-settings'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
@@ -164,6 +165,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin-settings',
+  path: '/admin-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -219,6 +225,7 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-settings': typeof AdminSettingsRoute
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-settings': typeof AdminSettingsRoute
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-settings': typeof AdminSettingsRoute
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -330,6 +339,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-settings'
     | '/chat'
     | '/data-preview'
     | '/feedback'
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-settings'
     | '/chat'
     | '/data-preview'
     | '/feedback'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-settings'
     | '/chat'
     | '/data-preview'
     | '/feedback'
@@ -439,6 +451,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   ChatRoute: typeof ChatRoute
   DataPreviewRoute: typeof DataPreviewRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -643,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-settings': {
+      id: '/admin-settings'
+      path: '/admin-settings'
+      fullPath: '/admin-settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -719,6 +739,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   ChatRoute: ChatRoute,
   DataPreviewRoute: DataPreviewRoute,
   FeedbackRoute: FeedbackRoute,
@@ -755,3 +776,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
