@@ -34,6 +34,7 @@ import { listUsersWithRoles, setUserRole, deleteUser, createUserWithRole, update
 import { useI18n, type TKey } from "@/lib/i18n";
 import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel";
 import { SystemHealthCenter } from "@/components/admin/SystemHealthCenter";
+import { GroupJoinRecordsPanel } from "@/components/admin/GroupJoinRecordsPanel";
 import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
@@ -593,6 +594,7 @@ function AdminPage() {
   const [kitchenDetailRow, setKitchenDetailRow] = useState<AttendanceRecord | null>(null);
   const [sundaySubTab, setSundaySubTab] = useState<string>("stats");
   const [welcomeSubTab, setWelcomeSubTab] = useState<string>("greet");
+  const [fellowshipSubTab, setFellowshipSubTab] = useState<string>("happiness");
   const _perms = useCurrentPermissions();
   const _canWelcomeStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "welcome", _perms.analytics);
   const _canMediaStats = !_perms.loading && canAccessModuleAnalytics(_perms.role, _perms.serviceArea, "media", _perms.analytics);
