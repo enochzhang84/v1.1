@@ -1,95 +1,95 @@
-# 圣工轮值表（今日）自动化方案
+## 目标
 
-把当前手工填写的 12 项轮值，改造为「按主日日期自动从各事工模块读取」。所有数据按日期保存，周报按当前主日自动读取，未录入显示「待定」。
+为 HOC3 V2.0 母版增加「首次系统开通向导」，让母版复制到任何教会时：
+- 首位 super_admin 注册时一次性完成账号 + 教会信息 + 认证域名 配置
+- 之后所有认证邮件（找回密码、邮箱验证、邀请）统一使用 `auth_base_url`，不再跳到 Lovable Preview / localhost / 写死域名
 
-## 后台编辑器整体调整
+## 一、数据层
 
-「圣工轮值表（今日）」后台不再是单一文本/字段编辑器，而是一个**只读汇总视图**，展示当前主日各项岗位的自动读取结果，并在每行旁提供「去录入」按钮直达对应事工的月历编辑界面。仅圣餐主日显示「圣餐服事」行。
+### 1. 扩展 `app_settings` 表（key/value 结构）
+检查现有结构后，使用统一 key 写入以下系统设置（若已是 key/value 表则只插入数据，若为列式表则迁移新增列）：
 
-字段重命名：`餐前投影` → `录音投影`。
+教会资料：
+- `church_name_cn`, `church_name_en`, `church_phone`, `church_email`, `church_website`, `church_address`, `sunday_service_time`
 
-## 数据源映射
+认证 & 邮件：
+- `auth_base_url`（如 `https://hoc3.org`，末尾不带 `/`）
+- `email_sender_name`（如 `HOC3 Ministry Center`）
+- `reply_to_email`（默认 = `church_email`）
 
-| 周报项目 | 数据来源 | 取值规则 |
-|---|---|---|
-| 讲员 / 司会 / 领诗 / 司琴 | 新表 `worship_service_roles` | 按主日日期录入 |
-| 招待 | 现有 `hospitality_ministry_entries`（接待事工 → 轮值表） | 该日 `迎宾接待 / 后门` |
-| 新人接待 | 同上 | 该日 `新人接待 / 前门` |
-| 圣餐服事 1/2 | 新表 `communion_service` | 仅每月第 1 个主日显示 |
-| 录音投影 | 现有 `duty_schedules`（影音投影 → 主日 PPT 岗位） | 该日 PPT 人员 |
-| 视频播放 | 现有 `duty_schedules`（影音投影 → 直播 / 直播1） | 两人同时显示 |
-| 厨房服事 | 新表 `kitchen_duty` | 按主日日期录入 |
-| 堂务 | 新表 `custodial_duty` | 按主日日期录入 |
-| 插花 | 新表 `flower_duty` | 按主日日期录入 |
+新增 `setup_completed`（布尔）作为「向导是否完成」的明确标志，避免依赖 `user_roles` 是否为空的隐式判断。
 
-未录入统一显示「待定」。
+### 2. RPC `public.is_system_initialized()`（SECURITY DEFINER，anon 可调用）
+返回布尔：`setup_completed = true` 或 `user_roles` 中存在 `super_admin` 任一为真即视为已初始化。供前端在未登录状态下安全判断是否显示向导。
 
-## 主页「服侍统计人数」
+### 3. RPC `public.complete_initial_setup(payload jsonb)`（SECURITY DEFINER，anon 可调用）
+- 入参：所有教会信息 + 认证/邮件设置 + `admin_user_id`（前端 signUp 成功后传入）
+- 行为（事务）：
+  1. 再次校验 `is_system_initialized() = false`，否则 raise exception
+  2. 写入 / upsert 所有 `app_settings`
+  3. 确保该 user_id 在 `user_roles` 表中拥有 `super_admin`（依赖现有 `handle_new_user` trigger 在表空时自动赋权；此处兜底 upsert）
+  4. 写入 `setup_completed = true`
 
-汇总当天「圣工轮值表（今日）」+「儿童事工（教师）」所有人员，按人名去重后计数，显示在主页。
+## 二、前端流程
 
-## 圣餐主日判定
+### 1. 新增 `/setup` 路由（公开，3 步向导）
+- Step 1: 创建超级管理员 — 姓名 / 邮箱 / 密码 / 确认密码 → 调用 `supabase.auth.signUp({ email, password, options: { data: { full_name } } })`
+- Step 2: 教会信息 — 7 个字段
+- Step 3: 认证与邮件 — `auth_base_url` / `email_sender_name` / `reply_to_email`（默认带入 church_email）
+- 完成：调用 `complete_initial_setup` RPC → 跳转 `/login`
 
-工具函数 `isCommunionSunday(date)`：当 `date` 为该月份的第 1 个星期日时返回 `true`。
+### 2. `/login` 守卫
+进入 `/login` 时先调用 `is_system_initialized` RPC：
+- 若 `false` → 自动 `redirect` 到 `/setup`
+- 若 `true` → 显示现有管理员登录页
 
-## 新增数据库表（共 5 个，统一结构）
+`/setup` 反向守卫：若已初始化，自动跳 `/login`。
 
-每张表都按主日日期唯一保存，结构：
-
-```text
-worship_service_roles
-  service_date date PK, preacher text, host text, song_leader text, pianist text
-
-communion_service
-  service_date date PK, worker_1 text, worker_2 text
-
-kitchen_duty
-  service_date date PK, workers text   -- 多人用顿号/换行分隔
-
-custodial_duty
-  service_date date PK, workers text
-
-flower_duty
-  service_date date PK, workers text
+### 3. 找回密码 / 邮件统一读取 `auth_base_url`
+新增 `src/lib/auth-base-url.ts`：
+```ts
+export async function getAuthBaseUrl(): Promise<string>
 ```
+- 从 `app_settings` 读取 `auth_base_url`
+- 兜底顺序：app_settings → `VITE_PUBLIC_SITE_URL` env → 抛错（不再 fallback 到 `window.location.origin`）
+- 内部缓存（模块级 Promise）
 
-每张表：
-- `GRANT` 给 `authenticated` / `service_role`；`anon` 只读（周报公开页需要）
-- RLS：`anon/authenticated` SELECT 允许；admin/super_admin 全权管理
-- 加 `created_at` / `updated_at` + `set_updated_at` trigger
+替换 `src/lib/public-origin.ts` 中所有「`window.location.origin` 兜底」逻辑，改为读取 `auth_base_url`。
 
-## 新增后台编辑器
+调用方更新：
+- `src/routes/forgot-password.tsx`：`resetPasswordForEmail(email, { redirectTo: \`${authBaseUrl}/reset-password\` })`
+- `src/routes/login.tsx`：同上
+- `src/routes/lovable/email/auth/webhook.ts`：所有链接生成读取 `auth_base_url`，邮件主题/正文中的「系统名称 / 教会中文名 / Reply-To」也从 `app_settings` 读取
+- `src/lib/email-templates/recovery.tsx`：标题改为 `重置您的 ${email_sender_name} 管理员密码`，正文 `您正在重置「${church_name_cn}」后台管理员密码`
 
-5 个轮值录入面板，统一「月历模式」交互（参考现有 `HospitalityCalendar.tsx`）：
+### 4. 后台「系统设置」入口
+在 `/admin` 下新增 `/admin/settings/church`（教会资料）和 `/admin/settings/auth`（认证设置）两页，仅 super_admin 可访问，用于以后修改向导填写的所有字段。
 
-1. `WorshipRolesCalendar` — 讲员/司会/领诗/司琴
-2. `CommunionCalendar` — 仅每月第一主日可编辑两位人员
-3. `KitchenDutyCalendar` — 单一「人员」文本域
-4. `CustodialDutyCalendar` — 同上
-5. `FlowerDutyCalendar` — 同上
+## 三、初始化（恢复出厂）规则
 
-挂入管理后台 ElderWeeklyOverview 所在页面（与现有「接待事工」「影音投影」入口并列）。
+新增 super_admin 专用 RPC `public.factory_reset()`（SECURITY DEFINER，仅 super_admin 可调用）：
+- 保留：`user_roles`、`user_profiles`、`app_settings`（教会资料 + 认证设置）、`home_page_settings`、`home_page_content`、`site-assets`（Logo）、`qr_library`、`qr_categories`
+- 清空：`registrations`、`retreat_registrations`、`attendance_records`、`sunday_school_checkins`、`adult_class_checkins`、`fellowship_checkins`、`chat_messages`、`messages`、`feedbacks`、`contacts`、`decisions`、`baptisms`、其他历史业务表
 
-## `ElderWeeklyOverview` 改造
+（本轮先实现 RPC + 后台按钮入口；具体清空表清单按上方明示。）
 
-- 新增 `useEffect` 拉取当前 `dutySunday` 对应 5 张新表 + hospitality + duty_schedules。
-- 移除现有手写 `editDuty.duty` 文本字段；`DutyEditor` 改为只读汇总 + 跳转按钮。
-- `WeeklyDutyView`（周报视图）按上方映射拼装，缺值显示「待定」；非圣餐主日跳过「圣餐服事」行。
-- 主页服侍统计人数：新增 helper 统计去重人数（影响首页 `HomePage` 已有的"服侍人数"位置；如果当前没有这块 UI，留 TODO 不动主页）。
+## 四、安全/边界
 
-## 技术细节
+- `complete_initial_setup` 与 `is_system_initialized` 都用 SECURITY DEFINER，并 `GRANT EXECUTE TO anon, authenticated`
+- `complete_initial_setup` 内部再次校验「未初始化」，防止并发或绕过前端二次调用
+- `auth_base_url` 写入时去除末尾 `/`，前端拼接 `/reset-password` 时保证只有一个 `/`
+- 不写入任何 Lovable / Supabase 字样到面向用户的文案
 
-- 新表的 `service_date` 使用 `date` 类型，主键即日期，方便 upsert。
-- 多人字段统一用换行分隔，前端 split 显示。
-- 圣餐主日 helper 放在 `src/lib/sunday-utils.ts`。
-- 数据读取在 `ElderWeeklyOverview` 中合并到现有 `byDate` state，避免破坏现有 SWR 行为。
+## 五、本轮交付清单
 
-## 范围说明
+1. 一个 SQL migration：扩展/约定 `app_settings` 用法 + `is_system_initialized` + `complete_initial_setup` + `factory_reset` RPC + grants
+2. 新文件：`src/lib/auth-base-url.ts`、`src/routes/setup.tsx`、`src/routes/_authenticated/admin/settings.church.tsx`、`src/routes/_authenticated/admin/settings.auth.tsx`
+3. 修改：`src/routes/login.tsx`（初始化守卫 + 用 authBaseUrl）、`src/routes/forgot-password.tsx`、`src/routes/lovable/email/auth/webhook.ts`、`src/lib/email-templates/recovery.tsx`、`src/lib/public-origin.ts`
+4. `/admin` 侧栏增加「系统设置 → 教会资料 / 认证设置」入口
 
-本次提交只覆盖：
-1. 数据库迁移（5 张表 + 权限 + RLS + trigger）
-2. 5 个新的月历编辑器组件 + 后台入口
-3. `ElderWeeklyOverview` 中「圣工轮值表（今日）」与周报视图改造
-4. `isCommunionSunday` + 服侍人数去重 helper
+## 六、需要您确认的两个点
 
-主页「服侍统计人数」UI 如果现有首页没有该区块，将仅导出 helper 不强行加 UI；若有则替换其数据源。请确认是否要本轮一并接入主页 UI。
+1. `app_settings` 当前是 key/value 结构（3 列：key/value/...）还是列式？我会先读它的实际 schema 再决定是 INSERT key/value 还是 ALTER TABLE 加列。
+2. 「恢复出厂设置」本轮是否一起实现？还是只搭好开通向导，工厂重置留到下一轮？
+
+如果您直接回复「按计划执行，app_settings 由你决定，工厂重置一起做」，我就开始落地。
