@@ -65,6 +65,7 @@ import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytic
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
 import { MinistryFunnelStats } from "@/components/admin/analytics/MinistryFunnelStats";
+import { MinistryFunnelDetail } from "@/components/admin/analytics/MinistryFunnelDetail";
 import { ElderWeeklyOverview } from "@/components/admin/ElderWeeklyOverview";
 import {
   ServiceRankingBoard,
