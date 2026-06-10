@@ -2166,6 +2166,7 @@ export type Database = {
         Returns: number
       }
       expire_display_screen: { Args: { _slug: string }; Returns: undefined }
+      get_email_queue_service_role_key: { Args: never; Returns: string }
       get_service_area: { Args: { _uid: string }; Returns: string }
       get_table_columns_info: {
         Args: { _tables: string[] }

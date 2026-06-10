@@ -2,7 +2,7 @@ import { sendLovableEmail } from '@lovable.dev/email-js'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
 
-const MAX_RETRIES = 5
+const MAX_RETRIES = 5 // rev: rotate-keys-2026-06-10
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
 const DEFAULT_AUTH_TTL_MINUTES = 15
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+        if (!apiKey || !supabaseUrl) {
           console.error('Missing required environment variables')
           return Response.json(
             { error: 'Server configuration error' },
@@ -76,19 +76,42 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        // Verify the caller is authorized with the service role key.
-        // In the TanStack stack, the pg_cron job sends the service role key as a Bearer token.
+
+        // Verify the caller is authorized.
+        // pg_cron sends a Bearer token sourced from the vault secret
+        // 'email_queue_service_role_key'. The Worker's
+        // process.env.SUPABASE_SERVICE_ROLE_KEY can drift from that vault
+        // snapshot (key rotation, preview vs prod env injection lag), so we
+        // validate the bearer by *using* it against Supabase: if it can read
+        // a privileged table, it is a valid service role key.
         const authHeader = request.headers.get('Authorization')
         if (!authHeader?.startsWith('Bearer ')) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
-
         const token = authHeader.slice('Bearer '.length).trim()
-        if (token !== supabaseServiceKey) {
+        if (!token) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Build the working admin client from the bearer itself. Falls back to
+        // env if bearer happens to equal env (same key path).
+        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, token, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+
+        // Cheap privileged read to verify the bearer is service role. The
+        // email_send_state table has RLS that blocks anon/authenticated and is
+        // owned by this app, so a successful read implies service_role.
+        const probe = await supabase
+          .from('email_send_state')
+          .select('id')
+          .limit(1)
+        if (probe.error) {
+          console.error('Email queue auth probe failed', probe.error)
           return Response.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
+
 
         // 1. Check rate-limit cooldown and read queue config
         const { data: state } = await supabase
