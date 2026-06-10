@@ -315,9 +315,23 @@ function RegisterPage() {
             </p>
             <p className="text-sm text-muted-foreground mt-2">— {verse.ref}</p>
           </div>
-          <Link to="/">
-            <Button variant="outline" className="rounded-full">返回首页</Button>
-          </Link>
+          {isAdmin && !eventToken ? (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/admin">
+                <Button variant="outline" className="rounded-full w-full sm:w-auto">返回后台</Button>
+              </Link>
+              <Button
+                className="rounded-full w-full sm:w-auto"
+                onClick={resetForContinue}
+              >
+                继续录入
+              </Button>
+            </div>
+          ) : (
+            <Link to="/">
+              <Button variant="outline" className="rounded-full">返回首页</Button>
+            </Link>
+          )}
         </div>
       </div>
     );
