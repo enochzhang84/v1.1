@@ -152,8 +152,7 @@ function RegisterPage() {
       .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
       .filter((c) => c.name);
     setSubmitting(true);
-    const isBackfill =
-      isAdmin && !eventToken && entryDate && entryDate !== todayStr();
+    const isBackfill = isAdmin && !eventToken && !!entryDateTime;
 
     const groupId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -165,7 +164,7 @@ function RegisterPage() {
         : undefined;
 
     const createdAtOverride = isBackfill
-      ? new Date(`${entryDate}T12:00:00`).toISOString()
+      ? new Date(entryDateTime).toISOString()
       : undefined;
 
     const primary: Record<string, unknown> = {
