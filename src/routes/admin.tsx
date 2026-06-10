@@ -3122,16 +3122,16 @@ function AdminPage() {
                           };
                           dl(r.schemaFilename, r.schemaSql);
                           dl(r.seedFilename, r.seedSql);
-                          toast.success(`已导出母版 v${r.version}（${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed）`);
-                        } catch (e: any) {
-                          toast.error("导出失败: " + (e?.message || e));
-                        } finally {
-                          setExportingMaster(false);
-                        }
-                      }}
-                      className="h-9 px-4 rounded-full text-[12px] font-medium bg-white border border-[#fecaca] text-[#a8201a] hover:bg-[#fff5f5] disabled:opacity-50"
-                    >
-                      {exportingMaster ? "正在导出..." : "📦 导出母版 SQL (schema + seed)"}
+                           toast.success(`已导出安装 SQL v${r.version}（${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed）`);
+                         } catch (e: any) {
+                           toast.error("导出失败: " + (e?.message || e));
+                         } finally {
+                           setExportingMaster(false);
+                         }
+                       }}
+                       className="h-9 px-4 rounded-full text-[12px] font-medium bg-white border border-[#fecaca] text-[#a8201a] hover:bg-[#fff5f5] disabled:opacity-50"
+                     >
+                       {exportingMaster ? "正在导出..." : "📦 导出系统 SQL (schema + seed)"}
                     </button>
                   </div>
                 </div>
