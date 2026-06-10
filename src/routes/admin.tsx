@@ -65,6 +65,7 @@ import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytic
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
 import { MinistryFunnelStats } from "@/components/admin/analytics/MinistryFunnelStats";
+import { MinistryFunnelDetail } from "@/components/admin/analytics/MinistryFunnelDetail";
 import { ElderWeeklyOverview } from "@/components/admin/ElderWeeklyOverview";
 import {
   ServiceRankingBoard,
@@ -325,6 +326,8 @@ export const TRANSFER_TARGET_OPTIONS = [
   { value: "grace_tea_group", label: "恩典茶经小组" },
   { value: "baptism_class", label: "受洗班" },
   { value: "decision_record", label: "决志记录" },
+  { value: "not_interested", label: "不感兴趣" },
+  { value: "follow_up", label: "持续跟进" },
 ] as const;
 export const TRANSFER_TARGET_LABELS: Record<string, string> = Object.fromEntries(
   TRANSFER_TARGET_OPTIONS.map((o) => [o.value, o.label]),
@@ -560,7 +563,7 @@ function AdminPage() {
   const TAB_PAGE_SIZE = 10;
   const [mainTab, setMainTab] = useState("stats");
   const [statsSubTab, setStatsSubTab] = useState<
-    "overview" | "newcomer" | "sunday" | "meals" | "service" | "baptism" | "annual"
+    "overview" | "newcomer" | "sunday" | "meals" | "service" | "baptism" | "annual" | "funnel"
   >("overview");
   const [kidsEnrollOpen, setKidsEnrollOpen] = useState(false);
   const [sundayParticipationOpen, setSundayParticipationOpen] = useState(false);
@@ -1842,7 +1845,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         {/* Chrome-style sub-tabs for 数据统计 */}
-        <div className="grid grid-cols-3 sm:grid-cols-7 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        <div className="grid grid-cols-3 sm:grid-cols-8 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
             { v: "overview", label: `📊 ${t("rptOverview")}` },
             { v: "newcomer", label: `🆕 ${t("rptNewcomer")}` },
@@ -1850,6 +1853,7 @@ function AdminPage() {
             { v: "meals", label: `🍱 ${t("rptMeals")}` },
             { v: "service", label: `🙏 ${t("rptService")}` },
             { v: "baptism", label: `💧 ${t("rptBaptism")}` },
+            { v: "funnel", label: `📊 牧养漏斗` },
             { v: "annual", label: `📈 ${t("rptAnnual")}` },
           ].map((tab) => {
             const active = statsSubTab === tab.v;
@@ -1960,7 +1964,7 @@ function AdminPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {cards.map((c, idx) => (
                   <Fragment key={c.label}>
-                    {idx === 2 && <MinistryFunnelStats />}
+                    {idx === 2 && <MinistryFunnelStats onClick={() => setStatsSubTab("funnel")} />}
                     <button
                       type="button"
                       onClick={c.jump}
@@ -2262,6 +2266,8 @@ function AdminPage() {
             <DecisionBaptismPanel />
           </div>
         )}
+
+        {statsSubTab === "funnel" && <MinistryFunnelDetail />}
 
         <LongAbsenceDialog
           open={absenceDialogOpen}
