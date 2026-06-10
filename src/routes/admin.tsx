@@ -1427,6 +1427,7 @@ function AdminPage() {
         欢迎探访: r.wants_visit ? "是" : "否",
         需要资料: r.wants_info ? "是" : "否",
         备注: r.notes ?? "",
+        转项: TRANSFER_TARGET_LABELS[(r as any).transfer_target as string] ?? "",
         录入方式: r.source === "qr" ? "扫码" : "手动",
         跟进人: r.follow_up_person ?? "",
         登记时间: new Date(r.created_at).toLocaleString("zh-CN"),
