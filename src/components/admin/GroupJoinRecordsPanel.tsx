@@ -283,22 +283,49 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
               <th className="py-2 px-2">姓名</th>
               <th className="py-2 px-2">性别</th>
               <th className="py-2 px-2">信仰</th>
-              <th className="py-2 px-2">加入时间</th>
-              <th className="py-2 px-2">状态</th>
-              <th className="py-2 px-2">备注</th>
+              <th className="py-2 px-2">跟进状态</th>
+              <th className="py-2 px-2">参加</th>
+              <th className="py-2 px-2">最近参加</th>
+              <th className="py-2 px-2">状态/备注</th>
               <th className="py-2 px-2 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} className="border-b border-border/30 align-top">
-                <td className="py-2 px-2 whitespace-nowrap">{r.record_date}</td>
+              <tr key={r.id} className={`border-b border-border/30 align-top ${r.transferred_out ? "opacity-60" : ""}`}>
+                <td className="py-2 px-2 whitespace-nowrap">
+                  {r.record_date}
+                  {r.source_registration_id && (
+                    <span className="ml-1 text-[10px] text-muted-foreground border border-border/60 rounded px-1">登记</span>
+                  )}
+                </td>
                 <td className="py-2 px-2 font-medium">{r.name}</td>
                 <td className="py-2 px-2">{r.gender ?? ""}</td>
                 <td className="py-2 px-2">{r.faith_status ?? ""}</td>
-                <td className="py-2 px-2 whitespace-nowrap">{r.joined_at ?? ""}</td>
-                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{r.status ?? ""}</td>
-                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{r.notes ?? ""}</td>
+                <td className="py-2 px-2">
+                  <select
+                    className="h-7 rounded-md border border-input bg-background px-1.5 text-xs"
+                    value={r.follow_up_status ?? "待邀请"}
+                    onChange={async (e) => {
+                      const v = e.target.value;
+                      const { error } = await (supabase as any)
+                        .from("group_join_records")
+                        .update({ follow_up_status: v })
+                        .eq("id", r.id);
+                      if (error) return toast.error(error.message);
+                      load();
+                    }}
+                  >
+                    {FOLLOW_UP_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </td>
+                <td className="py-2 px-2 text-center">{r.attended_count ?? 0}</td>
+                <td className="py-2 px-2 whitespace-nowrap text-xs">{r.last_attended_at ?? ""}</td>
+                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words text-xs">
+                  {r.status_note && <div className="text-muted-foreground">备注：{r.status_note}</div>}
+                  {r.status && <div>{r.status}</div>}
+                  {r.notes && <div className="text-muted-foreground">{r.notes}</div>}
+                </td>
                 <td className="py-2 px-2 text-right whitespace-nowrap">
                   <button onClick={() => openEdit(r)} className="text-xs text-primary hover:underline mr-2">编辑</button>
                   <button onClick={() => remove(r)} className="text-xs text-destructive hover:underline">删除</button>
@@ -307,7 +334,7 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
             ))}
             {filtered.length === 0 && !loading && (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                <td colSpan={9} className="py-8 text-center text-muted-foreground">
                   暂无记录
                 </td>
               </tr>
@@ -315,6 +342,7 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
           </tbody>
         </table>
       </div>
+
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-lg">
