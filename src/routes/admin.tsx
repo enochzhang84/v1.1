@@ -1959,10 +1959,9 @@ function AdminPage() {
             <section className="mt-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {cards.map((c, idx) => (
-                  <>
-                    {idx === 2 && <MinistryFunnelStats key="funnel" />}
+                  <Fragment key={c.label}>
+                    {idx === 2 && <MinistryFunnelStats />}
                     <button
-                      key={c.label}
                       type="button"
                       onClick={c.jump}
                       disabled={!c.jump}
@@ -1981,7 +1980,7 @@ function AdminPage() {
                       </div>
                       {c.sub && <div className="text-xs text-muted-foreground/80 mt-2">{c.sub}</div>}
                     </button>
-                  </>
+                  </Fragment>
                 ))}
               </div>
               <ElderWeeklyOverview
