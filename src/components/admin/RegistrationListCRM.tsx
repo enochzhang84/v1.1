@@ -607,7 +607,11 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                               setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, transfer_target: prev } : x)));
                               toast.error(error.message);
                             } else {
-                              toast.success("已更新转项");
+                              const tip = v === "happiness_group" ? "已自动建立幸福小组记录"
+                                : v === "grace_tea_group" ? "已自动建立恩典茶经小组记录"
+                                : v === "decision_record" ? "已自动建立决志档案"
+                                : "已更新转项";
+                              toast.success(tip);
                             }
                           }}
                         >
