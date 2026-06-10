@@ -1852,6 +1852,7 @@ function AdminPage() {
             { v: "meals", label: `🍱 ${t("rptMeals")}` },
             { v: "service", label: `🙏 ${t("rptService")}` },
             { v: "baptism", label: `💧 ${t("rptBaptism")}` },
+            { v: "funnel", label: `📊 牧养漏斗` },
             { v: "annual", label: `📈 ${t("rptAnnual")}` },
           ].map((tab) => {
             const active = statsSubTab === tab.v;
