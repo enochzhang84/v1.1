@@ -23,6 +23,8 @@ type QrCheckResult = QrItem & {
   level: Level;
   reasons: string[];
   httpStatus?: number | null;
+  qrHost: string;
+  currentHost: string;
 };
 
 function statusIcon(level: Level) {
@@ -39,48 +41,41 @@ function levelLabel(level: Level) {
   return level === "pass" ? "PASS" : level === "warn" ? "WARN" : "FAIL";
 }
 
-/** Hard FAIL rules per requirement: empty / undefined / lovable.app / 旧域名标记. */
+/** PASS 条件：二维码域名 == 当前项目域名。
+ *  FAIL 条件：空 / undefined / URL 非法 / 域名不一致 / 路径不符 / HTTP 不可达。
+ *  不再因为出现 lovable.app 就直接 FAIL — 仅以「是否等于当前站点域名」为准。 */
 function classifyUrl(
   url: string,
   currentOrigin: string,
   expectedPath?: string,
-): { level: Level; reasons: string[] } {
+): { level: Level; reasons: string[]; qrHost: string; currentHost: string } {
   const reasons: string[] = [];
+  const currentHost = (() => {
+    try { return new URL(currentOrigin).host.toLowerCase(); } catch { return ""; }
+  })();
+
   if (!url || !url.trim()) {
-    return { level: "fail", reasons: ["空链接"] };
+    return { level: "fail", reasons: ["空链接"], qrHost: "", currentHost };
   }
   if (/undefined|null/i.test(url)) reasons.push("URL 包含 undefined / null");
+
   let parsed: URL | null = null;
   try {
     parsed = new URL(url);
   } catch {
-    return { level: "fail", reasons: ["URL 格式无效"] };
+    return { level: "fail", reasons: ["URL 格式无效"], qrHost: "", currentHost };
   }
   const host = parsed.host.toLowerCase();
-  if (/\.lovable\.app$/.test(host)) reasons.push("指向旧 lovable.app 域名");
-  if (/lovableproject\.com$/.test(host)) reasons.push("指向预览域名 lovableproject.com");
-  if (/id-preview--/.test(host)) reasons.push("指向预览域名 id-preview");
-  if (/localhost|127\.0\.0\.1/.test(host)) reasons.push("指向本地开发地址");
-  if (/(^|\.)hoc3v1\./.test(host) || /\bhoc3v1\b/.test(host)) reasons.push("指向旧副本 hoc3v1");
-
-  const currentHost = (() => {
-    try {
-      return new URL(currentOrigin).host.toLowerCase();
-    } catch {
-      return "";
-    }
-  })();
-  const hostMatches = currentHost && host === currentHost;
 
   if (expectedPath && !parsed.pathname.startsWith(expectedPath)) {
     reasons.push(`路径应为 ${expectedPath}`);
   }
-
-  if (reasons.length > 0) return { level: "fail", reasons };
-  if (!hostMatches) {
-    return { level: "warn", reasons: [`指向另一域名 ${host}（当前 ${currentHost}）`] };
+  if (currentHost && host !== currentHost) {
+    reasons.push(`域名不一致：二维码 ${host} ≠ 当前 ${currentHost}`);
   }
-  return { level: "pass", reasons: [] };
+
+  if (reasons.length > 0) return { level: "fail", reasons, qrHost: host, currentHost };
+  return { level: "pass", reasons: [], qrHost: host, currentHost };
 }
 
 async function probeUrl(url: string): Promise<number | null> {
@@ -353,6 +348,16 @@ export function QrHealthCheckPanel() {
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground break-all mt-1">{q.url || "(空)"}</div>
+                  <div className="text-xs mt-1 grid sm:grid-cols-3 gap-x-3">
+                    <div>当前项目域名: <b>{q.currentHost || "-"}</b></div>
+                    <div>二维码域名: <b>{q.qrHost || "-"}</b></div>
+                    <div>
+                      是否一致:{" "}
+                      <b className={q.qrHost && q.currentHost && q.qrHost === q.currentHost ? "text-[#1f7a3a]" : "text-[#c0392b]"}>
+                        {q.qrHost && q.currentHost && q.qrHost === q.currentHost ? "是" : "否"}
+                      </b>
+                    </div>
+                  </div>
                   {q.reasons.length > 0 && (
                     <ul className="text-xs text-[#c0392b] mt-1 list-disc pl-5">
                       {q.reasons.map((r, j) => (<li key={j}>{r}</li>))}
