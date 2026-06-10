@@ -16,6 +16,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [systemInitialized, setSystemInitialized] = useState<boolean>(true);
 
   useEffect(() => {
     (async () => {
@@ -25,13 +26,13 @@ function LoginPage() {
         return;
       }
       const { data: inited, error } = await supabase.rpc("is_system_initialized");
-      if (!error && inited === false) {
-        navigate({ to: "/setup", replace: true });
-        return;
+      if (!error) {
+        setSystemInitialized(inited !== false);
       }
       setChecking(false);
     })();
   }, [navigate]);
+
 
   function friendlyError(msg: string): string {
     if (/invalid login credentials/i.test(msg)) return "邮箱或密码不正确。";
