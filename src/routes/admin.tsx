@@ -317,6 +317,17 @@ type KidsRow = {
   sort_order: number;
 };
 
+// 新人「转项」可选值 — 用于后续跟进去向
+export const TRANSFER_TARGET_OPTIONS = [
+  { value: "happiness_group", label: "幸福小组" },
+  { value: "grace_tea_group", label: "恩典茶经小组" },
+  { value: "baptism_class", label: "受洗班" },
+  { value: "decision_record", label: "决志记录" },
+] as const;
+export const TRANSFER_TARGET_LABELS: Record<string, string> = Object.fromEntries(
+  TRANSFER_TARGET_OPTIONS.map((o) => [o.value, o.label]),
+);
+
 const KIDS_TRACKS = {
   spring: { key: "kids_spring_2026", title: "2026年春季儿童主日学" },
   fall: { key: "kids_fall_2026", title: "2026 秋季儿童主日学" },
