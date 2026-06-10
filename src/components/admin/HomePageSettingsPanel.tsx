@@ -717,6 +717,14 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
                 size="sm"
                 variant="outline"
                 className="rounded-full"
+                onClick={() => window.open(previewQrLink, "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="w-4 h-4 mr-1.5" /> 打开 / 测试二维码
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
                 onClick={() => downloadPngFrom(qrSvgRef.current, "home-qr")}
               >
                 <Download className="w-4 h-4 mr-1.5" /> 下载 PNG
@@ -731,11 +739,16 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
               </Button>
             </div>
 
+            {isDevOrigin(previewQrLink) && (
+              <p className="text-xs text-[#a86c00]">⚠ 当前二维码使用开发域名，请点击上方「使用正式域名重新生成」。</p>
+            )}
+
             <p className="text-xs text-muted-foreground">
               更新时间：{qrUpdatedLabel}
             </p>
           </div>
         </div>
+
 
         {/* 隐藏 svg 用作下载/打印源（与预览同步） */}
         <div ref={qrSvgRef} className="hidden">
