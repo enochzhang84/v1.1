@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { FloatingChat } from "@/components/FloatingChat";
 import { I18nProvider } from "@/lib/i18n";
+import { loadOfficialOrigin } from "@/lib/public-origin";
 
 // Bump this string whenever you need to force every browser to drop its
 // cached localStorage / sessionStorage state. Supabase auth keys (sb-*) are
@@ -163,6 +164,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useChromeCacheReset();
+  useEffect(() => { loadOfficialOrigin().catch(() => {}); }, []);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hideChat =
     pathname === "/" ||
