@@ -4556,10 +4556,10 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
 
         <div className="mt-8 space-y-8">
         {fellowshipSubTab === "happiness" && (
-          <GroupJoinRecordsPanel groupType="happiness_group" title="幸福小组加入名单" />
+          <GroupJoinRecordsPanel groupType="happiness_group" title="幸福小组" />
         )}
         {fellowshipSubTab === "grace_tea" && (
-          <GroupJoinRecordsPanel groupType="grace_tea_group" title="恩典茶经小组加入名单" />
+          <GroupJoinRecordsPanel groupType="grace_tea_group" title="恩典茶经小组" />
         )}
         {fellowshipSubTab === "checkins" && (
           <section className="bg-card border border-border/50 rounded-2xl p-6">
