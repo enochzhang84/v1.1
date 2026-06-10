@@ -68,13 +68,14 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+        if (!apiKey || !supabaseUrl) {
           console.error('Missing required environment variables')
           return Response.json(
             { error: 'Server configuration error' },
             { status: 500 }
           )
         }
+
 
         // Verify the caller is authorized.
         // pg_cron sends a Bearer token sourced from the vault secret
