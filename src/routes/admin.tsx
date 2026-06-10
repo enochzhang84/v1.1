@@ -864,7 +864,7 @@ function AdminPage() {
       supabase.from("feedbacks").select("*").order("created_at", { ascending: false }),
       supabase.from("sunday_school_courses").select("*").order("sort_order", { ascending: true }),
     ]);
-    setRegs(r ?? []);
+    setRegs((r ?? []) as unknown as Reg[]);
     setEvents(e ?? []);
     setServiceApps((s ?? []) as ServiceApp[]);
     setAttendance((a ?? []) as AttendanceRecord[]);
