@@ -1460,14 +1460,17 @@ function AdminPage() {
       return `☐基督徒 年___　☐慕道友　☐其他`;
     };
     const ageText = (r: Reg) => {
-      const a = r.age_group ?? "";
-      const m = (v: string) => (a === v ? "☑" : "☐");
-      return `${m("60+")}60歲以上　${m("40-60")}40-60歲　${m("20-39")}20-39歲`;
+      const a = (r.age_group ?? "").toString();
+      // 兼容历史值: "60+" / "40-60" / "20-39" 与当前值: "60岁以上" / "40-60岁" / "20-39岁"
+      const isOld = a === "60岁以上" || a === "60+" || a.startsWith("60");
+      const isMid = a === "40-60岁" || a === "40-60";
+      const isYoung = a === "20-39岁" || a === "20-39";
+      return `${isOld ? "☑" : "☐"}60歲以上　${isMid ? "☑" : "☐"}40-60歲　${isYoung ? "☑" : "☐"}20-39歲`;
     };
     const genderText = (r: Reg) => {
-      const g = r.gender ?? "";
-      const isMale = g === "男" || g === "male";
-      const isFemale = g === "女" || g === "female";
+      const g = (r.gender ?? "").toString();
+      const isMale = g === "男" || g === "male" || g === "M";
+      const isFemale = g === "女" || g === "female" || g === "F";
       return `${isMale ? "☑" : "☐"}男　${isFemale ? "☑" : "☐"}女`;
     };
     const maritalText = (r: Reg) => {
@@ -2796,6 +2799,9 @@ function AdminPage() {
             超级管理员可用的系统级工具。日志记录管理员在本浏览器上的操作（编辑、删除、权限变更等）。
           </p>
           <div className="flex flex-wrap gap-3">
+            <Link to="/admin-settings">
+              <Button variant="outline">⛪ 教会信息</Button>
+            </Link>
             <Button
               variant="outline"
               onClick={() => { loadLogs(); setLogsOpen(true); }}
@@ -2842,9 +2848,6 @@ function AdminPage() {
             >
               ⚙️ 系统运维中心
             </Button>
-            <Link to="/admin-settings">
-              <Button variant="outline">⛪ 教会信息</Button>
-            </Link>
           </div>
         </section>
         )}
