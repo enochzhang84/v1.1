@@ -127,6 +127,17 @@ function LoginPage() {
               忘记密码
             </Link>
           </div>
+          {!systemInitialized && (
+            <div className="pt-4 mt-2 border-t border-gray-100 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">首次使用？开通系统并创建超级管理员</p>
+              <Link
+                to="/setup"
+                className="inline-block w-full rounded-full h-12 leading-[3rem] bg-white border border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-medium"
+              >
+                首次开通系统 / 注册超级管理员
+              </Link>
+            </div>
+          )}
         </form>
 
         <p className="text-center text-xs text-muted-foreground mt-8">
