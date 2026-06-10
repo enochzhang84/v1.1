@@ -2,7 +2,7 @@ import { sendLovableEmail } from '@lovable.dev/email-js'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
 
-const MAX_RETRIES = 5
+const MAX_RETRIES = 5 // rev: rotate-keys-2026-06-10
 const DEFAULT_BATCH_SIZE = 10
 const DEFAULT_SEND_DELAY_MS = 200
 const DEFAULT_AUTH_TTL_MINUTES = 15
@@ -76,19 +76,38 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        // Verify the caller is authorized with the service role key.
-        // In the TanStack stack, the pg_cron job sends the service role key as a Bearer token.
+        // Verify the caller is authorized.
+        // pg_cron sends a Bearer token sourced from the vault secret
+        // 'email_queue_service_role_key' (snapshotted from the Supabase service
+        // role key). The Worker's process.env.SUPABASE_SERVICE_ROLE_KEY can
+        // drift from that vault snapshot (key rotation, preview vs prod env
+        // injection lag, etc), so accept either value.
         const authHeader = request.headers.get('Authorization')
         if (!authHeader?.startsWith('Bearer ')) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
-
         const token = authHeader.slice('Bearer '.length).trim()
-        if (token !== supabaseServiceKey) {
+
+        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
+
+        let authorized = token === supabaseServiceKey
+        if (!authorized) {
+          // Fall back to comparing against the vault-stored snapshot via a
+          // SECURITY DEFINER RPC, so a rotated/stale worker env doesn't break
+          // the queue processor.
+          try {
+            const { data: vaultKey } = await supabase.rpc('get_email_queue_service_role_key')
+            if (typeof vaultKey === 'string' && vaultKey.length > 0 && token === vaultKey) {
+              authorized = true
+            }
+          } catch (e) {
+            console.error('Failed to read email_queue_service_role_key from vault', e)
+          }
+        }
+        if (!authorized) {
           return Response.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
         // 1. Check rate-limit cooldown and read queue config
         const { data: state } = await supabase
