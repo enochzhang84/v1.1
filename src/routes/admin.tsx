@@ -1958,27 +1958,30 @@ function AdminPage() {
           return (
             <section className="mt-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {cards.map((c) => (
-                  <button
-                    key={c.label}
-                    type="button"
-                    onClick={c.jump}
-                    disabled={!c.jump}
-                    className={cn(
-                      "text-left bg-card border border-border/60 rounded-2xl p-5 h-full flex flex-col transition-all shadow-sm",
-                      toneBorder(c.tone),
-                      c.jump
-                        ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
-                        : "cursor-default",
-                    )}
-                  >
-                    <div className="text-xl leading-none">{c.icon}</div>
-                    <div className="text-sm text-muted-foreground mt-2">{c.label}</div>
-                    <div className={cn("text-4xl font-bold mt-2 tabular-nums tracking-tight", toneText(c.tone))}>
-                      {c.value}
-                    </div>
-                    {c.sub && <div className="text-xs text-muted-foreground/80 mt-2">{c.sub}</div>}
-                  </button>
+                {cards.map((c, idx) => (
+                  <>
+                    {idx === 2 && <MinistryFunnelStats key="funnel" />}
+                    <button
+                      key={c.label}
+                      type="button"
+                      onClick={c.jump}
+                      disabled={!c.jump}
+                      className={cn(
+                        "text-left bg-card border border-border/60 rounded-2xl p-5 h-full flex flex-col transition-all shadow-sm",
+                        toneBorder(c.tone),
+                        c.jump
+                          ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+                          : "cursor-default",
+                      )}
+                    >
+                      <div className="text-xl leading-none">{c.icon}</div>
+                      <div className="text-sm text-muted-foreground mt-2">{c.label}</div>
+                      <div className={cn("text-4xl font-bold mt-2 tabular-nums tracking-tight", toneText(c.tone))}>
+                        {c.value}
+                      </div>
+                      {c.sub && <div className="text-xs text-muted-foreground/80 mt-2">{c.sub}</div>}
+                    </button>
+                  </>
                 ))}
               </div>
               <ElderWeeklyOverview
