@@ -48,7 +48,7 @@ export const updateRegistration = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { supabase } = context;
     const { id, ...updateData } = data;
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("registrations")
       .update(updateData)
       .eq("id", id);
