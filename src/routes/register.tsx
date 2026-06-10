@@ -322,7 +322,7 @@ function RegisterPage() {
             </p>
             <p className="text-sm text-muted-foreground mt-2">— {verse.ref}</p>
           </div>
-          {isAdmin && !eventToken ? (
+          {(isAdmin || isBackfillMode) && !eventToken ? (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/admin">
                 <Button variant="outline" className="rounded-full w-full sm:w-auto">返回后台</Button>
