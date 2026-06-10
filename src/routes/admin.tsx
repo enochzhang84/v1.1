@@ -6546,11 +6546,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                     </div>
 
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">最终确认：请输入 <b>初始化母版</b> 以解锁执行按钮</div>
+                      <div className="text-xs text-muted-foreground mb-1">最终确认：请输入 <b>初始化系统</b> 以解锁执行按钮</div>
                       <Input
                         value={initFinalConfirm}
                         onChange={(e) => setInitFinalConfirm(e.target.value)}
-                        placeholder="初始化母版"
+                        placeholder="初始化系统"
                         disabled={initLoading}
                       />
                     </div>
