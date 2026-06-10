@@ -64,6 +64,7 @@ import { SundayAnalytics } from "@/components/admin/analytics/SundayAnalytics";
 import { NewcomerAnalytics } from "@/components/admin/analytics/NewcomerAnalytics";
 import { WelcomeAnalytics } from "@/components/admin/analytics/WelcomeAnalytics";
 import { MediaAnalytics } from "@/components/admin/analytics/MediaAnalytics";
+import { MinistryFunnelStats } from "@/components/admin/analytics/MinistryFunnelStats";
 import { ElderWeeklyOverview } from "@/components/admin/ElderWeeklyOverview";
 import {
   ServiceRankingBoard,
@@ -1871,6 +1872,9 @@ function AdminPage() {
         </div>
 
         {/* 概览 — 长老仪表板 */}
+        {statsSubTab === "overview" && (
+          <div className="mt-2"><MinistryFunnelStats /></div>
+        )}
         {statsSubTab === "overview" && (() => {
           const now = new Date();
           const yearStart = new Date(now.getFullYear(), 0, 1);

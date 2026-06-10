@@ -26,9 +26,19 @@ export type GroupJoinRecord = {
   joined_at: string | null;
   status: string | null;
   notes: string | null;
+  follow_up_status: string | null;
+  status_note: string | null;
+  attended_count: number | null;
+  last_attended_at: string | null;
+  source_registration_id: string | null;
+  transferred_out: boolean | null;
   created_at: string;
   updated_at: string;
 };
+
+const FOLLOW_UP_OPTIONS = [
+  "待邀请","已邀请","已参加","未参加","持续跟进","转团契","转受洗班","暂停跟进","失联","已转出",
+];
 
 const EMPTY = (gt: GroupType): Partial<GroupJoinRecord> => ({
   group_type: gt,
@@ -39,6 +49,8 @@ const EMPTY = (gt: GroupType): Partial<GroupJoinRecord> => ({
   joined_at: null,
   status: "",
   notes: "",
+  follow_up_status: "待邀请",
+  status_note: "",
 });
 
 function pad2(n: number) {
@@ -175,6 +187,8 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
       joined_at: form.joined_at || null,
       status: form.status?.trim() || null,
       notes: form.notes?.trim() || null,
+      follow_up_status: form.follow_up_status || "待邀请",
+      status_note: form.status_note?.trim() || null,
     };
     if (form.id) {
       const { error } = await (supabase as any)
@@ -216,11 +230,16 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
       性别: r.gender ?? "",
       信仰: r.faith_status ?? "",
       加入时间: r.joined_at ?? "",
+      跟进状态: r.follow_up_status ?? "",
+      参加次数: r.attended_count ?? 0,
+      最近参加: r.last_attended_at ?? "",
+      状态备注: r.status_note ?? "",
       状态: r.status ?? "",
       备注: r.notes ?? "",
+      来源: r.source_registration_id ? "登记自动" : "手动",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 24 }, { wch: 30 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 24 }, { wch: 30 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, title);
     XLSX.writeFile(wb, `${title}_${dayFilter ?? ym}.xlsx`);
@@ -264,22 +283,49 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
               <th className="py-2 px-2">姓名</th>
               <th className="py-2 px-2">性别</th>
               <th className="py-2 px-2">信仰</th>
-              <th className="py-2 px-2">加入时间</th>
-              <th className="py-2 px-2">状态</th>
-              <th className="py-2 px-2">备注</th>
+              <th className="py-2 px-2">跟进状态</th>
+              <th className="py-2 px-2">参加</th>
+              <th className="py-2 px-2">最近参加</th>
+              <th className="py-2 px-2">状态/备注</th>
               <th className="py-2 px-2 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} className="border-b border-border/30 align-top">
-                <td className="py-2 px-2 whitespace-nowrap">{r.record_date}</td>
+              <tr key={r.id} className={`border-b border-border/30 align-top ${r.transferred_out ? "opacity-60" : ""}`}>
+                <td className="py-2 px-2 whitespace-nowrap">
+                  {r.record_date}
+                  {r.source_registration_id && (
+                    <span className="ml-1 text-[10px] text-muted-foreground border border-border/60 rounded px-1">登记</span>
+                  )}
+                </td>
                 <td className="py-2 px-2 font-medium">{r.name}</td>
                 <td className="py-2 px-2">{r.gender ?? ""}</td>
                 <td className="py-2 px-2">{r.faith_status ?? ""}</td>
-                <td className="py-2 px-2 whitespace-nowrap">{r.joined_at ?? ""}</td>
-                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{r.status ?? ""}</td>
-                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words">{r.notes ?? ""}</td>
+                <td className="py-2 px-2">
+                  <select
+                    className="h-7 rounded-md border border-input bg-background px-1.5 text-xs"
+                    value={r.follow_up_status ?? "待邀请"}
+                    onChange={async (e) => {
+                      const v = e.target.value;
+                      const { error } = await (supabase as any)
+                        .from("group_join_records")
+                        .update({ follow_up_status: v })
+                        .eq("id", r.id);
+                      if (error) return toast.error(error.message);
+                      load();
+                    }}
+                  >
+                    {FOLLOW_UP_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </td>
+                <td className="py-2 px-2 text-center">{r.attended_count ?? 0}</td>
+                <td className="py-2 px-2 whitespace-nowrap text-xs">{r.last_attended_at ?? ""}</td>
+                <td className="py-2 px-2 max-w-[260px] whitespace-pre-wrap break-words text-xs">
+                  {r.status_note && <div className="text-muted-foreground">备注：{r.status_note}</div>}
+                  {r.status && <div>{r.status}</div>}
+                  {r.notes && <div className="text-muted-foreground">{r.notes}</div>}
+                </td>
                 <td className="py-2 px-2 text-right whitespace-nowrap">
                   <button onClick={() => openEdit(r)} className="text-xs text-primary hover:underline mr-2">编辑</button>
                   <button onClick={() => remove(r)} className="text-xs text-destructive hover:underline">删除</button>
@@ -288,7 +334,7 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
             ))}
             {filtered.length === 0 && !loading && (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                <td colSpan={9} className="py-8 text-center text-muted-foreground">
                   暂无记录
                 </td>
               </tr>
@@ -296,6 +342,7 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
           </tbody>
         </table>
       </div>
+
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-lg">
@@ -348,6 +395,22 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
             <div className="space-y-1">
               <Label>状态（对聊天内容感觉怎么样）</Label>
               <Input value={form.status ?? ""} onChange={(e) => setForm({ ...form, status: e.target.value })} placeholder="例如：很感兴趣 / 反应平淡" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>跟进状态</Label>
+                <select
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.follow_up_status ?? "待邀请"}
+                  onChange={(e) => setForm({ ...form, follow_up_status: e.target.value })}
+                >
+                  {FOLLOW_UP_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>状态备注</Label>
+                <Input value={form.status_note ?? ""} onChange={(e) => setForm({ ...form, status_note: e.target.value })} placeholder="工作忙 / 出差 / 时间不合适" />
+              </div>
             </div>
             <div className="space-y-1">
               <Label>备注</Label>
