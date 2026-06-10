@@ -57,62 +57,50 @@ function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-interface MonthCalendarProps {
-  ym: string; // "YYYY-MM"
-  records: GroupJoinRecord[];
-  onSelectDay: (dateISO: string) => void;
-  onAddNew: (dateISO: string) => void;
-}
-function MonthCalendar({ ym, records, onSelectDay, onAddNew }: MonthCalendarProps) {
+function ymAdd(ym: string, delta: number): string {
   const [y, m] = ym.split("-").map(Number);
-  const first = new Date(y, m - 1, 1);
-  const startDow = first.getDay();
-  const daysInMonth = new Date(y, m, 0).getDate();
-  const cells: { d: number | null; iso: string | null }[] = [];
-  for (let i = 0; i < startDow; i++) cells.push({ d: null, iso: null });
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ d, iso: `${ym}-${pad2(d)}` });
-  }
-  while (cells.length % 7 !== 0) cells.push({ d: null, iso: null });
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+}
 
-  const countByDay = new Map<string, number>();
-  for (const r of records) {
-    if ((r.record_date ?? "").startsWith(ym)) {
-      countByDay.set(r.record_date, (countByDay.get(r.record_date) ?? 0) + 1);
-    }
-  }
-
+interface MonthBarProps {
+  ym: string;
+  onChange: (ym: string) => void;
+}
+function MonthBar({ ym, onChange }: MonthBarProps) {
+  const [y, m] = ym.split("-").map(Number);
   return (
-    <div className="bg-card border border-border/50 rounded-2xl p-4">
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-1">
-        {["日", "一", "二", "三", "四", "五", "六"].map((w) => (
-          <div key={w}>{w}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((c, i) =>
-          c.d === null ? (
-            <div key={i} className="h-16" />
-          ) : (
-            <button
-              key={i}
-              type="button"
-              onClick={() => (countByDay.get(c.iso!) ? onSelectDay(c.iso!) : onAddNew(c.iso!))}
-              className="h-16 rounded-lg border border-border/40 hover:bg-muted/40 text-left p-1 flex flex-col"
-            >
-              <span className="text-xs text-muted-foreground">{c.d}</span>
-              {countByDay.get(c.iso!) ? (
-                <span className="mt-auto inline-flex items-center justify-center text-[11px] bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 self-end">
-                  {countByDay.get(c.iso!)}
-                </span>
-              ) : null}
-            </button>
-          ),
-        )}
-      </div>
+    <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background px-1 py-0.5">
+      <button
+        type="button"
+        onClick={() => onChange(ymAdd(ym, -1))}
+        className="h-7 w-7 rounded-full hover:bg-muted text-sm"
+        aria-label="上一月"
+      >
+        ‹
+      </button>
+      <div className="px-2 text-sm tabular-nums whitespace-nowrap">{y}年{pad2(m)}月</div>
+      <button
+        type="button"
+        onClick={() => onChange(ymAdd(ym, 1))}
+        className="h-7 w-7 rounded-full hover:bg-muted text-sm"
+        aria-label="下一月"
+      >
+        ›
+      </button>
+      <label className="h-7 w-7 rounded-full hover:bg-muted text-sm flex items-center justify-center cursor-pointer relative" title="选择年月">
+        📅
+        <input
+          type="month"
+          value={ym}
+          onChange={(e) => e.target.value && onChange(e.target.value)}
+          className="absolute inset-0 opacity-0 cursor-pointer"
+        />
+      </label>
     </div>
   );
 }
+
 
 interface Props {
   groupType: GroupType;
