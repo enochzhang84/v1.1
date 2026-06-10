@@ -752,6 +752,7 @@ function AdminPage() {
       media: "media",
       kitchen: "kitchen",
       sunday_school: "sunday",
+      fellowship: "fellowship",
       newcomer: "stats",
       retreat: "stats",
       tv_display: "stats",
