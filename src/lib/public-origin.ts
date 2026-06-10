@@ -74,3 +74,23 @@ export function isCurrentWindowDev(): boolean {
   if (typeof window === "undefined") return false;
   return isDevOrigin(window.location.origin);
 }
+
+/**
+ * 渲染二维码 / 分享链接前的最后防线：
+ * 如果保存的链接指向沙箱域（lovableproject.com / id-preview / localhost），
+ * 自动把域名改写为已发布站点，保留路径和参数。
+ * 其他域名原样返回。
+ */
+export function sanitizePublicUrl(url: string | null | undefined): string {
+  const raw = (url ?? "").trim();
+  if (!raw) return "";
+  try {
+    const u = new URL(raw);
+    if (isDevOrigin(u.origin)) {
+      return `${PUBLISHED_ORIGIN}${u.pathname}${u.search}${u.hash}`;
+    }
+    return raw;
+  } catch {
+    return raw;
+  }
+}
