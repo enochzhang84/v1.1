@@ -1963,7 +1963,7 @@ function AdminPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {cards.map((c, idx) => (
                   <Fragment key={c.label}>
-                    {idx === 2 && <MinistryFunnelStats />}
+                    {idx === 2 && <MinistryFunnelStats onClick={() => setStatsSubTab("funnel")} />}
                     <button
                       type="button"
                       onClick={c.jump}
