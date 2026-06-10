@@ -2266,6 +2266,8 @@ function AdminPage() {
           </div>
         )}
 
+        {statsSubTab === "funnel" && <MinistryFunnelDetail />}
+
         <LongAbsenceDialog
           open={absenceDialogOpen}
           onOpenChange={setAbsenceDialogOpen}
