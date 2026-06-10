@@ -12,12 +12,12 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 const DEFAULT_EMAIL_SUBJECTS: Record<string, string> = {
-  signup: '确认您的邮箱',
-  invite: '您已被邀请',
-  magiclink: '登录验证码',
-  recovery: '重置您的管理员密码',
-  email_change: '确认您的新邮箱',
-  reauthentication: '您的验证码',
+  signup: '【LioneApps】确认您的邮箱 / Confirm Your Email',
+  invite: '【LioneApps】您已被邀请加入系统 / You Are Invited',
+  magiclink: '【LioneApps】登录链接 / Sign In Link',
+  recovery: '【LioneApps】密码重置通知 / Password Reset Request',
+  email_change: '【LioneApps】确认邮箱变更 / Confirm Email Change',
+  reauthentication: '【LioneApps】重新认证验证码 / Reauthentication Code',
 }
 
 // Template mapping
@@ -30,35 +30,10 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   reauthentication: ReauthenticationEmail,
 }
 
-// 默认发信配置（在系统未开通时使用）
-const DEFAULT_SITE_NAME = "HOC3 Ministry Center"
-const SENDER_DOMAIN = "notify.lioneapps.com"
-const ROOT_DOMAIN = "lioneapps.com"
-const FROM_DOMAIN = "lioneapps.com"
-
-// 从 app_settings 读取教会品牌信息
-async function loadBrandSettings(sb: any) {
-  try {
-    const { data } = await sb.rpc('get_public_app_settings')
-    const map: Record<string, string> = {}
-    for (const row of (data ?? []) as Array<{ key: string; value: string }>) {
-      map[row.key] = row.value
-    }
-    return {
-      siteName: map.email_sender_name || map.admin_logo_title_zh || DEFAULT_SITE_NAME,
-      churchNameCn: map.church_name_cn || '',
-      siteUrl: map.auth_base_url || `https://${ROOT_DOMAIN}`,
-      replyTo: map.reply_to_email || map.church_email || '',
-    }
-  } catch {
-    return {
-      siteName: DEFAULT_SITE_NAME,
-      churchNameCn: '',
-      siteUrl: `https://${ROOT_DOMAIN}`,
-      replyTo: '',
-    }
-  }
-}
+// 统一品牌发件配置（通用模板，不绑定任何单一客户/教会副本）
+const BRAND_SENDER_NAME = 'LioneApps Security'
+const SENDER_DOMAIN = 'notify.lioneapps.com'
+const FROM_DOMAIN = 'notify.lioneapps.com'
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
