@@ -165,7 +165,8 @@ function RegisterPage() {
       .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
       .filter((c) => c.name);
     setSubmitting(true);
-    const isBackfill = isAdmin && !eventToken && !!entryDateTime;
+    const showAdminUI = (isAdmin || isBackfillMode) && !eventToken;
+    const isBackfill = showAdminUI && !!entryDateTime;
 
     const groupId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
