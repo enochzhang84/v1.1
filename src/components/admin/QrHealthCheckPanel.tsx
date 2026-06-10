@@ -346,6 +346,16 @@ export function QrHealthCheckPanel() {
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground break-all mt-1">{q.url || "(空)"}</div>
+                  <div className="text-xs mt-1 grid sm:grid-cols-3 gap-x-3">
+                    <div>当前项目域名: <b>{q.currentHost || "-"}</b></div>
+                    <div>二维码域名: <b>{q.qrHost || "-"}</b></div>
+                    <div>
+                      是否一致:{" "}
+                      <b className={q.qrHost && q.currentHost && q.qrHost === q.currentHost ? "text-[#1f7a3a]" : "text-[#c0392b]"}>
+                        {q.qrHost && q.currentHost && q.qrHost === q.currentHost ? "是" : "否"}
+                      </b>
+                    </div>
+                  </div>
                   {q.reasons.length > 0 && (
                     <ul className="text-xs text-[#c0392b] mt-1 list-disc pl-5">
                       {q.reasons.map((r, j) => (<li key={j}>{r}</li>))}
