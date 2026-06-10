@@ -256,12 +256,6 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
         </div>
       </div>
 
-      <MonthCalendar
-        ym={ym}
-        records={records}
-        onSelectDay={(iso) => setDayFilter(iso)}
-        onAddNew={(iso) => openNew(iso)}
-      />
 
       <div className="overflow-x-auto rounded-lg border border-border/50">
         <table className="w-full text-sm">
