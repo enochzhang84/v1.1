@@ -6579,7 +6579,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       initLoading ||
                       !initPreview ||
                       initPreview.superAdminCount < 1 ||
-                      initFinalConfirm !== "初始化母版"
+                      initFinalConfirm !== "初始化系统"
                     }
                     onClick={async () => {
                       setInitLoading(true);
@@ -6587,8 +6587,8 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                         const r = await runFactoryResetFn();
                         setInitResult(r);
                         if (r.ok) {
-                          toast.success(`已重置为母版 (清空 ${r.totalDeleted} 条)`);
-                          logAction(`系统初始化母版（清空 ${r.totalDeleted} 条业务数据）`);
+                          toast.success(`已恢复为新系统状态 (清空 ${r.totalDeleted} 条)`);
+                          logAction(`系统初始化（清空 ${r.totalDeleted} 条业务数据）`);
                         } else {
                           toast.error("初始化后安全检查未通过");
                         }
@@ -6599,7 +6599,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       }
                     }}
                   >
-                    {initLoading ? "正在初始化..." : "确定初始化为母版"}
+                    {initLoading ? "正在初始化..." : "确认初始化系统"}
                   </Button>
                   <Button
                     variant="secondary"
