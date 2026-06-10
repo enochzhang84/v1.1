@@ -109,6 +109,7 @@ type Reg = {
   relationship_to_primary: string | null;
   primary_registration_id: string | null;
   wechat: string | null;
+  transfer_target: string | null;
 };
 
 
