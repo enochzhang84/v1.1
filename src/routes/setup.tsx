@@ -71,11 +71,12 @@ function SetupWizard() {
       setForm((f) => ({
         ...f,
         auth_base_url: f.auth_base_url || getPublicOrigin(),
-        email_sender_name: f.email_sender_name || "HOC3 Ministry Center",
+        email_sender_name: f.email_sender_name || "Ministry Center",
       }));
       setChecking(false);
     })();
   }, [navigate]);
+
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -169,15 +170,20 @@ function SetupWizard() {
       if (rpcErr) throw rpcErr;
 
       clearPublicAppSettingsCache();
-      toast.success("系统开通成功，即将进入管理后台。");
+      // 退出当前会话，强制走标准登录流程
+      try { await supabase.auth.signOut(); } catch { /* noop */ }
+      toast.success("系统初始化成功，请登录管理员账户。");
       setTimeout(() => {
-        window.location.assign("/admin");
-      }, 600);
+        window.location.assign("/login");
+      }, 800);
     } catch (e: any) {
       setSubmitting(false);
-      toast.error(`开通失败：${e?.message || e}`);
+      const msg = e?.message || String(e);
+      toast.error(`开通失败：${msg}`);
+      console.error("[setup] complete failed:", e);
     }
   }
+
 
   if (checking) {
     return (
@@ -188,12 +194,18 @@ function SetupWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-4 py-10 relative">
+      <div className="absolute top-4 right-4">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground rounded-full border border-gray-200 bg-white/80 px-4 py-2 backdrop-blur">
+          退出
+        </Link>
+      </div>
       <div className="w-full max-w-xl">
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl text-foreground tracking-tight">首次系统开通向导</h1>
-          <p className="text-muted-foreground text-sm mt-2">第 {step} / 3 步</p>
+          <h1 className="font-serif text-4xl text-foreground tracking-tight">欢迎使用系统管理中心</h1>
+          <p className="text-muted-foreground text-sm mt-2">首次开通向导 · 第 {step} / 3 步</p>
         </div>
+
 
         <div className="bg-white/90 backdrop-blur rounded-3xl p-8 space-y-5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.12)] border border-white">
           {step === 1 && (
@@ -226,7 +238,7 @@ function SetupWizard() {
                 <Input className="h-12 rounded-xl" value={form.auth_base_url} onChange={(e) => set("auth_base_url", e.target.value)} placeholder="https://hoc3.org" />
               </Field>
               <Field label="系统发信显示名称 *">
-                <Input className="h-12 rounded-xl" value={form.email_sender_name} onChange={(e) => set("email_sender_name", e.target.value)} placeholder="HOC3 Ministry Center" />
+                <Input className="h-12 rounded-xl" value={form.email_sender_name} onChange={(e) => set("email_sender_name", e.target.value)} placeholder="Ministry Center" />
               </Field>
               <Field label="回复邮箱 Reply-To" hint="默认使用教会联系邮箱">
                 <Input type="email" className="h-12 rounded-xl" value={form.reply_to_email} onChange={(e) => set("reply_to_email", e.target.value)} placeholder={form.church_email || "reply@yourchurch.org"} />
