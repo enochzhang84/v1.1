@@ -6230,6 +6230,20 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                 </div>
 
                 <div className="space-y-2">
+                  <Label>转项（崇拜后跟进去向）</Label>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={((editForm as any).transfer_target as string) ?? ""}
+                    onChange={(e) => setEditForm((prev) => prev ? ({ ...prev, transfer_target: e.target.value || null } as any) : prev)}
+                  >
+                    <option value="">未设置</option>
+                    {TRANSFER_TARGET_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
                   <Label>备注 / 代祷事项(选填)</Label>
                   <Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm((prev) => prev ? { ...prev, notes: e.target.value } : prev)} rows={3} />
                 </div>
