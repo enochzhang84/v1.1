@@ -594,7 +594,9 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
   const SectionQr = (
     <div className="space-y-5">
       <UnifiedQrInspector />
+      <LegacyUrlScanPanel />
       <QrAutoTestPanel />
+
 
 
 
