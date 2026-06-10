@@ -72,7 +72,18 @@ export type Reg = {
   relationship_to_primary: string | null;
   primary_registration_id: string | null;
   wechat: string | null;
+  transfer_target: string | null;
 };
+
+const TRANSFER_TARGET_OPTIONS_INLINE = [
+  { value: "happiness_group", label: "幸福小组" },
+  { value: "grace_tea_group", label: "恩典茶经小组" },
+  { value: "baptism_class", label: "受洗班" },
+  { value: "decision_record", label: "决志记录" },
+];
+const TRANSFER_TARGET_LABELS_INLINE: Record<string, string> = Object.fromEntries(
+  TRANSFER_TARGET_OPTIONS_INLINE.map((o) => [o.value, o.label]),
+);
 
 function formatReferrer(r: Pick<Reg, "referrer_type" | "invited_by" | "referrer_other">): string {
   switch (r.referrer_type) {
