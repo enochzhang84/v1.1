@@ -335,17 +335,16 @@ function RegisterPage() {
           {isAdmin && !eventToken && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <Label className="text-sm font-medium">
-                登记日期（管理员补录）
+                登记日期 / 补录日期
               </Label>
               <Input
-                type="date"
-                value={entryDate}
-                max={todayStr()}
-                onChange={(e) => setEntryDate(e.target.value || todayStr())}
-                className="w-full sm:w-56"
+                type="datetime-local"
+                value={entryDateTime}
+                onChange={(e) => setEntryDateTime(e.target.value || nowLocalStr())}
+                className="w-full sm:w-72"
               />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                默认为今天，可修改为历史日期以补录当天遗漏的登记。仅超级管理员 / 管理员可见，数据将与扫码登记统一进入统计。
+                默认为当前时间，可修改为任意历史日期/时间以补录新人资料。保存时将写入登记时间字段，后台列表与今日/本周/本月统计均按此时间计算。
               </p>
             </div>
           )}
