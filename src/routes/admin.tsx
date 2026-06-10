@@ -6430,11 +6430,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   </ul>
                 </details>
 
-                {/* 母版状态检查 */}
+                {/* 系统状态检查 */}
                 {initResult.health && (
                   <div className="rounded-lg border p-3 bg-muted/30">
                     <div className="font-medium text-sm mb-2">
-                      母版状态检查{" "}
+                      系统状态检查{" "}
                       {initResult.health.ok ? (
                         <span className="text-green-700">✓ 全部通过</span>
                       ) : (
