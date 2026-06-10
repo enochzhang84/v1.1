@@ -2842,6 +2842,9 @@ function AdminPage() {
             >
               ⚙️ 系统运维中心
             </Button>
+            <Link to="/admin-settings">
+              <Button variant="outline">⛪ 教会信息</Button>
+            </Link>
           </div>
         </section>
         )}
