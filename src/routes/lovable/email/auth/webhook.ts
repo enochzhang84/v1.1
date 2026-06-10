@@ -130,7 +130,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           )
         }
 
-        // 创建 supabase 服务端 client + 读取教会品牌设置
+        // 创建 supabase 服务端 client（仅用于入队列与日志）
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -143,17 +143,11 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey)
-        const brand = await loadBrandSettings(supabase)
 
-        // Build template props from payload.data (HookData structure)
+        // 通用模板 props：confirmationUrl 必须是 Supabase 原始 URL，不做任何 host 改写
         const templateProps = {
-          siteName: brand.siteName,
-          siteUrl: brand.siteUrl,
-          churchName: brand.churchNameCn,
-          recipient: payload.data.email,
           confirmationUrl: payload.data.url,
           token: payload.data.token,
-          email: payload.data.email,
           oldEmail: payload.data.old_email,
           newEmail: payload.data.new_email,
         }
@@ -165,11 +159,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
 
         const messageId = crypto.randomUUID()
 
-        // 主题动态拼上品牌名（recovery 邮件特别处理）
-        const subject =
-          emailType === 'recovery'
-            ? `重置您的 ${brand.siteName} 管理员密码`
-            : DEFAULT_EMAIL_SUBJECTS[emailType] || 'Notification'
+        const subject = DEFAULT_EMAIL_SUBJECTS[emailType] || 'LioneApps Notification'
 
         // Log pending BEFORE enqueue so we have a record even if enqueue crashes
         await supabase.from('email_send_log').insert({
@@ -183,7 +173,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           run_id,
           message_id: messageId,
           to: payload.data.email,
-          from: `${brand.siteName} <noreply@${FROM_DOMAIN}>`,
+          from: `${BRAND_SENDER_NAME} <noreply@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
           subject,
           html,
@@ -192,7 +182,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           label: emailType,
           queued_at: new Date().toISOString(),
         }
-        if (brand.replyTo) enqueuePayload.reply_to = brand.replyTo
+
 
         const { error: enqueueError } = await supabase.rpc('enqueue_email', {
           queue_name: 'auth_emails',
