@@ -187,6 +187,8 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
       joined_at: form.joined_at || null,
       status: form.status?.trim() || null,
       notes: form.notes?.trim() || null,
+      follow_up_status: form.follow_up_status || "待邀请",
+      status_note: form.status_note?.trim() || null,
     };
     if (form.id) {
       const { error } = await (supabase as any)
