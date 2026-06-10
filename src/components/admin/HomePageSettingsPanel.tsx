@@ -31,6 +31,7 @@ import {
   emitAdminLogoUpdated,
 } from "@/hooks/useAdminLogo";
 import { UnifiedQrInspector } from "./UnifiedQrInspector";
+import { QrAutoTestPanel } from "./QrAutoTestPanel";
 
 type Settings = {
   id: string;
@@ -592,6 +593,9 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
   const SectionQr = (
     <div className="space-y-5">
       <UnifiedQrInspector />
+      <QrAutoTestPanel />
+
+
 
       {/* Phase 1 标准化：正式域名状态 + 警告 */}
       <div
