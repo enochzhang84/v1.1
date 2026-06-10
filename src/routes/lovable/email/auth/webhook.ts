@@ -37,7 +37,7 @@ const ROOT_DOMAIN = "lioneapps.com"
 const FROM_DOMAIN = "lioneapps.com"
 
 // 从 app_settings 读取教会品牌信息
-async function loadBrandSettings(sb: ReturnType<typeof createClient>) {
+async function loadBrandSettings(sb: any) {
   try {
     const { data } = await sb.rpc('get_public_app_settings')
     const map: Record<string, string> = {}
