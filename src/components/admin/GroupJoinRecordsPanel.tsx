@@ -396,6 +396,22 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
               <Label>状态（对聊天内容感觉怎么样）</Label>
               <Input value={form.status ?? ""} onChange={(e) => setForm({ ...form, status: e.target.value })} placeholder="例如：很感兴趣 / 反应平淡" />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>跟进状态</Label>
+                <select
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.follow_up_status ?? "待邀请"}
+                  onChange={(e) => setForm({ ...form, follow_up_status: e.target.value })}
+                >
+                  {FOLLOW_UP_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>状态备注</Label>
+                <Input value={form.status_note ?? ""} onChange={(e) => setForm({ ...form, status_note: e.target.value })} placeholder="工作忙 / 出差 / 时间不合适" />
+              </div>
+            </div>
             <div className="space-y-1">
               <Label>备注</Label>
               <Textarea rows={3} value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
