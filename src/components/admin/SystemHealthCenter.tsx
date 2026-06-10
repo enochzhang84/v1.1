@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getSystemHealth, type SystemHealthReport } from "@/lib/system-health.functions";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Sparkles } from "lucide-react";
+import { QrHealthCheckPanel } from "@/components/admin/QrHealthCheckPanel";
 
 function fmtTime(v: string | null | undefined): string {
   if (!v) return "—";
@@ -316,6 +317,9 @@ export function SystemHealthCenter() {
                 ))}
               </div>
             </Card>
+
+            {/* 二维码健康检查 */}
+            <QrHealthCheckPanel />
 
             {/* 预留扩展 */}
             <Card title="未来扩展" icon="🚀">
