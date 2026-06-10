@@ -562,7 +562,7 @@ function AdminPage() {
   const TAB_PAGE_SIZE = 10;
   const [mainTab, setMainTab] = useState("stats");
   const [statsSubTab, setStatsSubTab] = useState<
-    "overview" | "newcomer" | "sunday" | "meals" | "service" | "baptism" | "annual"
+    "overview" | "newcomer" | "sunday" | "meals" | "service" | "baptism" | "annual" | "funnel"
   >("overview");
   const [kidsEnrollOpen, setKidsEnrollOpen] = useState(false);
   const [sundayParticipationOpen, setSundayParticipationOpen] = useState(false);
