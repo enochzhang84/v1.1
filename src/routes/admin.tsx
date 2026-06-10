@@ -1734,7 +1734,7 @@ function AdminPage() {
               {t("hoc3Home")}
             </Button>
             {isAdmin && (
-              <Link to="/register" target="_blank">
+              <Link to="/register" search={{ backfill: "1" }}>
                 <Button size="sm">{t("manualEntry")}</Button>
               </Link>
             )}
