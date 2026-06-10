@@ -49,6 +49,8 @@ const EMPTY = (gt: GroupType): Partial<GroupJoinRecord> => ({
   joined_at: null,
   status: "",
   notes: "",
+  follow_up_status: "待邀请",
+  status_note: "",
 });
 
 function pad2(n: number) {
