@@ -1927,14 +1927,7 @@ function AdminPage() {
           }> = [
             { icon: "👥", label: t("cardSundayAttendance"), value: latestWorship, sub: t("subLatestWorship"), tone: "ok" },
             { icon: "🆕", label: t("cardNewcomers"), value: newcomersYear, sub: `${now.getFullYear()}${t("subYearTotal")}`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
-            {
-              icon: "⚠️",
-              label: t("cardLongAbsence"),
-              value: longAbsentNames.size,
-              sub: t("subAbsence4w"),
-              tone: longAbsentNames.size > 10 ? "alert" : longAbsentNames.size > 5 ? "warn" : "ok",
-              jump: () => setAbsenceDialogOpen(true),
-            },
+            
             {
               icon: "🤝",
               label: t("cardFellowshipRate"),
