@@ -591,6 +591,32 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                       <td className="py-3 px-3 align-middle">
                         <FollowUpEditor r={r} setRegs={setRegs} />
                       </td>
+                      <td className="py-3 px-3 align-middle">
+                        <select
+                          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                          value={r.transfer_target ?? ""}
+                          onChange={async (e) => {
+                            const v = e.target.value || null;
+                            const prev = r.transfer_target;
+                            setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, transfer_target: v } : x)));
+                            const { error } = await (supabase as any)
+                              .from("registrations")
+                              .update({ transfer_target: v })
+                              .eq("id", r.id);
+                            if (error) {
+                              setRegs((list) => list.map((x) => (x.id === r.id ? { ...x, transfer_target: prev } : x)));
+                              toast.error(error.message);
+                            } else {
+                              toast.success("已更新转项");
+                            }
+                          }}
+                        >
+                          <option value="">未设置</option>
+                          {TRANSFER_TARGET_OPTIONS_INLINE.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1">
                           <IconBtn label="详情" onClick={() => setDetailReg(r)}><Eye className="h-4 w-4" /></IconBtn>
@@ -603,7 +629,7 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                 })}
                 {paginated.length === 0 && (
                   <tr>
-                    <td colSpan={mode === "full" ? 12 : 8} className="py-16 text-center text-muted-foreground">
+                    <td colSpan={mode === "full" ? 13 : 9} className="py-16 text-center text-muted-foreground">
                       暂无登记记录
                     </td>
                   </tr>
