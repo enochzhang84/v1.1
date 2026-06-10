@@ -484,6 +484,7 @@ export function RegistrationListCRM(props: RegistrationListCRMProps) {
                   {mode === "full" && <th className="py-2.5 px-3 font-medium">标记</th>}
                   <th className="py-2.5 px-3 font-medium">跟进状态</th>
                   <th className="py-2.5 px-3 font-medium">跟进人</th>
+                  <th className="py-2.5 px-3 font-medium">转项</th>
                   <th className="py-2.5 px-3 font-medium text-right">操作</th>
                 </tr>
               </thead>
