@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAuthBaseUrl } from "@/lib/auth-base-url";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +19,11 @@ function ForgotPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const base = await getAuthBaseUrl();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${base}/reset-password`,
+      redirectTo: "https://forgot-password.lioneapps.com/update-password",
     });
     setLoading(false);
+
     if (error) {
       toast.error(error.message);
       return;

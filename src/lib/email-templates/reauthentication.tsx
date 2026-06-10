@@ -1,58 +1,34 @@
 import * as React from 'react'
+import { Section, Text } from '@react-email/components'
+import { LioneLayout, styles } from './_layout'
 
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from '@react-email/components'
-
-interface ReauthenticationEmailProps {
+interface Props {
   token: string
 }
 
-export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>Your verification code</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Confirm reauthentication</Heading>
-        <Text style={text}>Use the code below to confirm your identity:</Text>
-        <Text style={codeStyle}>{token}</Text>
-        <Text style={footer}>
-          This code will expire shortly. If you didn't request this, you can
-          safely ignore this email.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+export const ReauthenticationEmail = ({ token }: Props) => (
+  <LioneLayout preview="重新认证验证码 / Reauthentication Code">
+    <Text style={styles.h1}>重新认证验证码</Text>
+    <Text style={styles.langLabel}>中文</Text>
+    <Text style={styles.text}>您好，</Text>
+    <Text style={styles.text}>您正在进行安全认证。</Text>
+    <Text style={styles.text}>验证码：</Text>
+    <Text style={styles.code}>{token}</Text>
+    <Text style={styles.textMuted}>此验证码将在短时间内失效。</Text>
+    <Text style={styles.textMuted}>
+      如果这不是您本人操作，请忽略此邮件。
+    </Text>
+    <Section style={styles.divider} />
+    <Text style={styles.langLabel}>English</Text>
+    <Text style={styles.text}>Hello,</Text>
+    <Text style={styles.text}>You are completing a security verification.</Text>
+    <Text style={styles.text}>Verification code:</Text>
+    <Text style={styles.code}>{token}</Text>
+    <Text style={styles.textMuted}>This code will expire shortly.</Text>
+    <Text style={styles.textMuted}>
+      If you did not request this verification, you may safely ignore this email.
+    </Text>
+  </LioneLayout>
 )
 
 export default ReauthenticationEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const codeStyle = {
-  fontFamily: 'Courier, monospace',
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 30px',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

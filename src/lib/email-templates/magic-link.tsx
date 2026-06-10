@@ -1,72 +1,38 @@
 import * as React from 'react'
+import { Button, Section, Text } from '@react-email/components'
+import { LioneLayout, styles } from './_layout'
 
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Preview,
-  Section,
-  Text,
-} from '@react-email/components'
-
-interface MagicLinkEmailProps {
-  token: string
+interface Props {
+  confirmationUrl: string
+  token?: string
 }
 
-export const MagicLinkEmail = ({
-  token,
-}: MagicLinkEmailProps) => (
-  <Html lang="zh-CN" dir="ltr">
-    <Head />
-    <Preview>登录验证码</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Text style={title}>登录验证码</Text>
-        <Text style={bodyText}>您的验证码为：</Text>
-        <Section style={tokenSection}>
-          <Text style={tokenText}>{token}</Text>
-        </Section>
-        <Text style={bodyText}>
-          请返回登录页面输入验证码完成登录。
-        </Text>
-        <Text style={bodyText}>验证码将在有效期后失效。</Text>
-        <Text style={bodyText}>
-          如果这不是您的操作，请忽略此邮件。
-        </Text>
-        <Text style={footer}>
-          此邮件由系统自动发送，请勿回复。
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+export const MagicLinkEmail = ({ confirmationUrl, token }: Props) => (
+  <LioneLayout preview="登录链接 / Sign In Link">
+    <Text style={styles.h1}>登录链接</Text>
+    <Text style={styles.langLabel}>中文</Text>
+    <Text style={styles.text}>您好，</Text>
+    <Text style={styles.text}>请点击下方按钮登录系统：</Text>
+    <Section style={styles.buttonWrap}>
+      <Button style={styles.button} href={confirmationUrl}>
+        登录 Sign In
+      </Button>
+    </Section>
+    {token ? (
+      <>
+        <Text style={styles.textMuted}>或使用以下验证码 / Or use the code:</Text>
+        <Text style={styles.code}>{token}</Text>
+      </>
+    ) : null}
+    <Text style={styles.textMuted}>如果您没有请求登录，请忽略此邮件。</Text>
+    <Section style={styles.divider} />
+    <Text style={styles.langLabel}>English</Text>
+    <Text style={styles.text}>Hello,</Text>
+    <Text style={styles.text}>Please click the button above to sign in.</Text>
+    <Text style={styles.textMuted}>
+      If you did not request this sign-in link, you may safely ignore this email.
+    </Text>
+  </LioneLayout>
 )
 
 export default MagicLinkEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const title = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const bodyText = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 12px',
-}
-const tokenSection = {
-  textAlign: 'center' as const,
-  margin: '24px 0',
-}
-const tokenText = {
-  fontSize: '36px',
-  fontWeight: 'bold' as const,
-  letterSpacing: '8px',
-  color: '#000000',
-  margin: '0',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
