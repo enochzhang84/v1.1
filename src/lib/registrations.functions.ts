@@ -41,6 +41,7 @@ export const updateRegistration = createServerFn({ method: "POST" })
       wants_visit: z.boolean().nullable().optional(),
       wants_info: z.boolean().nullable().optional(),
       notes: z.string().nullable().optional(),
+      transfer_target: z.string().nullable().optional(),
     }).parse(data)
   )
   .handler(async ({ data, context }) => {
