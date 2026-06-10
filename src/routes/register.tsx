@@ -26,14 +26,12 @@ function RegisterPage() {
   const [done, setDone] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const todayStr = () => {
+  const nowLocalStr = () => {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-  const [entryDate, setEntryDate] = useState<string>(todayStr());
+  const [entryDateTime, setEntryDateTime] = useState<string>(nowLocalStr());
 
   type Companion = {
     name: string;
@@ -75,7 +73,7 @@ function RegisterPage() {
   });
   const [companions, setCompanions] = useState<Companion[]>([]);
 
-  const [form, setForm] = useState({
+  const emptyForm = () => ({
     name: "",
     name_en: "",
     district: "",
@@ -85,20 +83,29 @@ function RegisterPage() {
     zip: "",
     phone: "",
     email: "",
-    faith: "", // christian | seeker | other
+    faith: "",
     faith_years: "",
     faith_other: "",
     age_group: "",
-    marital_status: "", // married | single
+    marital_status: "",
     spouse_name: "",
-    referrer_type: "", // self | friend | other
+    referrer_type: "",
     invited_by: "",
     referrer_other: "",
-    source_channel: "", // chatgpt | maps | wechat | youtube | missionary
+    source_channel: "",
     wants_visit: false,
     wants_info: false,
     notes: "",
   });
+  const [form, setForm] = useState(emptyForm());
+
+  const resetForContinue = () => {
+    setForm(emptyForm());
+    setCompanions([]);
+    setEntryDateTime(nowLocalStr());
+    setDone(false);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (!eventToken) return;
@@ -154,8 +161,7 @@ function RegisterPage() {
       .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
       .filter((c) => c.name);
     setSubmitting(true);
-    const isBackfill =
-      isAdmin && !eventToken && entryDate && entryDate !== todayStr();
+    const isBackfill = isAdmin && !eventToken && !!entryDateTime;
 
     const groupId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -167,7 +173,7 @@ function RegisterPage() {
         : undefined;
 
     const createdAtOverride = isBackfill
-      ? new Date(`${entryDate}T12:00:00`).toISOString()
+      ? new Date(entryDateTime).toISOString()
       : undefined;
 
     const primary: Record<string, unknown> = {
@@ -309,9 +315,23 @@ function RegisterPage() {
             </p>
             <p className="text-sm text-muted-foreground mt-2">— {verse.ref}</p>
           </div>
-          <Link to="/">
-            <Button variant="outline" className="rounded-full">返回首页</Button>
-          </Link>
+          {isAdmin && !eventToken ? (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/admin">
+                <Button variant="outline" className="rounded-full w-full sm:w-auto">返回后台</Button>
+              </Link>
+              <Button
+                className="rounded-full w-full sm:w-auto"
+                onClick={resetForContinue}
+              >
+                继续录入
+              </Button>
+            </div>
+          ) : (
+            <Link to="/">
+              <Button variant="outline" className="rounded-full">返回首页</Button>
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -338,17 +358,16 @@ function RegisterPage() {
           {isAdmin && !eventToken && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <Label className="text-sm font-medium">
-                登记日期（管理员补录）
+                登记日期 / 补录日期
               </Label>
               <Input
-                type="date"
-                value={entryDate}
-                max={todayStr()}
-                onChange={(e) => setEntryDate(e.target.value || todayStr())}
-                className="w-full sm:w-56"
+                type="datetime-local"
+                value={entryDateTime}
+                onChange={(e) => setEntryDateTime(e.target.value || nowLocalStr())}
+                className="w-full sm:w-72"
               />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                默认为今天，可修改为历史日期以补录当天遗漏的登记。仅超级管理员 / 管理员可见，数据将与扫码登记统一进入统计。
+                默认为当前时间，可修改为任意历史日期/时间以补录新人资料。保存时将写入登记时间字段，后台列表与今日/本周/本月统计均按此时间计算。
               </p>
             </div>
           )}
