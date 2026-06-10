@@ -14,31 +14,36 @@ import {
 interface RecoveryEmailProps {
   siteName: string
   confirmationUrl: string
+  churchName?: string
 }
 
 export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
-}: RecoveryEmailProps) => (
-  <Html lang="zh-CN" dir="ltr">
-    <Head />
-    <Preview>重置您的 {siteName} 管理员密码</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>重置管理员密码</Heading>
-        <Text style={text}>
-          您正在重置 {siteName} 管理后台密码。请点击下方按钮设置新密码。
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          重置密码
-        </Button>
-        <Text style={footer}>
-          如果不是您本人操作，请忽略此邮件，您的密码不会被更改。
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-)
+  churchName,
+}: RecoveryEmailProps) => {
+  const brand = churchName || siteName
+  return (
+    <Html lang="zh-CN" dir="ltr">
+      <Head />
+      <Preview>重置您的 {siteName} 管理员密码</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>重置管理员密码</Heading>
+          <Text style={text}>
+            您正在重置「{brand}」后台管理员密码。请点击下方按钮设置新密码。
+          </Text>
+          <Button style={button} href={confirmationUrl}>
+            重置密码
+          </Button>
+          <Text style={footer}>
+            如果不是您本人操作，请忽略此邮件，您的密码不会被更改。
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
 
 export default RecoveryEmail
 

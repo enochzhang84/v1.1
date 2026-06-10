@@ -14,6 +14,7 @@ import { Route as SundayScheduleRouteImport } from './routes/sunday-schedule'
 import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SignageRouteImport } from './routes/signage'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
 import { Route as RetreatInfoRouteImport } from './routes/retreat-info'
@@ -32,6 +33,7 @@ import { Route as FellowshipCheckinRouteImport } from './routes/fellowship-check
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DataPreviewRouteImport } from './routes/data-preview'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AdminSettingsRouteImport } from './routes/admin-settings'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodayPublicTokenRouteImport } from './routes/today-public.$token'
@@ -66,6 +68,11 @@ const SignupRoute = SignupRouteImport.update({
 const SignageRoute = SignageRouteImport.update({
   id: '/signage',
   path: '/signage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServeApplyRoute = ServeApplyRouteImport.update({
@@ -158,6 +165,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin-settings',
+  path: '/admin-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -213,6 +225,7 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-settings': typeof AdminSettingsRoute
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -231,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/setup': typeof SetupRoute
   '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -248,6 +262,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-settings': typeof AdminSettingsRoute
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -266,6 +281,7 @@ export interface FileRoutesByTo {
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/setup': typeof SetupRoute
   '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -284,6 +300,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-settings': typeof AdminSettingsRoute
   '/chat': typeof ChatRoute
   '/data-preview': typeof DataPreviewRoute
   '/feedback': typeof FeedbackRoute
@@ -302,6 +319,7 @@ export interface FileRoutesById {
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/setup': typeof SetupRoute
   '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -321,6 +339,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-settings'
     | '/chat'
     | '/data-preview'
     | '/feedback'
@@ -339,6 +358,7 @@ export interface FileRouteTypes {
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
+    | '/setup'
     | '/signage'
     | '/signup'
     | '/sunday-checkin'
@@ -356,6 +376,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-settings'
     | '/chat'
     | '/data-preview'
     | '/feedback'
@@ -374,6 +395,7 @@ export interface FileRouteTypes {
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
+    | '/setup'
     | '/signage'
     | '/signup'
     | '/sunday-checkin'
@@ -391,6 +413,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-settings'
     | '/chat'
     | '/data-preview'
     | '/feedback'
@@ -409,6 +432,7 @@ export interface FileRouteTypes {
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
+    | '/setup'
     | '/signage'
     | '/signup'
     | '/sunday-checkin'
@@ -427,6 +451,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   ChatRoute: typeof ChatRoute
   DataPreviewRoute: typeof DataPreviewRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -445,6 +470,7 @@ export interface RootRouteChildren {
   RetreatInfoRoute: typeof RetreatInfoRoute
   RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
+  SetupRoute: typeof SetupRoute
   SignageRoute: typeof SignageRoute
   SignupRoute: typeof SignupRoute
   SundayCheckinRoute: typeof SundayCheckinRoute
@@ -495,6 +521,13 @@ declare module '@tanstack/react-router' {
       path: '/signage'
       fullPath: '/signage'
       preLoaderRoute: typeof SignageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/serve-apply': {
@@ -623,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-settings': {
+      id: '/admin-settings'
+      path: '/admin-settings'
+      fullPath: '/admin-settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -699,6 +739,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   ChatRoute: ChatRoute,
   DataPreviewRoute: DataPreviewRoute,
   FeedbackRoute: FeedbackRoute,
@@ -717,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetreatInfoRoute: RetreatInfoRoute,
   RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
+  SetupRoute: SetupRoute,
   SignageRoute: SignageRoute,
   SignupRoute: SignupRoute,
   SundayCheckinRoute: SundayCheckinRoute,
