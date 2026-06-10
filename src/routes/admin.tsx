@@ -6457,12 +6457,12 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   </div>
                 )}
 
-                {/* 导出母版 SQL */}
+                {/* 导出系统 SQL */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50/40 p-3 space-y-2">
-                  <div className="text-sm font-medium text-blue-900">📦 导出母版 SQL</div>
+                  <div className="text-sm font-medium text-blue-900">📦 导出系统 SQL</div>
                   <div className="text-xs text-blue-800/80">
-                    导出当前数据库结构与默认配置，作为新副本的初始化基线。
-                    文件名包含版本号（hoc3_database_init_vX.sql / hoc3_seed_data_vX.sql）。
+                    导出当前数据库结构与默认配置，作为新系统的初始化基线。
+                    文件名包含版本号（database_init_vX.sql / seed_data_vX.sql）。
                   </div>
                   <Button
                     size="sm"
