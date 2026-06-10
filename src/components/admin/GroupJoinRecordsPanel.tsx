@@ -230,11 +230,16 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
       性别: r.gender ?? "",
       信仰: r.faith_status ?? "",
       加入时间: r.joined_at ?? "",
+      跟进状态: r.follow_up_status ?? "",
+      参加次数: r.attended_count ?? 0,
+      最近参加: r.last_attended_at ?? "",
+      状态备注: r.status_note ?? "",
       状态: r.status ?? "",
       备注: r.notes ?? "",
+      来源: r.source_registration_id ? "登记自动" : "手动",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 24 }, { wch: 30 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 24 }, { wch: 30 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, title);
     XLSX.writeFile(wb, `${title}_${dayFilter ?? ym}.xlsx`);
