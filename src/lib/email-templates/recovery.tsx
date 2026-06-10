@@ -1,72 +1,46 @@
 import * as React from 'react'
+import { Button, Section, Text } from '@react-email/components'
+import { LioneLayout, styles } from './_layout'
 
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from '@react-email/components'
-
-interface RecoveryEmailProps {
-  siteName: string
+interface Props {
   confirmationUrl: string
-  churchName?: string
 }
 
-export const RecoveryEmail = ({
-  siteName,
-  confirmationUrl,
-  churchName,
-}: RecoveryEmailProps) => {
-  const brand = churchName || siteName
-  return (
-    <Html lang="zh-CN" dir="ltr">
-      <Head />
-      <Preview>重置您的 {siteName} 管理员密码</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>重置管理员密码</Heading>
-          <Text style={text}>
-            您正在重置「{brand}」后台管理员密码。请点击下方按钮设置新密码。
-          </Text>
-          <Button style={button} href={confirmationUrl}>
-            重置密码
-          </Button>
-          <Text style={footer}>
-            如果不是您本人操作，请忽略此邮件，您的密码不会被更改。
-          </Text>
-        </Container>
-      </Body>
-    </Html>
-  )
-}
+export const RecoveryEmail = ({ confirmationUrl }: Props) => (
+  <LioneLayout preview="密码重置通知 / Password Reset Request">
+    <Text style={styles.h1}>密码重置通知</Text>
+    <Text style={styles.langLabel}>中文</Text>
+    <Text style={styles.text}>您好，</Text>
+    <Text style={styles.text}>我们收到了一项密码重置请求。</Text>
+    <Text style={styles.text}>
+      如果这是您本人操作，请点击下方按钮设置新的密码：
+    </Text>
+    <Section style={styles.buttonWrap}>
+      <Button style={styles.button} href={confirmationUrl}>
+        重置密码 Reset Password
+      </Button>
+    </Section>
+    <Text style={styles.textMuted}>
+      此链接仅可使用一次，并将在一定时间后失效。
+    </Text>
+    <Text style={styles.textMuted}>
+      如果您并未请求重置密码，请忽略此邮件，您的账户和密码不会受到任何影响。
+    </Text>
+    <Section style={styles.divider} />
+    <Text style={styles.langLabel}>English</Text>
+    <Text style={styles.text}>Hello,</Text>
+    <Text style={styles.text}>We received a request to reset your password.</Text>
+    <Text style={styles.text}>
+      If this request was made by you, please click the button above to create a
+      new password.
+    </Text>
+    <Text style={styles.textMuted}>
+      This link can only be used once and will expire after a period of time.
+    </Text>
+    <Text style={styles.textMuted}>
+      If you did not request a password reset, you may safely ignore this email.
+    </Text>
+  </LioneLayout>
+)
 
 export default RecoveryEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const button = {
-  backgroundColor: '#059669',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
