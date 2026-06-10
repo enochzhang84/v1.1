@@ -14,6 +14,7 @@ import { Route as SundayScheduleRouteImport } from './routes/sunday-schedule'
 import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SignageRouteImport } from './routes/signage'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ServeApplyRouteImport } from './routes/serve-apply'
 import { Route as RetreatRegisterRouteImport } from './routes/retreat-register'
 import { Route as RetreatInfoRouteImport } from './routes/retreat-info'
@@ -66,6 +67,11 @@ const SignupRoute = SignupRouteImport.update({
 const SignageRoute = SignageRouteImport.update({
   id: '/signage',
   path: '/signage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServeApplyRoute = ServeApplyRouteImport.update({
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/setup': typeof SetupRoute
   '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -266,6 +273,7 @@ export interface FileRoutesByTo {
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/setup': typeof SetupRoute
   '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/retreat-info': typeof RetreatInfoRoute
   '/retreat-register': typeof RetreatRegisterRoute
   '/serve-apply': typeof ServeApplyRoute
+  '/setup': typeof SetupRoute
   '/signage': typeof SignageRoute
   '/signup': typeof SignupRoute
   '/sunday-checkin': typeof SundayCheckinRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
+    | '/setup'
     | '/signage'
     | '/signup'
     | '/sunday-checkin'
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
+    | '/setup'
     | '/signage'
     | '/signup'
     | '/sunday-checkin'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/retreat-info'
     | '/retreat-register'
     | '/serve-apply'
+    | '/setup'
     | '/signage'
     | '/signup'
     | '/sunday-checkin'
@@ -445,6 +457,7 @@ export interface RootRouteChildren {
   RetreatInfoRoute: typeof RetreatInfoRoute
   RetreatRegisterRoute: typeof RetreatRegisterRoute
   ServeApplyRoute: typeof ServeApplyRoute
+  SetupRoute: typeof SetupRoute
   SignageRoute: typeof SignageRoute
   SignupRoute: typeof SignupRoute
   SundayCheckinRoute: typeof SundayCheckinRoute
@@ -495,6 +508,13 @@ declare module '@tanstack/react-router' {
       path: '/signage'
       fullPath: '/signage'
       preLoaderRoute: typeof SignageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/serve-apply': {
@@ -717,6 +737,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetreatInfoRoute: RetreatInfoRoute,
   RetreatRegisterRoute: RetreatRegisterRoute,
   ServeApplyRoute: ServeApplyRoute,
+  SetupRoute: SetupRoute,
   SignageRoute: SignageRoute,
   SignupRoute: SignupRoute,
   SundayCheckinRoute: SundayCheckinRoute,
