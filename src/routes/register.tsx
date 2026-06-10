@@ -11,7 +11,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
-const searchSchema = z.object({ event: z.string().optional() });
+const searchSchema = z.object({
+  event: z.string().optional(),
+  backfill: z.string().optional(),
+});
 
 export const Route = createFileRoute("/register")({
   validateSearch: searchSchema,
