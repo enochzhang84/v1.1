@@ -36,6 +36,7 @@ import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel"
 import { SystemHealthCenter } from "@/components/admin/SystemHealthCenter";
 import { GroupJoinRecordsPanel } from "@/components/admin/GroupJoinRecordsPanel";
 import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
+import { VersionHotkeyDialog } from "@/components/admin/VersionHotkeyDialog";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
