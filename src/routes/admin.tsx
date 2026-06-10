@@ -1721,11 +1721,6 @@ function AdminPage() {
               isSuperAdmin={userRole === "super_admin"}
               userEmail={currentUserEmail}
             />
-            {isAdmin && (
-              <Link to="/admin-settings">
-                <Button size="sm" variant="outline">系统设置</Button>
-              </Link>
-            )}
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground px-2 py-1 rounded-md bg-muted/60 max-w-[200px] truncate" title={currentUserEmail}>
               <User className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">{currentUserEmail}</span>
@@ -2847,6 +2842,9 @@ function AdminPage() {
             >
               ⚙️ 系统运维中心
             </Button>
+            <Link to="/admin-settings">
+              <Button variant="outline">⛪ 教会信息</Button>
+            </Link>
           </div>
         </section>
         )}
