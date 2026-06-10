@@ -155,10 +155,26 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           )
         }
 
+        // 创建 supabase 服务端 client + 读取教会品牌设置
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+        if (!supabaseUrl || !supabaseServiceKey) {
+          console.error('Missing Supabase environment variables')
+          return Response.json(
+            { error: 'Server configuration error' },
+            { status: 500 }
+          )
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        const brand = await loadBrandSettings(supabase)
+
         // Build template props from payload.data (HookData structure)
         const templateProps = {
-          siteName: SITE_NAME,
-          siteUrl: `https://${ROOT_DOMAIN}`,
+          siteName: brand.siteName,
+          siteUrl: brand.siteUrl,
+          churchName: brand.churchNameCn,
           recipient: payload.data.email,
           confirmationUrl: payload.data.url,
           token: payload.data.token,
@@ -172,20 +188,13 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         const html = await render(element)
         const text = await render(element, { plainText: true })
 
-        // Enqueue email for async processing by the dispatcher (process-email-queue).
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-        if (!supabaseUrl || !supabaseServiceKey) {
-          console.error('Missing Supabase environment variables')
-          return Response.json(
-            { error: 'Server configuration error' },
-            { status: 500 }
-          )
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseServiceKey)
         const messageId = crypto.randomUUID()
+
+        // 主题动态拼上品牌名（recovery 邮件特别处理）
+        const subject =
+          emailType === 'recovery'
+            ? `重置您的 ${brand.siteName} 管理员密码`
+            : DEFAULT_EMAIL_SUBJECTS[emailType] || 'Notification'
 
         // Log pending BEFORE enqueue so we have a record even if enqueue crashes
         await supabase.from('email_send_log').insert({
@@ -195,21 +204,24 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           status: 'pending',
         })
 
+        const enqueuePayload: Record<string, unknown> = {
+          run_id,
+          message_id: messageId,
+          to: payload.data.email,
+          from: `${brand.siteName} <noreply@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject,
+          html,
+          text,
+          purpose: 'transactional',
+          label: emailType,
+          queued_at: new Date().toISOString(),
+        }
+        if (brand.replyTo) enqueuePayload.reply_to = brand.replyTo
+
         const { error: enqueueError } = await supabase.rpc('enqueue_email', {
           queue_name: 'auth_emails',
-          payload: {
-            run_id,
-            message_id: messageId,
-            to: payload.data.email,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-            sender_domain: SENDER_DOMAIN,
-            subject: EMAIL_SUBJECTS[emailType] || 'Notification',
-            html,
-            text,
-            purpose: 'transactional',
-            label: emailType,
-            queued_at: new Date().toISOString(),
-          },
+          payload: enqueuePayload,
         })
 
         if (enqueueError) {
