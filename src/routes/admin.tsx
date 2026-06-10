@@ -1927,14 +1927,7 @@ function AdminPage() {
           }> = [
             { icon: "👥", label: t("cardSundayAttendance"), value: latestWorship, sub: t("subLatestWorship"), tone: "ok" },
             { icon: "🆕", label: t("cardNewcomers"), value: newcomersYear, sub: `${now.getFullYear()}${t("subYearTotal")}`, tone: "ok", jump: () => setStatsSubTab("newcomer") },
-            {
-              icon: "⚠️",
-              label: t("cardLongAbsence"),
-              value: longAbsentNames.size,
-              sub: t("subAbsence4w"),
-              tone: longAbsentNames.size > 10 ? "alert" : longAbsentNames.size > 5 ? "warn" : "ok",
-              jump: () => setAbsenceDialogOpen(true),
-            },
+            
             {
               icon: "🤝",
               label: t("cardFellowshipRate"),
@@ -4556,10 +4549,10 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
 
         <div className="mt-8 space-y-8">
         {fellowshipSubTab === "happiness" && (
-          <GroupJoinRecordsPanel groupType="happiness_group" title="幸福小组加入名单" />
+          <GroupJoinRecordsPanel groupType="happiness_group" title="幸福小组" />
         )}
         {fellowshipSubTab === "grace_tea" && (
-          <GroupJoinRecordsPanel groupType="grace_tea_group" title="恩典茶经小组加入名单" />
+          <GroupJoinRecordsPanel groupType="grace_tea_group" title="恩典茶经小组" />
         )}
         {fellowshipSubTab === "checkins" && (
           <section className="bg-card border border-border/50 rounded-2xl p-6">

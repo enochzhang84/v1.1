@@ -1,74 +1,116 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-type Counts = {
-  registrations: number;
-  happiness: number;
-  graceTea: number;
-  decisions: number;
-  baptisms: number;
-  service: number;
-};
+type Period = "year" | "quarter" | "month";
+
+type Row = { created_at: string | null };
+
+function periodRange(p: Period): { start: Date; label: string } {
+  const now = new Date();
+  if (p === "year") {
+    return { start: new Date(now.getFullYear(), 0, 1), label: `${now.getFullYear()}年` };
+  }
+  if (p === "quarter") {
+    const q = Math.floor(now.getMonth() / 3);
+    const start = new Date(now.getFullYear(), q * 3, 1);
+    return { start, label: `${now.getFullYear()}年 Q${q + 1}` };
+  }
+  return { start: new Date(now.getFullYear(), now.getMonth(), 1), label: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}` };
+}
+
+function countInRange(rows: Row[], start: Date) {
+  return rows.filter((r) => r.created_at && new Date(r.created_at) >= start).length;
+}
 
 export function MinistryFunnelStats() {
-  const [c, setC] = useState<Counts | null>(null);
+  const [period, setPeriod] = useState<Period>("year");
+  const [data, setData] = useState<{
+    regs: Row[]; hap: Row[]; gra: Row[]; dec: Row[]; bap: Row[];
+  } | null>(null);
+
   useEffect(() => {
     (async () => {
-      const [reg, hap, gra, dec, bap, ser] = await Promise.all([
-        supabase.from("registrations").select("id", { count: "exact", head: true }),
-        (supabase as any).from("group_join_records").select("id", { count: "exact", head: true }).eq("group_type", "happiness_group"),
-        (supabase as any).from("group_join_records").select("id", { count: "exact", head: true }).eq("group_type", "grace_tea_group"),
-        supabase.from("decisions").select("id", { count: "exact", head: true }),
-        supabase.from("baptisms").select("id", { count: "exact", head: true }),
-        supabase.from("service_applications").select("id", { count: "exact", head: true }),
+      const [reg, hap, gra, dec, bap] = await Promise.all([
+        supabase.from("registrations").select("created_at"),
+        (supabase as any).from("group_join_records").select("created_at").eq("group_type", "happiness_group"),
+        (supabase as any).from("group_join_records").select("created_at").eq("group_type", "grace_tea_group"),
+        supabase.from("decisions").select("created_at"),
+        supabase.from("baptisms").select("created_at"),
       ]);
-      setC({
-        registrations: reg.count ?? 0,
-        happiness: hap.count ?? 0,
-        graceTea: gra.count ?? 0,
-        decisions: dec.count ?? 0,
-        baptisms: bap.count ?? 0,
-        service: ser.count ?? 0,
+      setData({
+        regs: (reg.data ?? []) as Row[],
+        hap: (hap.data ?? []) as Row[],
+        gra: (gra.data ?? []) as Row[],
+        dec: (dec.data ?? []) as Row[],
+        bap: (bap.data ?? []) as Row[],
       });
     })();
   }, []);
-  if (!c) return <div className="text-xs text-muted-foreground p-3">加载漏斗…</div>;
-  const steps = [
-    { label: "新人登记", n: c.registrations, emoji: "📝", color: "from-sky-500/20 to-sky-500/5" },
-    { label: "幸福小组", n: c.happiness, emoji: "💗", color: "from-pink-500/20 to-pink-500/5" },
-    { label: "恩典茶经小组", n: c.graceTea, emoji: "🍵", color: "from-emerald-500/20 to-emerald-500/5" },
-    { label: "决志", n: c.decisions, emoji: "🙏", color: "from-amber-500/20 to-amber-500/5" },
-    { label: "受洗", n: c.baptisms, emoji: "💧", color: "from-blue-500/20 to-blue-500/5" },
-    { label: "加入服事", n: c.service, emoji: "🤝", color: "from-violet-500/20 to-violet-500/5" },
-  ];
-  const max = Math.max(1, ...steps.map((s) => s.n));
+
+  const { start, label } = useMemo(() => periodRange(period), [period]);
+
+  const cards = useMemo(() => {
+    if (!data) return null;
+    return [
+      { label: "新人登记", n: countInRange(data.regs, start), emoji: "📝", tint: "from-sky-500/15 to-sky-500/0", ring: "ring-sky-500/20" },
+      { label: "幸福小组", n: countInRange(data.hap, start), emoji: "💗", tint: "from-pink-500/15 to-pink-500/0", ring: "ring-pink-500/20" },
+      { label: "恩典茶经小组", n: countInRange(data.gra, start), emoji: "🍵", tint: "from-emerald-500/15 to-emerald-500/0", ring: "ring-emerald-500/20" },
+      { label: "决志", n: countInRange(data.dec, start), emoji: "🙏", tint: "from-amber-500/15 to-amber-500/0", ring: "ring-amber-500/20" },
+      { label: "受洗", n: countInRange(data.bap, start), emoji: "💧", tint: "from-blue-500/15 to-blue-500/0", ring: "ring-blue-500/20" },
+    ];
+  }, [data, start]);
+
   return (
-    <section className="bg-card border border-border/50 rounded-2xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="font-serif text-lg">牧养漏斗</h3>
-        <span className="text-xs text-muted-foreground">从新人登记到加入服事</span>
+    <section className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-baseline gap-2">
+          <h3 className="font-serif text-lg">牧养漏斗</h3>
+          <span className="text-xs text-muted-foreground">{label}</span>
+        </div>
+        <div className="inline-flex rounded-full border border-border/60 p-0.5 text-xs">
+          {([
+            ["year", "年度"],
+            ["quarter", "季度"],
+            ["month", "月度"],
+          ] as Array<[Period, string]>).map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => setPeriod(k)}
+              className={`px-3 py-1 rounded-full transition ${period === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="space-y-2">
-        {steps.map((s, i) => {
-          const pct = (s.n / max) * 100;
-          const prev = i > 0 ? steps[i - 1].n : 0;
-          const conv = i > 0 && prev > 0 ? Math.round((s.n / prev) * 100) : null;
-          return (
-            <div key={s.label} className="flex items-center gap-3">
-              <div className="w-28 text-sm text-muted-foreground shrink-0">
-                <span className="mr-1">{s.emoji}</span>{s.label}
-              </div>
-              <div className="flex-1 h-9 rounded-md bg-muted/30 overflow-hidden relative">
-                <div className={`h-full bg-gradient-to-r ${s.color}`} style={{ width: `${pct}%` }} />
-                <div className="absolute inset-0 flex items-center justify-between px-3 text-sm">
-                  <span className="font-medium">{s.n}</span>
-                  {conv !== null && <span className="text-xs text-muted-foreground">转化 {conv}%</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+
+      {!cards ? (
+        <div className="text-xs text-muted-foreground p-2">加载中…</div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {cards.slice(0, 3).map((c) => <FunnelCard key={c.label} {...c} />)}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {cards.slice(3).map((c) => <FunnelCard key={c.label} {...c} />)}
+          </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+function FunnelCard({ label, n, emoji, tint, ring }: { label: string; n: number; emoji: string; tint: string; ring: string }) {
+  return (
+    <div className={`relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br ${tint} p-5 ring-1 ${ring} backdrop-blur-sm shadow-sm`}>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-xl leading-none">{emoji}</span>
+      </div>
+      <div className="mt-3 flex items-baseline gap-1">
+        <span className="text-4xl font-semibold tabular-nums tracking-tight">{n}</span>
+        <span className="text-sm text-muted-foreground">人</span>
+      </div>
+    </div>
   );
 }
