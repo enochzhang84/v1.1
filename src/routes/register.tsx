@@ -261,10 +261,12 @@ function RegisterPage() {
 
     const rows = [primary, ...companionRows];
 
+    console.log("[Register] inserting rows:", rows);
     const insertQuery = supabase.from("registrations").insert(rows as never);
-    const { data, error } = isAdmin
+    const { data, error } = showAdminUI
       ? await insertQuery.select()
       : await insertQuery;
+    console.log("[Register] insert result — data:", data, "error:", error);
     setSubmitting(false);
 
     if (error) {
@@ -274,11 +276,11 @@ function RegisterPage() {
         error.details ? `details: ${error.details}` : "",
         error.hint ? `hint: ${error.hint}` : "",
       ].filter(Boolean).join(" | ");
-      toast.error(`提交失败 — ${parts}`, { duration: 12000 });
+      toast.error(`提交失败 — ${parts}`, { duration: 15000 });
       return;
     }
-    if (isAdmin && (!data || data.length === 0)) {
-      toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 12000 });
+    if (showAdminUI && (!data || data.length === 0)) {
+      toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 15000 });
       return;
     }
     const totalCount = 1 + cleanCompanions.length;
