@@ -1552,6 +1552,57 @@ export type Database = {
           },
         ]
       }
+      qr_test_logs: {
+        Row: {
+          cleaned_up: boolean
+          created_at: string
+          created_by: string | null
+          database_inserted: boolean
+          entered_form_page: boolean
+          error_message: string | null
+          final_url: string | null
+          http_status: number | null
+          id: string
+          qr_name: string
+          qr_url: string
+          status: string
+          submitted_successfully: boolean
+          test_record_id: string | null
+        }
+        Insert: {
+          cleaned_up?: boolean
+          created_at?: string
+          created_by?: string | null
+          database_inserted?: boolean
+          entered_form_page?: boolean
+          error_message?: string | null
+          final_url?: string | null
+          http_status?: number | null
+          id?: string
+          qr_name: string
+          qr_url: string
+          status: string
+          submitted_successfully?: boolean
+          test_record_id?: string | null
+        }
+        Update: {
+          cleaned_up?: boolean
+          created_at?: string
+          created_by?: string | null
+          database_inserted?: boolean
+          entered_form_page?: boolean
+          error_message?: string | null
+          final_url?: string | null
+          http_status?: number | null
+          id?: string
+          qr_name?: string
+          qr_url?: string
+          status?: string
+          submitted_successfully?: boolean
+          test_record_id?: string | null
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           address: string | null
@@ -1573,6 +1624,7 @@ export type Database = {
           invited_by: string | null
           is_first_visit: boolean | null
           is_primary: boolean
+          is_test: boolean
           last_followup_at: string | null
           marital_status: string | null
           name: string
@@ -1615,6 +1667,7 @@ export type Database = {
           invited_by?: string | null
           is_first_visit?: boolean | null
           is_primary?: boolean
+          is_test?: boolean
           last_followup_at?: string | null
           marital_status?: string | null
           name: string
@@ -1657,6 +1710,7 @@ export type Database = {
           invited_by?: string | null
           is_first_visit?: boolean | null
           is_primary?: boolean
+          is_test?: boolean
           last_followup_at?: string | null
           marital_status?: string | null
           name?: string

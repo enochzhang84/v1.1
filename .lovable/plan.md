@@ -1,85 +1,68 @@
-## 团契与小组模块优化 — 自动化牧养漏斗
+## 目标
 
-将新人登记打通到后续所有跟进模块，实现「只登记一次，全流程自动关联」。
+在后台新增一个「二维码自动检测工具」，一键检测全部二维码是否真的可用，包括：链接可达、是否跳 Lovable 登录页、新人登记是否能成功写入数据库、并自动清理测试数据。
 
----
+## 实施范围
 
-### 一、数据库变更（一次迁移）
+只新增，不改旧的（沿用之前确定的「只新增不动旧的」策略）。
 
-**1. `group_join_records` 表新增字段：**
-- `follow_up_status text` — 跟进状态，默认 `'待邀请'`
-- `status_note text` — 状态备注（如「工作忙/出差」）
-- `attended_count int default 0` — 参加次数
-- `last_attended_at date` — 最近参加日期
-- `source_registration_id uuid` — 关联 registrations.id（用于自动建档去重）
-- `transferred_out boolean default false` — 是否已转出
+### 1. 数据库变更（一个 migration）
 
-**2. `registrations` 表：**
-- `transfer_target` 字段已存在，作为唯一「转项」入口。
-- 不再额外加字段。
+**registrations 表新增字段**
+- `is_test boolean not null default false` — 测试数据标记
+- 后台名单 / 统计查询「不自动」改，先在 UI 层加 `eq('is_test', false)` 过滤（避免影响现有 RLS / 触发器逻辑）。如果后续要全局隐藏，再补一轮。
 
-**3. 新增信仰成长档案表 `faith_growth_profiles`（如果项目里没有现成可复用表，则新建）：**
-- `id, registration_id (uuid, unique), name, phone, email, registered_at, faith_status, notes, created_at, updated_at`
-- RLS：super_admin / admin / worker(area='newcomer' 或 'fellowship') 可读写。
-- GRANT authenticated / service_role。
-> 若仓库中已有 `FaithFollowupCRM` 对应的表（如 `faith_followups`），则复用并只补字段，不新建。实现阶段会先查证。
+**新增表 `qr_test_logs`**
+字段：`id, qr_name, qr_url, final_url, status (ok|warn|fail), http_status, error_message, entered_form_page, submitted_successfully, database_inserted, test_record_id, cleaned_up, created_at, created_by`
 
-**4. 触发器 `trg_registration_autoflow`（AFTER INSERT/UPDATE OF transfer_target, faith ON registrations）：**
+RLS：
+- 只有 admin / super_admin 能 SELECT / INSERT
+- 配套 GRANT 给 authenticated / service_role
 
-逻辑：
-- INSERT 时：
-  - 自动 upsert `faith_growth_profiles`（按 registration_id 去重）。
-  - 若 `faith = 'seeker'`（慕道友），自动 insert `group_join_records`：
-    - `group_type='happiness_group'`, `follow_up_status='待邀请'`, `source_registration_id=NEW.id`, `record_date=today`。
-- UPDATE `transfer_target` 时：
-  - 找到该 registration 关联的 happiness_group / grace_tea_group 记录，标记原记录 `transferred_out=true`、`follow_up_status='已转出'`。
-  - 根据新 `transfer_target` 自动在目标表插入新记录：
-    - `happiness_group` → group_join_records (happiness)
-    - `grace_tea_group` → group_join_records (grace_tea)
-    - `baptism_class` → decisions/baptisms（若表存在则插入待跟进，否则仅写入 faith profile 备注）
-    - `decision_record` → decisions 表
-  - 同名记录用 `source_registration_id` 去重，避免重复创建。
+### 2. 服务端逻辑 `src/lib/qr-autotest.functions.ts`
 
-**5. `group_join_records` 状态变更触发器：**
-- 当 `follow_up_status` 改为 `'已参加'` 时：`attended_count = attended_count + 1`，`last_attended_at = today`。
+3 个 server function，全部 `requireSupabaseAuth`：
 
----
+- `qrProbeUrl({ url })` — admin+：服务端 fetch URL（避免浏览器 CORS），返回 `{ httpStatus, finalUrl, redirected, error }`。判定 finalUrl 是否含 `lovable.app/login`、`lovableproject.com`、`/auth`、`/login`、`/admin` 等。
+- `qrSubmitTestRegistration({ qrName, qrUrl })` — **仅 super_admin**：用 `supabaseAdmin` 写入一条 `is_test=true` 的 registration（姓名「系统测试」、邮箱 `qr-test+<ts>@lioneapps.com`、备注「二维码自动检测测试数据，请勿跟进」），返回 `insertedId`。
+- `qrCleanupTestRegistration({ id })` — super_admin：删除该测试记录，返回 `cleanedUp`。
+- 每步执行后写一条 `qr_test_logs`。
 
-### 二、UI 变更
+### 3. 前端组件 `src/components/admin/QrAutoTestPanel.tsx`
 
-**`GroupJoinRecordsPanel.tsx`：**
-- 表格新增「跟进状态」列，下拉直接编辑：
-  待邀请 / 已邀请 / 已参加 / 未参加 / 持续跟进 / 转团契 / 转受洗班 / 暂停跟进 / 失联 / 已转出
-- 表格新增「参加次数」「最近参加」两列（只读）。
-- 编辑弹窗加入「跟进状态」「状态备注」字段。
-- 来自自动登记的记录显示一个小标签「← 登记自动创建」。
+收集二维码（沿用 QrHealthCheckPanel 的来源逻辑）：主页新人/退修会、系统内置（sunday-checkin / fellowship-checkin）、`qr_library` 全部记录。
 
-**`RegistrationListCRM.tsx`：**
-- 「转项」下拉已存在 — 更新文案，添加提示「修改后将自动建立对应跟进记录」。
-- 列表新增显示「跟进进度」徽章（根据 registration_id 在 group_join_records / decisions / baptisms 出现的状态汇总）。
+按钮：
+1. 检测所有二维码（仅链接）
+2. 完整检测（含提交测试数据，仅 super_admin 可见）
+3. 查看检测日志（读 `qr_test_logs` 最近 50 条）
 
-**新增牧养漏斗统计组件 `MinistryFunnelStats.tsx`：**
-- 位置：数据统计模块顶部。
-- 一个垂直/横向漏斗图：新人登记 → 幸福小组 → 恩典茶经小组 → 决志 → 受洗 → 加入服事。
-- 每层显示总人数 + 上层转化率。
-- 数据源：分别 count(registrations) / count(group_join_records by type) / count(decisions) / count(baptisms) / count(service_applications approved)。
+每行展示：名称 / URL / HTTP / finalUrl / 是否进入登记页 / 是否提交成功 / 是否入库 / 是否清理 / 状态徽章（🟢🟡🔴）。
 
----
+URL 包含 `lovable.app`/`lovableproject.com`/`localhost`/`127.0.0.1` → 🟡 警告。
+finalUrl 跳到 `/auth`、`/login`、`/admin` 或 Lovable 登录页 → 🔴 失败 + 提示「可能进入登录界面」。
 
-### 三、保护与兼容
+新人登记二维码的「完整检测」流程：
+1. 探测 URL
+2. 抓取 HTML，正则检查是否包含「姓名 / 电话 / 邮箱 / 信仰 / 婚姻 / 介绍人 / 提交」等关键字段（轻量字段存在性检查，不真的填表）
+3. 调用 `qrSubmitTestRegistration`（=直接 INSERT，模拟前台提交效果）
+4. 用 service role 查询 `registrations` 确认入库
+5. 调用 `qrCleanupTestRegistration` 删除；失败则标注「测试数据未清理」
 
-- 触发器使用 `SECURITY DEFINER` 并 `SET search_path = public`。
-- 所有自动写入用 `ON CONFLICT (source_registration_id, group_type) DO NOTHING`（先加唯一索引）避免重复。
-- 不影响现有手动新增流程。
-- 工厂重置已包含 `group_join_records`，新增 `faith_growth_profiles`（若新建）也加入清理列表。
+### 4. 接入点
 
----
+`HomePageSettingsPanel` 二维码管理区新增「自动检测」入口，挂载 `<QrAutoTestPanel />`。不动旧的 `QrHealthCheckPanel` / `UnifiedQrInspector`。
 
-### 四、技术清单
+## 不做的事
 
-- 1 个 migration：加字段 + 唯一索引 + 触发器 + 可能的新表。
-- 编辑：`src/components/admin/GroupJoinRecordsPanel.tsx`、`src/components/admin/RegistrationListCRM.tsx`。
-- 新建：`src/components/admin/analytics/MinistryFunnelStats.tsx`，并挂载到 `src/routes/admin.tsx` 数据统计标签页顶部。
-- 更新：`src/lib/factory-reset.functions.ts`（如新增表）。
+- 不真的模拟手机端填表（用直接 INSERT 等价代替，更稳定）
+- 不改 RLS 现有策略 / 不动 `registrations_autoflow` 触发器
+- 不全局隐藏 is_test（先 UI 过滤，避免误伤）
+- 不动正式域名 / 不动 `public-origin.ts`
 
-请确认后我会先发起 migration（需要您批准），再写代码。
+## 风险
+
+- `registrations_autoflow` 触发器会因 `faith=seeker` 自动写 `group_join_records`。测试数据 faith 留空即可避免触发；额外在清理时同样按 `source_registration_id` 清掉可能的孤儿。
+- 服务端 fetch lovableproject.com 不一定能精确判断「微信里会不会跳登录」（那是平台对外部浏览器的拦截），只能根据响应内容/重定向尽力识别——会在 UI 上注明。
+
+确认后我开始实现。
