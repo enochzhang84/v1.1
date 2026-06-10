@@ -238,7 +238,7 @@ export function GroupJoinRecordsPanel({ groupType, title }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-serif text-xl">{title}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Input type="month" value={ym} onChange={(e) => { setYm(e.target.value); setDayFilter(null); }} className="h-8 w-[140px]" />
+          <MonthBar ym={ym} onChange={(v) => { setYm(v); setDayFilter(null); }} />
           {dayFilter && (
             <Button size="sm" variant="ghost" onClick={() => setDayFilter(null)}>
               清除 {dayFilter}
