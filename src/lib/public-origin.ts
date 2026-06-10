@@ -1,17 +1,15 @@
 // Public origin used for QR codes / share links.
 //
-// Phase 1 标准化：二维码必须使用「正式域名」，而不是 Lovable 预览域名
-// (*.lovableproject.com / *.lovable.app) 或 localhost。
+// 测试环境策略（当前项目）：
+//   - 不绑定任何正式域名
+//   - 二维码直接使用当前 window.location.origin
+//     （即 https://<uuid>.lovableproject.com 或 *.lovable.app）
+//   - 不再从 app_settings.auth_base_url 自动写入"正式域名"缓存
 //
-// 策略：
-//   1. 启动时由 RootComponent 调用 loadOfficialOrigin()，从
-//      app_settings.auth_base_url 读取正式域名并写入模块缓存 + localStorage。
-//   2. 同步 getPublicOrigin() 优先返回该缓存。
-//   3. 仅当缓存为空且当前 window 不是开发域时，回退到 window.location.origin。
-//   4. 如果两者都不可用，使用 SSR_FALLBACK_ORIGIN。
-import { getAuthBaseUrl } from "@/lib/auth-base-url";
+// 如未来切换正式环境，再恢复 loadOfficialOrigin 的 DB 读取逻辑即可。
 
-export const SSR_FALLBACK_ORIGIN = "https://hoc3.lioneapps.com";
+export const SSR_FALLBACK_ORIGIN =
+  "https://62afd8e3-2019-4bcc-a154-5b4a311e6a8e.lovableproject.com";
 const LS_KEY = "official_origin_v1";
 
 const DEV_HOST_PATTERNS = [
@@ -36,57 +34,36 @@ export function isDevOrigin(originOrUrl: string): boolean {
   }
 }
 
-let _officialOrigin: string | null = null;
-
-// Hydrate from localStorage synchronously so first paint already uses the
-// correct origin even before loadOfficialOrigin() resolves.
+// 清除历史遗留的 localStorage 缓存（之前可能写入了 hoc3.lioneapps.com）。
 if (typeof window !== "undefined") {
-  try {
-    const cached = window.localStorage.getItem(LS_KEY);
-    if (cached && /^https?:\/\//i.test(cached) && !isDevOrigin(cached)) {
-      _officialOrigin = normalize(cached);
-    }
-  } catch { /* ignore */ }
+  try { window.localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
 }
 
-export function setOfficialOrigin(url: string | null) {
-  if (!url) {
-    _officialOrigin = null;
-    try { window.localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
-    return;
-  }
-  if (!/^https?:\/\//i.test(url)) return;
-  if (isDevOrigin(url)) return; // 拒绝把开发域写进缓存
-  _officialOrigin = normalize(url);
-  try { window.localStorage.setItem(LS_KEY, _officialOrigin); } catch { /* ignore */ }
+let _officialOrigin: string | null = null;
+
+export function setOfficialOrigin(_url: string | null) {
+  // 测试环境：不接受任何"正式域名"写入。
+  _officialOrigin = null;
+  try { window.localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
 }
 
 export function getOfficialOrigin(): string | null {
-  return _officialOrigin;
+  return null;
 }
 
-/** 异步从 app_settings 读取并刷新缓存。在 RootComponent 启动时调用一次。 */
+/** 测试环境下不再从 DB 读取正式域名，直接 no-op。 */
 export async function loadOfficialOrigin(): Promise<string | null> {
-  try {
-    const base = await getAuthBaseUrl();
-    if (base && /^https?:\/\//i.test(base) && !isDevOrigin(base)) {
-      setOfficialOrigin(base);
-      return _officialOrigin;
-    }
-  } catch { /* ignore */ }
-  return _officialOrigin;
+  return null;
 }
 
 export function getPublicOrigin(): string {
-  if (_officialOrigin) return _officialOrigin;
-  if (typeof window !== "undefined") {
-    const here = window.location.origin;
-    if (!isDevOrigin(here)) return normalize(here);
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return normalize(window.location.origin);
   }
   return SSR_FALLBACK_ORIGIN;
 }
 
-/** 当前 window 是否处于开发域（用于在 UI 上提示警告）。 */
+/** 当前 window 是否处于开发域（保留导出以兼容已引用此函数的组件）。 */
 export function isCurrentWindowDev(): boolean {
   if (typeof window === "undefined") return false;
   return isDevOrigin(window.location.origin);
