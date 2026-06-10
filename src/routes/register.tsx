@@ -26,14 +26,12 @@ function RegisterPage() {
   const [done, setDone] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const todayStr = () => {
+  const nowLocalStr = () => {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-  const [entryDate, setEntryDate] = useState<string>(todayStr());
+  const [entryDateTime, setEntryDateTime] = useState<string>(nowLocalStr());
 
   type Companion = {
     name: string;
