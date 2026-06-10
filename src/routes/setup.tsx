@@ -238,7 +238,7 @@ function SetupWizard() {
                 <Input className="h-12 rounded-xl" value={form.auth_base_url} onChange={(e) => set("auth_base_url", e.target.value)} placeholder="https://hoc3.org" />
               </Field>
               <Field label="系统发信显示名称 *">
-                <Input className="h-12 rounded-xl" value={form.email_sender_name} onChange={(e) => set("email_sender_name", e.target.value)} placeholder="HOC3 Ministry Center" />
+                <Input className="h-12 rounded-xl" value={form.email_sender_name} onChange={(e) => set("email_sender_name", e.target.value)} placeholder="Ministry Center" />
               </Field>
               <Field label="回复邮箱 Reply-To" hint="默认使用教会联系邮箱">
                 <Input type="email" className="h-12 rounded-xl" value={form.reply_to_email} onChange={(e) => set("reply_to_email", e.target.value)} placeholder={form.church_email || "reply@yourchurch.org"} />
