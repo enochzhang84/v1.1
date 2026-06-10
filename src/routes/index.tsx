@@ -8,7 +8,7 @@ import logo from "@/assets/logo.png";
 import iconAdmin from "@/assets/icon-admin.png";
 import iconFullscreen from "@/assets/icon-fullscreen.png";
 import iconExitFullscreen from "@/assets/icon-exit-fullscreen.png";
-import { getPublicOrigin } from "@/lib/public-origin";
+import { getPublicOrigin, sanitizePublicUrl } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/")({
   component: IndexGate,
@@ -166,7 +166,7 @@ function Index() {
 
   // Use the stable published origin (never the preview host, which requires login).
   const origin = getPublicOrigin();
-  const configuredUrl = home?.qr_newcomer_url?.trim() || "";
+  const configuredUrl = sanitizePublicUrl(home?.qr_newcomer_url);
   const isImageUrl = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(configuredUrl) || /\/storage\/v1\/object\//i.test(configuredUrl);
   const isValidRegisterUrl = /^https?:\/\//.test(configuredUrl) && !isImageUrl;
   const registerUrl = isValidRegisterUrl

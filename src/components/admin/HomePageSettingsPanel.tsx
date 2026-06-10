@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { useWin98Dialog } from "./Win98Dialog";
-import { getPublicOrigin, isDevOrigin, loadOfficialOrigin, getOfficialOrigin, setOfficialOrigin } from "@/lib/public-origin";
+import { getPublicOrigin, isDevOrigin, loadOfficialOrigin, getOfficialOrigin, setOfficialOrigin, sanitizePublicUrl } from "@/lib/public-origin";
 import {
   Settings as SettingsIcon,
   Images,
@@ -170,12 +170,12 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
 
   const qrValue =
     qrType === "newcomer"
-      ? s?.qr_newcomer_url?.trim() || `${origin}/register`
+      ? sanitizePublicUrl(s?.qr_newcomer_url) || `${origin}/register`
       : qrType === "retreat"
-      ? s?.qr_retreat_url?.trim() || `${origin}/retreat-register`
+      ? sanitizePublicUrl(s?.qr_retreat_url) || `${origin}/retreat-register`
       : qrType === "chat"
       ? `${origin}/chat`
-      : qrCustom || `${origin}/`;
+      : sanitizePublicUrl(qrCustom) || `${origin}/`;
 
   useEffect(() => {
     (async () => {
@@ -429,12 +429,12 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
       <div className="p-10 text-sm text-muted-foreground">未找到主页设置记录</div>
     );
 
-  const previewQrLink = s.qr_newcomer_url?.trim() || `${origin}/register`;
+  const previewQrLink = sanitizePublicUrl(s.qr_newcomer_url) || `${origin}/register`;
   const previewQrImage = s.qr_image_url?.trim() || null;
   const qrUpdatedLabel = s.home_qr_updated_at
     ? new Date(s.home_qr_updated_at).toLocaleString()
     : "尚未替换";
-  const retreatLink = s.qr_retreat_url?.trim() || `${origin}/retreat-register`;
+  const retreatLink = sanitizePublicUrl(s.qr_retreat_url) || `${origin}/retreat-register`;
 
   /* ─── Image uploader (compact, borderless) ──────────────────────────── */
   const ImageUploader = ({

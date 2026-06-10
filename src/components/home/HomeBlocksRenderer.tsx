@@ -2,6 +2,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link } from "@tanstack/react-router";
 import type { HomeBlock } from "@/lib/home-content";
 import { sanitizeHtml } from "@/lib/home-content";
+import { sanitizePublicUrl } from "@/lib/public-origin";
 
 function alignClass(a?: string) {
   return a === "center" ? "text-center" : a === "right" ? "text-right" : "text-left";
@@ -61,13 +62,14 @@ export function HomeBlocksRenderer({ blocks, css }: { blocks: HomeBlock[]; css?:
             );
           case "qrcode": {
             const size = b.size ?? 200;
+            const qrUrl = sanitizePublicUrl(b.value);
             return (
               <div key={b.id} className={`flex flex-col items-center gap-2`} style={{ alignItems: b.align === "left" ? "flex-start" : b.align === "right" ? "flex-end" : "center" }}>
                 {b.mode === "image" && b.image_url ? (
                   <img src={b.image_url} alt={b.label || "QR"} style={{ width: size, height: size }} />
-                ) : b.value ? (
+                ) : qrUrl ? (
                   <div style={{ background: "#fff", padding: 12, borderRadius: 8 }}>
-                    <QRCodeSVG value={b.value} size={size} />
+                    <QRCodeSVG value={qrUrl} size={size} />
                   </div>
                 ) : null}
                 {b.label ? <div className="text-sm text-muted-foreground">{b.label}</div> : null}
