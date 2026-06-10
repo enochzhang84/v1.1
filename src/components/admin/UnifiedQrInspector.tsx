@@ -45,27 +45,37 @@ async function probe(url: string, currentOrigin: string): Promise<QrStatus> {
 
   const sameOrigin = parsed.origin === currentOrigin;
 
-  try {
-    // 跨域时只能 no-cors 探测，无法读状态码 → 标 🟡
-    if (!sameOrigin) {
-      await fetch(url, { method: "GET", mode: "no-cors" });
+  if (sameOrigin) {
+    try {
+      const res = await fetch(url, { method: "GET", redirect: "follow" });
+      if (res.status === 404) return { level: "fail", label: "🔴 页面不存在（404）" };
+      if (res.status >= 500) return { level: "fail", label: `🔴 服务器错误（${res.status}）` };
+      if (res.status === 401 || res.status === 403)
+        return { level: "warn", label: "🟡 需要登录" };
+      if (res.status >= 200 && res.status < 400)
+        return { level: "ok", label: "🟢 正常访问", detail: `HTTP ${res.status}` };
+      return { level: "warn", label: `🟡 状态 ${res.status}` };
+    } catch (e) {
+      // fetch 异常通常是网络/CORS 问题，不代表用户无法访问
       return {
         level: "warn",
-        label: "🟡 跨域链接（无法读取状态码）",
-        detail: `二维码指向 ${parsed.origin}，与当前站点 ${currentOrigin} 不一致`,
+        label: "🟡 检测受限（可能为跨域限制）",
+        detail: `浏览器 fetch 失败：${(e as Error).message}。请点击「测试」用浏览器直接打开验证。`,
       };
     }
-    const res = await fetch(url, { method: "GET", redirect: "follow" });
-    if (res.status === 404) return { level: "fail", label: "🔴 页面不存在（404）" };
-    if (res.status >= 500) return { level: "fail", label: `🔴 页面错误（${res.status}）` };
-    if (res.status === 401 || res.status === 403)
-      return { level: "warn", label: "🟡 需要登录" };
-    if (res.status >= 200 && res.status < 400)
-      return { level: "ok", label: "🟢 正常访问", detail: `HTTP ${res.status}` };
-    return { level: "warn", label: `🟡 状态 ${res.status}` };
-  } catch (e) {
-    return { level: "fail", label: "🔴 无法访问", detail: (e as Error).message };
   }
+
+  // 跨域：无法读状态码。fetch 异常也不等于无法访问。
+  try {
+    await fetch(url, { method: "GET", mode: "no-cors" });
+  } catch {
+    /* ignore */
+  }
+  return {
+    level: "warn",
+    label: "🟡 检测受限（跨域，无法读取状态码）",
+    detail: `二维码指向 ${parsed.origin}，与当前站点 ${currentOrigin} 不同源，浏览器无法读取真实状态。请点击「测试」用浏览器打开验证。`,
+  };
 }
 
 export function UnifiedQrInspector() {
