@@ -194,12 +194,18 @@ function SetupWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-4 py-10 relative">
+      <div className="absolute top-4 right-4">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground rounded-full border border-gray-200 bg-white/80 px-4 py-2 backdrop-blur">
+          退出
+        </Link>
+      </div>
       <div className="w-full max-w-xl">
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl text-foreground tracking-tight">首次系统开通向导</h1>
-          <p className="text-muted-foreground text-sm mt-2">第 {step} / 3 步</p>
+          <h1 className="font-serif text-4xl text-foreground tracking-tight">欢迎使用系统管理中心</h1>
+          <p className="text-muted-foreground text-sm mt-2">首次开通向导 · 第 {step} / 3 步</p>
         </div>
+
 
         <div className="bg-white/90 backdrop-blur rounded-3xl p-8 space-y-5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.12)] border border-white">
           {step === 1 && (
