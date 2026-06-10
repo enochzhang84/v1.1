@@ -32,6 +32,7 @@ import {
 } from "@/hooks/useAdminLogo";
 import { UnifiedQrInspector } from "./UnifiedQrInspector";
 import { QrAutoTestPanel } from "./QrAutoTestPanel";
+import { LegacyUrlScanPanel } from "./LegacyUrlScanPanel";
 
 type Settings = {
   id: string;
@@ -593,7 +594,9 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
   const SectionQr = (
     <div className="space-y-5">
       <UnifiedQrInspector />
+      <LegacyUrlScanPanel />
       <QrAutoTestPanel />
+
 
 
 

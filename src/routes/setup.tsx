@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { clearPublicAppSettingsCache } from "@/lib/auth-base-url";
 import { getPublicOrigin } from "@/lib/public-origin";
+import { rewriteLegacyUrls } from "@/lib/legacy-urls";
 
 export const Route = createFileRoute("/setup")({
   component: SetupWizard,
@@ -170,12 +171,39 @@ function SetupWizard() {
       if (rpcErr) throw rpcErr;
 
       clearPublicAppSettingsCache();
+
+      // 3) 自动扫描 + 一键替换数据库里残留的旧域名（lovableproject.com / id-preview / localhost / 旧教会域名）
+      try {
+        const extraLegacy: string[] = [];
+        try {
+          const cw = (form.church_website || "").trim();
+          if (cw) {
+            const u = new URL(cw.startsWith("http") ? cw : `https://${cw}`);
+            // 当且仅当 church_website 与目标 auth_base_url 域名不同时，把它当作「旧教会域名」一并替换
+            const target = new URL(form.auth_base_url);
+            if (u.host && u.host.toLowerCase() !== target.host.toLowerCase()) {
+              extraLegacy.push(u.host);
+            }
+          }
+        } catch { /* ignore */ }
+
+        const result = await rewriteLegacyUrls(form.auth_base_url, extraLegacy);
+        console.log("[setup] legacy URL rewrite:", result);
+        if (result.updated > 0) {
+          toast.success(`已自动替换 ${result.updated} 处旧域名 → ${form.auth_base_url}`, { duration: 6000 });
+        } else if (result.failed > 0) {
+          toast.warning(`旧域名扫描完成，${result.failed} 处替换失败，请登录后到「主页设置 → 二维码」复查。`, { duration: 8000 });
+        }
+      } catch (e) {
+        console.warn("[setup] legacy URL rewrite skipped:", e);
+      }
+
       // 退出当前会话，强制走标准登录流程
       try { await supabase.auth.signOut(); } catch { /* noop */ }
-      toast.success("系统初始化成功，请登录管理员账户。");
+      toast.success("系统初始化成功，请登录管理员账户。登录后将自动进行二维码健康检查。");
       setTimeout(() => {
-        window.location.assign("/login");
-      }, 800);
+        window.location.assign("/login?postSetup=1");
+      }, 1200);
     } catch (e: any) {
       setSubmitting(false);
       const msg = e?.message || String(e);
