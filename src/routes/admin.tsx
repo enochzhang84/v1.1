@@ -1757,13 +1757,14 @@ function AdminPage() {
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full min-w-0">
           {/* Soft UI 主导航栏 — Apple Dashboard 风格 */}
           <div className="mb-8 p-1.5 bg-[#f5f0e8] rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-8 gap-1">
               {(([
                 { value: "stats", key: "modReports" as TKey },
                 { value: "welcome", key: "modWelcome" as TKey },
                 { value: "media", key: "modMedia" as TKey },
                 { value: "kitchen", key: "modKitchen" as TKey },
                 { value: "sunday", key: "modSundaySchool" as TKey },
+                { value: "fellowship", key: "modFellowship" as TKey },
                 { value: "events", key: "modEvents" as TKey },
                 { value: "retreat", key: "modRetreat" as TKey },
               ] as { value: string; key: TKey }[]).map((x) => ({ value: x.value, label: t(x.key) })))
@@ -1778,6 +1779,7 @@ function AdminPage() {
                       media: "media",
                       kitchen: "kitchen",
                       sunday: "sunday_school",
+                      fellowship: "fellowship",
                     };
                     const required = map[tab.value];
                     return required ? currentServiceArea === required : false;
@@ -1790,6 +1792,7 @@ function AdminPage() {
                       media: "media",
                       kitchen: "kitchen",
                       sunday: "sunday_school",
+                      fellowship: "fellowship",
                     };
                     const required = map[tab.value];
                     return required ? currentServiceArea === required : false;
