@@ -592,6 +592,78 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
   const SectionQr = (
     <div className="space-y-5">
       <UnifiedQrInspector />
+
+      {/* Phase 1 标准化：正式域名状态 + 警告 */}
+      <div
+        className={`rounded-2xl p-4 border ${originIsDev ? "bg-[#fff8e6] border-[#ffe2a8]" : "bg-[#f1faf3] border-[#c8eed1]"}`}
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <div className="text-xs text-muted-foreground">二维码当前使用的域名</div>
+            <div className="font-medium break-all text-sm mt-0.5">{origin}</div>
+            {officialOrigin && (
+              <div className="text-xs text-muted-foreground mt-1">
+                系统设置中的正式域名：<b>{officialOrigin}</b>
+              </div>
+            )}
+            {originIsDev && (
+              <div className="text-xs text-[#a86c00] mt-2">
+                ⚠ 当前二维码使用开发域名（lovableproject.com / lovable.app / localhost），微信扫码会进入 Lovable 页面，请切换到正式域名。
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={async () => {
+                const v = await loadOfficialOrigin();
+                if (v) {
+                  setOrigin(getPublicOrigin());
+                  // 同步把数据库里的主页二维码字段替换为正式域名版本
+                  const newcomerUrl = `${v}/register`;
+                  const retreatUrl = `${v}/retreat-register`;
+                  await persistQrChange({
+                    qr_newcomer_url: newcomerUrl,
+                    qr_retreat_url: retreatUrl,
+                    qr_image_url: null,
+                  });
+                  alert("已更新", `二维码已重新生成为正式域名：\n${v}`, "success");
+                } else {
+                  alert(
+                    "未配置正式域名",
+                    "请先在「系统设置 → 认证 / Site URL」填入正式域名（例如 https://hoc3.lioneapps.com），再点击此按钮。",
+                    "error",
+                  );
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-1.5" /> 使用正式域名重新生成
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => {
+                const v = prompt("输入正式域名（例如 https://hoc3.lioneapps.com）", officialOrigin || "");
+                if (v == null) return;
+                const trimmed = v.trim();
+                if (!trimmed) { setOfficialOrigin(null); setOrigin(getPublicOrigin()); return; }
+                if (isDevOrigin(trimmed)) {
+                  alert("无效域名", "不能使用开发域名（lovableproject.com / lovable.app / localhost）。", "error");
+                  return;
+                }
+                setOfficialOrigin(trimmed);
+                setOrigin(getPublicOrigin());
+              }}
+            >
+              手动设置
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <Card
         title="主页二维码"
         description="主页、欢迎页、电视显示页将同步显示该二维码"
