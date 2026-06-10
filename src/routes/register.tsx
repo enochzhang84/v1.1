@@ -22,7 +22,8 @@ export const Route = createFileRoute("/register")({
 });
 
 function RegisterPage() {
-  const { event: eventToken } = Route.useSearch();
+  const { event: eventToken, backfill } = Route.useSearch();
+  const isBackfillMode = backfill === "1" || backfill === "true";
   const [eventId, setEventId] = useState<string | null>(null);
   const [eventName, setEventName] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
