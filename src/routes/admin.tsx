@@ -3122,16 +3122,16 @@ function AdminPage() {
                           };
                           dl(r.schemaFilename, r.schemaSql);
                           dl(r.seedFilename, r.seedSql);
-                          toast.success(`已导出母版 v${r.version}（${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed）`);
-                        } catch (e: any) {
-                          toast.error("导出失败: " + (e?.message || e));
-                        } finally {
-                          setExportingMaster(false);
-                        }
-                      }}
-                      className="h-9 px-4 rounded-full text-[12px] font-medium bg-white border border-[#fecaca] text-[#a8201a] hover:bg-[#fff5f5] disabled:opacity-50"
-                    >
-                      {exportingMaster ? "正在导出..." : "📦 导出母版 SQL (schema + seed)"}
+                           toast.success(`已导出安装 SQL v${r.version}（${r.stats.tables} 表 / ${r.stats.seedRows} 行 seed）`);
+                         } catch (e: any) {
+                           toast.error("导出失败: " + (e?.message || e));
+                         } finally {
+                           setExportingMaster(false);
+                         }
+                       }}
+                       className="h-9 px-4 rounded-full text-[12px] font-medium bg-white border border-[#fecaca] text-[#a8201a] hover:bg-[#fff5f5] disabled:opacity-50"
+                     >
+                       {exportingMaster ? "正在导出..." : "📦 导出系统 SQL (schema + seed)"}
                     </button>
                   </div>
                 </div>
@@ -6393,11 +6393,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
           </DialogContent>
         </Dialog>
 
-        {/* System Init (Factory Reset / 母版) Dialog */}
+        {/* System Init (Factory Reset / 新系统状态) Dialog */}
         <Dialog open={initOpen} onOpenChange={(o) => { if (!initLoading) setInitOpen(o); }}>
           <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>系统初始化（母版重置）</DialogTitle>
+              <DialogTitle>系统初始化（恢复为新系统状态）</DialogTitle>
             </DialogHeader>
 
             {initResult ? (
@@ -6430,11 +6430,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   </ul>
                 </details>
 
-                {/* 母版状态检查 */}
+                {/* 系统状态检查 */}
                 {initResult.health && (
                   <div className="rounded-lg border p-3 bg-muted/30">
                     <div className="font-medium text-sm mb-2">
-                      母版状态检查{" "}
+                      系统状态检查{" "}
                       {initResult.health.ok ? (
                         <span className="text-green-700">✓ 全部通过</span>
                       ) : (
@@ -6457,12 +6457,12 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                   </div>
                 )}
 
-                {/* 导出母版 SQL */}
+                {/* 导出系统 SQL */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50/40 p-3 space-y-2">
-                  <div className="text-sm font-medium text-blue-900">📦 导出母版 SQL</div>
+                  <div className="text-sm font-medium text-blue-900">📦 导出系统 SQL</div>
                   <div className="text-xs text-blue-800/80">
-                    导出当前数据库结构与默认配置，作为新副本的初始化基线。
-                    文件名包含版本号（hoc3_database_init_vX.sql / hoc3_seed_data_vX.sql）。
+                    导出当前数据库结构与默认配置，作为新系统的初始化基线。
+                    文件名包含版本号（database_init_vX.sql / seed_data_vX.sql）。
                   </div>
                   <Button
                     size="sm"
@@ -6500,7 +6500,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
               <div className="space-y-3 py-2 text-sm">
                 <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
                   <div className="font-medium">⚠️ 强烈建议先导出备份再继续</div>
-                  <div className="mt-1 text-xs">此操作不可撤销。完成后系统将变成"母版"——保留管理员与配置，清空所有业务数据，可复制为新的教会副本。</div>
+                  <div className="mt-1 text-xs">此操作不可撤销。完成后系统将恢复为"新系统状态"——保留管理员与系统配置，清空业务数据，可用于部署新的教会系统。</div>
                 </div>
 
                 {!initPreview ? (
@@ -6546,11 +6546,11 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                     </div>
 
                     <div>
-                      <div className="text-xs text-muted-foreground mb-1">最终确认：请输入 <b>初始化母版</b> 以解锁执行按钮</div>
+                      <div className="text-xs text-muted-foreground mb-1">最终确认：请输入 <b>初始化系统</b> 以解锁执行按钮</div>
                       <Input
                         value={initFinalConfirm}
                         onChange={(e) => setInitFinalConfirm(e.target.value)}
-                        placeholder="初始化母版"
+                        placeholder="初始化系统"
                         disabled={initLoading}
                       />
                     </div>
@@ -6579,7 +6579,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       initLoading ||
                       !initPreview ||
                       initPreview.superAdminCount < 1 ||
-                      initFinalConfirm !== "初始化母版"
+                      initFinalConfirm !== "初始化系统"
                     }
                     onClick={async () => {
                       setInitLoading(true);
@@ -6587,8 +6587,8 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                         const r = await runFactoryResetFn();
                         setInitResult(r);
                         if (r.ok) {
-                          toast.success(`已重置为母版 (清空 ${r.totalDeleted} 条)`);
-                          logAction(`系统初始化母版（清空 ${r.totalDeleted} 条业务数据）`);
+                          toast.success(`已恢复为新系统状态 (清空 ${r.totalDeleted} 条)`);
+                          logAction(`系统初始化（清空 ${r.totalDeleted} 条业务数据）`);
                         } else {
                           toast.error("初始化后安全检查未通过");
                         }
@@ -6599,7 +6599,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
                       }
                     }}
                   >
-                    {initLoading ? "正在初始化..." : "确定初始化为母版"}
+                    {initLoading ? "正在初始化..." : "确认初始化系统"}
                   </Button>
                   <Button
                     variant="secondary"

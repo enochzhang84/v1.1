@@ -566,7 +566,7 @@ export function BackupRestorePanel() {
         <div>
           <h3 className="font-medium">🚀 部署 / 迁移包导出</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            用于快速复制 HOC3、迁移 VPS、迁移后端数据库、建立新教会副本。导出文件不包含 Service Role Key、密码、JWT Secret 等敏感凭据。
+            用于快速复制系统、迁移 VPS、迁移数据库、建立新的教会系统。导出文件不包含 Service Role Key、密码、JWT Secret 等敏感凭据。
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -574,7 +574,7 @@ export function BackupRestorePanel() {
             <div className="text-sm font-medium">① 系统安装包</div>
             <p className="text-xs text-muted-foreground min-h-[3rem]">
               数据库结构 + 默认配置 + 开发 RLS + .env 模板 + 部署说明。<br />
-              <span className="text-muted-foreground/80">用于安装 HOC3，不含用户数据。</span>
+              <span className="text-muted-foreground/80">用于安装新系统，不含用户数据。</span>
             </p>
             <Button
               size="sm"
