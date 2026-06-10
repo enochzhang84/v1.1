@@ -831,6 +831,14 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
                 size="sm"
                 variant="outline"
                 className="rounded-full"
+                onClick={() => window.open(qrValue, "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="w-4 h-4 mr-1.5" /> 打开 / 测试
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
                 onClick={async () => {
                   // generate from qrValue directly
                   const tmp = document.createElement("div");
