@@ -71,11 +71,12 @@ function SetupWizard() {
       setForm((f) => ({
         ...f,
         auth_base_url: f.auth_base_url || getPublicOrigin(),
-        email_sender_name: f.email_sender_name || "HOC3 Ministry Center",
+        email_sender_name: f.email_sender_name || "Ministry Center",
       }));
       setChecking(false);
     })();
   }, [navigate]);
+
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
