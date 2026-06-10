@@ -1872,6 +1872,9 @@ function AdminPage() {
         </div>
 
         {/* 概览 — 长老仪表板 */}
+        {statsSubTab === "overview" && (
+          <div className="mt-2"><MinistryFunnelStats /></div>
+        )}
         {statsSubTab === "overview" && (() => {
           const now = new Date();
           const yearStart = new Date(now.getFullYear(), 0, 1);
