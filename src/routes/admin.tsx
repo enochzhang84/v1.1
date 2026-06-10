@@ -36,6 +36,7 @@ import { HomePageSettingsPanel } from "@/components/admin/HomePageSettingsPanel"
 import { SystemHealthCenter } from "@/components/admin/SystemHealthCenter";
 import { GroupJoinRecordsPanel } from "@/components/admin/GroupJoinRecordsPanel";
 import { SystemUpgradePanel } from "@/components/admin/SystemUpgradePanel";
+import { VersionHotkeyDialog } from "@/components/admin/VersionHotkeyDialog";
 import { exportDeployPackage } from "@/lib/deploy.functions";
 import { Win98Window } from "@/components/admin/win98";
 import { BackupRestorePanel } from "@/components/admin/BackupRestorePanel";
@@ -1691,6 +1692,7 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <VersionHotkeyDialog isSuperAdmin={isSuperAdmin} />
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <AdminBrand />
