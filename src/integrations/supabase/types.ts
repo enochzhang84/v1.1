@@ -983,48 +983,74 @@ export type Database = {
       }
       group_join_records: {
         Row: {
+          attended_count: number
           created_at: string
           created_by: string | null
           faith_status: string | null
+          follow_up_status: string
           gender: string | null
           group_type: string
           id: string
           joined_at: string | null
+          last_attended_at: string | null
           name: string
           notes: string | null
           record_date: string
+          source_registration_id: string | null
           status: string | null
+          status_note: string | null
+          transferred_out: boolean
           updated_at: string
         }
         Insert: {
+          attended_count?: number
           created_at?: string
           created_by?: string | null
           faith_status?: string | null
+          follow_up_status?: string
           gender?: string | null
           group_type: string
           id?: string
           joined_at?: string | null
+          last_attended_at?: string | null
           name: string
           notes?: string | null
           record_date?: string
+          source_registration_id?: string | null
           status?: string | null
+          status_note?: string | null
+          transferred_out?: boolean
           updated_at?: string
         }
         Update: {
+          attended_count?: number
           created_at?: string
           created_by?: string | null
           faith_status?: string | null
+          follow_up_status?: string
           gender?: string | null
           group_type?: string
           id?: string
           joined_at?: string | null
+          last_attended_at?: string | null
           name?: string
           notes?: string | null
           record_date?: string
+          source_registration_id?: string | null
           status?: string | null
+          status_note?: string | null
+          transferred_out?: boolean
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "group_join_records_source_registration_id_fkey"
+            columns: ["source_registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       home_page_content: {
         Row: {
