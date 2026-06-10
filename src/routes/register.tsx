@@ -362,7 +362,7 @@ function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 space-y-5 shadow-sm">
-          {isAdmin && !eventToken && (
+          {(isAdmin || isBackfillMode) && !eventToken && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <Label className="text-sm font-medium">
                 登记日期 / 补录日期
