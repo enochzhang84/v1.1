@@ -1632,6 +1632,7 @@ function AdminPage() {
           wants_visit: editForm.wants_visit ?? false,
           wants_info: editForm.wants_info ?? false,
           notes: editForm.notes?.trim() || null,
+          transfer_target: (editForm as any).transfer_target || null,
         },
       });
       setEditOpen(false);
@@ -1673,6 +1674,7 @@ function AdminPage() {
           wants_visit: r.wants_visit ?? false,
           wants_info: r.wants_info ?? false,
           notes: r.notes ?? null,
+          transfer_target: (r as any).transfer_target ?? null,
         },
       });
       logAction(`更新了 ${r.name} 跟进状态: ${status}`);
