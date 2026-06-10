@@ -59,7 +59,8 @@ export function QrAutoTestPanel() {
   const probeFn = useServerFn(qrProbeUrl);
   const fullTestFn = useServerFn(qrFullTestRegistration);
   const listLogsFn = useServerFn(qrListLogs);
-  const { isSuperAdmin } = useCurrentPermissions();
+  const { role } = useCurrentPermissions();
+  const isSuperAdmin = role === "super_admin";
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loadingList, setLoadingList] = useState(false);
