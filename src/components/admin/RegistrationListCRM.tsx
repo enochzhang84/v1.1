@@ -80,6 +80,8 @@ const TRANSFER_TARGET_OPTIONS_INLINE = [
   { value: "grace_tea_group", label: "恩典茶经小组" },
   { value: "baptism_class", label: "受洗班" },
   { value: "decision_record", label: "决志记录" },
+  { value: "not_interested", label: "不感兴趣" },
+  { value: "follow_up", label: "持续跟进" },
 ];
 const TRANSFER_TARGET_LABELS_INLINE: Record<string, string> = Object.fromEntries(
   TRANSFER_TARGET_OPTIONS_INLINE.map((o) => [o.value, o.label]),
