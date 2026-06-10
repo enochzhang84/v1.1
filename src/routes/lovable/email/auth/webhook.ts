@@ -11,11 +11,11 @@ import { RecoveryEmail } from '@/lib/email-templates/recovery'
 import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
-const EMAIL_SUBJECTS: Record<string, string> = {
+const DEFAULT_EMAIL_SUBJECTS: Record<string, string> = {
   signup: '确认您的邮箱',
   invite: '您已被邀请',
   magiclink: '登录验证码',
-  recovery: '重置您的 LioneApps 管理员密码',
+  recovery: '重置您的管理员密码',
   email_change: '确认您的新邮箱',
   reauthentication: '您的验证码',
 }
@@ -30,11 +30,35 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   reauthentication: ReauthenticationEmail,
 }
 
-// Configuration
-const SITE_NAME = "LioneApps"
+// 默认发信配置（在系统未开通时使用）
+const DEFAULT_SITE_NAME = "HOC3 Ministry Center"
 const SENDER_DOMAIN = "notify.lioneapps.com"
 const ROOT_DOMAIN = "lioneapps.com"
 const FROM_DOMAIN = "lioneapps.com"
+
+// 从 app_settings 读取教会品牌信息
+async function loadBrandSettings(sb: ReturnType<typeof createClient>) {
+  try {
+    const { data } = await sb.rpc('get_public_app_settings')
+    const map: Record<string, string> = {}
+    for (const row of (data ?? []) as Array<{ key: string; value: string }>) {
+      map[row.key] = row.value
+    }
+    return {
+      siteName: map.email_sender_name || map.admin_logo_title_zh || DEFAULT_SITE_NAME,
+      churchNameCn: map.church_name_cn || '',
+      siteUrl: map.auth_base_url || `https://${ROOT_DOMAIN}`,
+      replyTo: map.reply_to_email || map.church_email || '',
+    }
+  } catch {
+    return {
+      siteName: DEFAULT_SITE_NAME,
+      churchNameCn: '',
+      siteUrl: `https://${ROOT_DOMAIN}`,
+      replyTo: '',
+    }
+  }
+}
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
