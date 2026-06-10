@@ -1844,7 +1844,7 @@ function AdminPage() {
 
             <TabsContent value="stats" className="space-y-8 mt-0">
         {/* Chrome-style sub-tabs for 数据统计 */}
-        <div className="grid grid-cols-3 sm:grid-cols-7 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
+        <div className="grid grid-cols-3 sm:grid-cols-8 items-end gap-1 border-b border-border/60 px-2 pt-1 -mb-2">
           {[
             { v: "overview", label: `📊 ${t("rptOverview")}` },
             { v: "newcomer", label: `🆕 ${t("rptNewcomer")}` },
