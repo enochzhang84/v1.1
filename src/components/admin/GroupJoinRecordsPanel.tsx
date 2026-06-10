@@ -26,9 +26,19 @@ export type GroupJoinRecord = {
   joined_at: string | null;
   status: string | null;
   notes: string | null;
+  follow_up_status: string | null;
+  status_note: string | null;
+  attended_count: number | null;
+  last_attended_at: string | null;
+  source_registration_id: string | null;
+  transferred_out: boolean | null;
   created_at: string;
   updated_at: string;
 };
+
+const FOLLOW_UP_OPTIONS = [
+  "待邀请","已邀请","已参加","未参加","持续跟进","转团契","转受洗班","暂停跟进","失联","已转出",
+];
 
 const EMPTY = (gt: GroupType): Partial<GroupJoinRecord> => ({
   group_type: gt,
