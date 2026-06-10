@@ -325,6 +325,8 @@ export const TRANSFER_TARGET_OPTIONS = [
   { value: "grace_tea_group", label: "恩典茶经小组" },
   { value: "baptism_class", label: "受洗班" },
   { value: "decision_record", label: "决志记录" },
+  { value: "not_interested", label: "不感兴趣" },
+  { value: "follow_up", label: "持续跟进" },
 ] as const;
 export const TRANSFER_TARGET_LABELS: Record<string, string> = Object.fromEntries(
   TRANSFER_TARGET_OPTIONS.map((o) => [o.value, o.label]),
