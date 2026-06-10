@@ -30,6 +30,7 @@ import {
   ADMIN_LOGO_DEFAULTS,
   emitAdminLogoUpdated,
 } from "@/hooks/useAdminLogo";
+import { UnifiedQrInspector } from "./UnifiedQrInspector";
 
 type Settings = {
   id: string;
