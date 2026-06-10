@@ -11,7 +11,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
-const searchSchema = z.object({ event: z.string().optional() });
+const searchSchema = z.object({
+  event: z.string().optional(),
+  backfill: z.string().optional(),
+});
 
 export const Route = createFileRoute("/register")({
   validateSearch: searchSchema,
@@ -19,7 +22,8 @@ export const Route = createFileRoute("/register")({
 });
 
 function RegisterPage() {
-  const { event: eventToken } = Route.useSearch();
+  const { event: eventToken, backfill } = Route.useSearch();
+  const isBackfillMode = backfill === "1" || backfill === "true";
   const [eventId, setEventId] = useState<string | null>(null);
   const [eventName, setEventName] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -161,7 +165,8 @@ function RegisterPage() {
       .map((c) => ({ ...c, name: c.name.trim(), phone: c.phone.trim(), wechat: c.wechat.trim() }))
       .filter((c) => c.name);
     setSubmitting(true);
-    const isBackfill = isAdmin && !eventToken && !!entryDateTime;
+    const showAdminUI = (isAdmin || isBackfillMode) && !eventToken;
+    const isBackfill = showAdminUI && !!entryDateTime;
 
     const groupId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -256,10 +261,12 @@ function RegisterPage() {
 
     const rows = [primary, ...companionRows];
 
+    console.log("[Register] inserting rows:", rows);
     const insertQuery = supabase.from("registrations").insert(rows as never);
-    const { data, error } = isAdmin
+    const { data, error } = showAdminUI
       ? await insertQuery.select()
       : await insertQuery;
+    console.log("[Register] insert result — data:", data, "error:", error);
     setSubmitting(false);
 
     if (error) {
@@ -269,11 +276,11 @@ function RegisterPage() {
         error.details ? `details: ${error.details}` : "",
         error.hint ? `hint: ${error.hint}` : "",
       ].filter(Boolean).join(" | ");
-      toast.error(`提交失败 — ${parts}`, { duration: 12000 });
+      toast.error(`提交失败 — ${parts}`, { duration: 15000 });
       return;
     }
-    if (isAdmin && (!data || data.length === 0)) {
-      toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 12000 });
+    if (showAdminUI && (!data || data.length === 0)) {
+      toast.error("提交未返回数据，可能被RLS策略拦截。请检查登录状态。", { duration: 15000 });
       return;
     }
     const totalCount = 1 + cleanCompanions.length;
@@ -315,7 +322,7 @@ function RegisterPage() {
             </p>
             <p className="text-sm text-muted-foreground mt-2">— {verse.ref}</p>
           </div>
-          {isAdmin && !eventToken ? (
+          {(isAdmin || isBackfillMode) && !eventToken ? (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/admin">
                 <Button variant="outline" className="rounded-full w-full sm:w-auto">返回后台</Button>
@@ -355,7 +362,7 @@ function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 space-y-5 shadow-sm">
-          {isAdmin && !eventToken && (
+          {(isAdmin || isBackfillMode) && !eventToken && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
               <Label className="text-sm font-medium">
                 登记日期 / 补录日期
