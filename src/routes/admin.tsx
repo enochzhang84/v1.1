@@ -6500,7 +6500,7 @@ ${rows.length===0?'<tr><td colspan="5" style="text-align:center;color:#888;paddi
               <div className="space-y-3 py-2 text-sm">
                 <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
                   <div className="font-medium">⚠️ 强烈建议先导出备份再继续</div>
-                  <div className="mt-1 text-xs">此操作不可撤销。完成后系统将变成"母版"——保留管理员与配置，清空所有业务数据，可复制为新的教会副本。</div>
+                  <div className="mt-1 text-xs">此操作不可撤销。完成后系统将恢复为"新系统状态"——保留管理员与系统配置，清空业务数据，可用于部署新的教会系统。</div>
                 </div>
 
                 {!initPreview ? (
