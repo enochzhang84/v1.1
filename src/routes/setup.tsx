@@ -97,6 +97,7 @@ function SetupWizard() {
   const [probeBusy, setProbeBusy] = useState(false);
 
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
+  const [checklistMode, setChecklistMode] = useState(false);
 
   useEffect(() => {
     (async () => {
