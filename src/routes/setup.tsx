@@ -131,6 +131,10 @@ function SetupWizard() {
           setChecking(false);
           return;
         }
+        // 已有 super_admin 登录：跳过表单，进入检查模式（不再要求重复填写）
+        setChecklistMode(true);
+        setChecking(false);
+        return;
       }
       setForm((f) => ({
         ...f,
