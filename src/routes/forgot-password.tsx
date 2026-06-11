@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { buildAuthUrl } from "@/lib/auth-base-url";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +20,11 @@ function ForgotPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    // 必须使用初始化向导写入的 auth_base_url（正式域名），否则
+    // Supabase 会回退到 lovable.dev/auth-bridge → Access denied。
+    const redirectTo = await buildAuthUrl("/update-password");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo,
     });
     setLoading(false);
 
