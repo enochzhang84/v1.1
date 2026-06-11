@@ -386,6 +386,20 @@ function SetupWizard() {
     );
   }
 
+  if (blockedReason) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-sm text-center space-y-4">
+          <h1 className="text-xl font-semibold text-foreground">初始化已完成</h1>
+          <p className="text-muted-foreground text-sm">{blockedReason}</p>
+          <Link to="/login" className="inline-block rounded-full px-6 py-2 bg-emerald-600 text-white hover:bg-emerald-700">
+            返回登录
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const stepTitles = [
     "教会基础信息", "管理员账号", "邮件设置",
     "系统域名配置", "二维码初始化", "旧域名扫描", "二维码健康检查",
