@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NotificationBell } from "@/components/admin/NotificationBell";
+import { InitChecklistPanel } from "@/components/admin/InitChecklistPanel";
 
 const APP_VERSION = "v1.0";
 import { Calendar } from "@/components/ui/calendar";
