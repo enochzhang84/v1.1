@@ -341,6 +341,42 @@ function SetupWizard() {
         else if (devHost) { status = "warn"; parts.push("仍含开发域名 ⚠"); }
         else if (!res.ok) { status = "fail"; parts.push(res.errorMessage ?? "请求失败"); }
         list[i] = { ...r, status, message: parts.join(" · ") };
+  // ---- 步骤 7：二维码健康检查 ----
+  async function runHealthCheck() {
+    const origin = normalizeOrigin(form.formal_origin);
+    // 从 qr_registry 拉取全部已注册模块；失败则回退到内置清单
+    let entries: Array<{ name: string; route_path: string }>;
+    try {
+      const reg = await loadQrRegistry();
+      entries = reg.length > 0 ? reg : BUILTIN_QR_REGISTRY;
+    } catch {
+      entries = BUILTIN_QR_REGISTRY;
+    }
+    const list: ProbeRow[] = [
+      { name: "主页", url: `${origin}/`, status: "pending", message: "" },
+      ...entries.map((e) => ({
+        name: e.name,
+        url: `${origin}${e.route_path}`,
+        status: "pending" as const,
+        message: "",
+      })),
+    ];
+    setProbeRows(list);
+    setProbeBusy(true);
+    for (let i = 0; i < list.length; i++) {
+      const r = list[i];
+      try {
+        const res = await qrProbeUrl({ data: { qrName: r.name, url: r.url } });
+        const enteredAuth = res.detectedAuthRedirect;
+        const devHost = res.detectedDevHost;
+        let status: ProbeRow["status"] = "ok";
+        const parts: string[] = [];
+        if (res.httpStatus) parts.push(`HTTP ${res.httpStatus}`);
+        if (res.finalUrl && res.finalUrl !== r.url) parts.push(`→ ${res.finalUrl}`);
+        if (enteredAuth) { status = "fail"; parts.push("跳转到登录/管理页 ✗"); }
+        else if (devHost) { status = "warn"; parts.push("仍含开发域名 ⚠"); }
+        else if (!res.ok) { status = "fail"; parts.push(res.errorMessage ?? "请求失败"); }
+        list[i] = { ...r, status, message: parts.join(" · ") };
       } catch (e: any) {
         list[i] = { ...r, status: "warn", message: `检测跳过：${e?.message ?? "未登录"}` };
       }
