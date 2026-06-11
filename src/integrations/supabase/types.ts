@@ -1552,6 +1552,39 @@ export type Database = {
           },
         ]
       }
+      qr_registry: {
+        Row: {
+          created_at: string
+          id: string
+          is_system: boolean
+          module: string | null
+          name: string
+          route_path: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          module?: string | null
+          name: string
+          route_path: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          module?: string | null
+          name?: string
+          route_path?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       qr_test_logs: {
         Row: {
           cleaned_up: boolean
