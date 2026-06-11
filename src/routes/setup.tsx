@@ -422,6 +422,33 @@ function SetupWizard() {
     );
   }
 
+  if (checklistMode) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] py-10 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-6">
+            <h1 className="font-serif text-3xl text-foreground tracking-tight">初始化检查</h1>
+            <p className="text-muted-foreground text-sm mt-2">
+              系统检测到现有配置，无需重复填写。请确认下列项目，全部通过后点击「确认初始化完成」。
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-white">
+            <InitChecklistPanel
+              onCompleted={() => {
+                window.location.assign("/admin");
+              }}
+            />
+          </div>
+          <div className="text-center mt-4">
+            <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">
+              ← 返回后台
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const stepTitles = [
     "教会基础信息", "管理员账号", "邮件设置",
     "系统域名配置", "二维码初始化", "旧域名扫描", "二维码健康检查",
