@@ -31,6 +31,7 @@ import {
   emitAdminLogoUpdated,
 } from "@/hooks/useAdminLogo";
 import { UnifiedQrInspector } from "./UnifiedQrInspector";
+import { DomainBindingPanel } from "./DomainBindingPanel";
 import { QrAutoTestPanel } from "./QrAutoTestPanel";
 import { LegacyUrlScanPanel } from "./LegacyUrlScanPanel";
 
@@ -593,6 +594,7 @@ export function HomePageSettingsPanel({ onClose }: { onClose?: () => void } = {}
 
   const SectionQr = (
     <div className="space-y-5">
+      <DomainBindingPanel />
       <UnifiedQrInspector />
       <LegacyUrlScanPanel />
       <QrAutoTestPanel />
