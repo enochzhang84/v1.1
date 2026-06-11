@@ -194,24 +194,33 @@ export function QrHealthCheckPanel() {
           const cls = classifyUrl(it.url, origin, it.expectedPath);
           let httpStatus: number | null = null;
           if (cls.level !== "fail" && it.url) {
-            httpStatus = await probeUrl(it.url);
-            if (httpStatus === null) {
-              cls.reasons.push("HTTP 请求失败 / 不可达");
+            const probe = await probeUrl(it.url, origin);
+            httpStatus = probe.status;
+            if (!probe.reachable) {
+              cls.reasons.push(probe.note || "HTTP 请求失败 / 不可达");
               cls.level = "fail";
+            } else if (probe.restricted) {
+              // 跨域检测受限：不算失败，仅提示
+              cls.reasons.push("检测受限（跨域，无法读取状态码）— 请使用「打开测试」验证");
+              if (cls.level === "pass") cls.level = "warn";
             }
           }
           return { ...it, ...cls, httpStatus };
         }),
       );
 
-      // ----- 4. INSERT 测试 -----
+      // ----- 4. INSERT 测试（可选，未授权时跳过而不是 FAIL） -----
       const insertTest = await insertTestFn().catch((e: Error) => ({
         insertOk: false,
         readOk: false,
         deleteOk: false,
         insertedId: null,
-        error: e.message,
-      }));
+        error: /Unauthorized|No authorization/i.test(e.message)
+          ? "已跳过（当前会话未授权，公开页面无需此检查）"
+          : e.message,
+        skipped: /Unauthorized|No authorization/i.test(e.message),
+      })) as { insertOk: boolean; readOk: boolean; deleteOk: boolean; insertedId: string | null; error: string | null; skipped?: boolean };
+
 
       // ----- 5. 同步检查 -----
       const sync = {
