@@ -78,15 +78,31 @@ function classifyUrl(
   return { level: "pass", reasons: [], qrHost: host, currentHost };
 }
 
-async function probeUrl(url: string): Promise<number | null> {
+type ProbeResult = { reachable: boolean; status: number | null; restricted: boolean; note?: string };
+
+async function probeUrl(url: string, currentOrigin: string): Promise<ProbeResult> {
+  if (!url) return { reachable: false, status: null, restricted: false, note: "空链接" };
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return { reachable: false, status: null, restricted: false, note: "URL 无效" }; }
+  const sameOrigin = parsed.origin === currentOrigin;
+  if (sameOrigin) {
+    try {
+      const res = await fetch(url, { method: "GET", redirect: "follow" });
+      // 200-399 视为可达；401/403 也视为「页面存在」（公开页本身不应 401，但 fetch 可能携带 cookie 触发跳转）
+      return { reachable: res.status < 500, status: res.status, restricted: false };
+    } catch (e) {
+      return { reachable: false, status: null, restricted: false, note: (e as Error).message };
+    }
+  }
+  // 跨域：no-cors 拿不到状态码，只能判断「网络层是否通」。
   try {
-    const res = await fetch(url, { method: "GET", mode: "no-cors" });
-    // no-cors 拿不到 status；只要 fetch 不 throw 就视为可达
-    return res.type === "opaque" ? 200 : res.status;
-  } catch {
-    return null;
+    await fetch(url, { method: "GET", mode: "no-cors" });
+    return { reachable: true, status: null, restricted: true, note: "跨域，仅能验证网络可达" };
+  } catch (e) {
+    return { reachable: false, status: null, restricted: true, note: "跨域 + 网络失败：" + (e as Error).message };
   }
 }
+
 
 export function QrHealthCheckPanel() {
   const insertTestFn = useServerFn(runQrInsertTest);
@@ -178,24 +194,33 @@ export function QrHealthCheckPanel() {
           const cls = classifyUrl(it.url, origin, it.expectedPath);
           let httpStatus: number | null = null;
           if (cls.level !== "fail" && it.url) {
-            httpStatus = await probeUrl(it.url);
-            if (httpStatus === null) {
-              cls.reasons.push("HTTP 请求失败 / 不可达");
+            const probe = await probeUrl(it.url, origin);
+            httpStatus = probe.status;
+            if (!probe.reachable) {
+              cls.reasons.push(probe.note || "HTTP 请求失败 / 不可达");
               cls.level = "fail";
+            } else if (probe.restricted) {
+              // 跨域检测受限：不算失败，仅提示
+              cls.reasons.push("检测受限（跨域，无法读取状态码）— 请使用「打开测试」验证");
+              if (cls.level === "pass") cls.level = "warn";
             }
           }
           return { ...it, ...cls, httpStatus };
         }),
       );
 
-      // ----- 4. INSERT 测试 -----
+      // ----- 4. INSERT 测试（可选，未授权时跳过而不是 FAIL） -----
       const insertTest = await insertTestFn().catch((e: Error) => ({
         insertOk: false,
         readOk: false,
         deleteOk: false,
         insertedId: null,
-        error: e.message,
-      }));
+        error: /Unauthorized|No authorization/i.test(e.message)
+          ? "已跳过（当前会话未授权，公开页面无需此检查）"
+          : e.message,
+        skipped: /Unauthorized|No authorization/i.test(e.message),
+      })) as { insertOk: boolean; readOk: boolean; deleteOk: boolean; insertedId: string | null; error: string | null; skipped?: boolean };
+
 
       // ----- 5. 同步检查 -----
       const sync = {
@@ -211,8 +236,9 @@ export function QrHealthCheckPanel() {
           ? "warn"
           : "pass";
       const domainLevel: Level = origin && /^https?:\/\//.test(origin) ? "pass" : "fail";
-      const dbLevel: Level =
-        insertTest.insertOk && insertTest.readOk && insertTest.deleteOk ? "pass" : "fail";
+      const dbLevel: Level = insertTest.skipped
+        ? "warn"
+        : insertTest.insertOk && insertTest.readOk && insertTest.deleteOk ? "pass" : "fail";
       const syncLevel: Level = sync.match ? "pass" : "fail";
       const overall: Level =
         [qrLevel, domainLevel, dbLevel, syncLevel].includes("fail")
@@ -342,10 +368,22 @@ export function QrHealthCheckPanel() {
                       <span>{q.name}</span>
                       <span className="text-xs text-muted-foreground">[{q.source}]</span>
                     </div>
-                    <span className="text-xs">
-                      {levelLabel(q.level)}
-                      {q.httpStatus != null && <span className="ml-1 text-muted-foreground">HTTP {q.httpStatus}</span>}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">
+                        {levelLabel(q.level)}
+                        {q.httpStatus != null && <span className="ml-1 text-muted-foreground">HTTP {q.httpStatus}</span>}
+                      </span>
+                      {q.url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full h-7 px-3 text-xs"
+                          onClick={() => window.open(q.url, "_blank", "noopener")}
+                        >
+                          打开测试
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground break-all mt-1">{q.url || "(空)"}</div>
                   <div className="text-xs mt-1 grid sm:grid-cols-3 gap-x-3">
