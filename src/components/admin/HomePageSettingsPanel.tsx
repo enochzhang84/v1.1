@@ -31,6 +31,7 @@ import {
   emitAdminLogoUpdated,
 } from "@/hooks/useAdminLogo";
 import { UnifiedQrInspector } from "./UnifiedQrInspector";
+import { DomainBindingPanel } from "./DomainBindingPanel";
 import { QrAutoTestPanel } from "./QrAutoTestPanel";
 import { LegacyUrlScanPanel } from "./LegacyUrlScanPanel";
 
