@@ -516,6 +516,15 @@ function AdminPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
   const [noSuperAdminDetected, setNoSuperAdminDetected] = useState(false);
+  const [setupCompleted, setSetupCompleted] = useState<boolean>(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.rpc("is_system_initialized");
+        setSetupCompleted(data === true);
+      } catch { setSetupCompleted(true); }
+    })();
+  }, []);
   const [permsDialogUser, setPermsDialogUser] = useState<AppUser | null>(null);
   const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
