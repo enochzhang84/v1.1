@@ -99,20 +99,36 @@ function SetupWizard() {
 
   useEffect(() => {
     (async () => {
-      // 双重校验：setup_completed 或 已存在 super_admin，任一满足都禁止再次初始化
+      // 守卫规则：
+      //  1) setup_completed = true → 一律禁止再次进入（已彻底初始化）。
+      //  2) setup_completed = false 且已存在 super_admin → 仅允许该 super_admin 登录后继续完成向导；
+      //     其他用户/匿名一律拒绝。
+      //  3) setup_completed = false 且无 super_admin → 允许首次初始化。
       const { data: inited } = await supabase.rpc("is_system_initialized");
-      let blocked = inited === true;
-      if (!blocked) {
-        const { count } = await supabase
-          .from("user_roles")
-          .select("user_id", { count: "exact", head: true })
-          .eq("role", "super_admin");
-        if ((count ?? 0) > 0) blocked = true;
-      }
-      if (blocked) {
+      if (inited === true) {
         setBlockedReason("系统已完成初始化,如需新增管理员,请由超级管理员在后台授权。");
         setChecking(false);
         return;
+      }
+      const { data: superRows } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "super_admin")
+        .limit(1);
+      const existingSuperId = (superRows?.[0]?.user_id as string | undefined) ?? null;
+      if (existingSuperId) {
+        const { data: sess } = await supabase.auth.getSession();
+        const uid = sess.session?.user?.id ?? null;
+        if (!uid) {
+          setBlockedReason("系统已存在超级管理员但尚未完成初始化,请先以超级管理员身份登录后再继续。");
+          setChecking(false);
+          return;
+        }
+        if (uid !== existingSuperId) {
+          setBlockedReason("仅当前超级管理员可以继续完成初始化向导。");
+          setChecking(false);
+          return;
+        }
       }
       setForm((f) => ({
         ...f,

@@ -516,6 +516,15 @@ function AdminPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRoleState] = useState<Role | null>(null);
   const [noSuperAdminDetected, setNoSuperAdminDetected] = useState(false);
+  const [setupCompleted, setSetupCompleted] = useState<boolean>(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.rpc("is_system_initialized");
+        setSetupCompleted(data === true);
+      } catch { setSetupCompleted(true); }
+    })();
+  }, []);
   const [permsDialogUser, setPermsDialogUser] = useState<AppUser | null>(null);
   const [currentServiceArea, setCurrentServiceArea] = useState<ServiceArea | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -1693,6 +1702,23 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <VersionHotkeyDialog isSuperAdmin={isSuperAdmin} />
+      {isSuperAdmin && !setupCompleted && (
+        <div className="bg-amber-50 border-b border-amber-300 text-amber-900">
+          <div className="container mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span>⚠️</span>
+              <span>系统尚未完成初始化，请完成初始化向导。</span>
+            </div>
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => navigate({ to: "/setup" })}
+            >
+              立即进入初始化向导 →
+            </Button>
+          </div>
+        </div>
+      )}
       <header className="border-b border-border/60 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <AdminBrand />
@@ -2873,6 +2899,15 @@ function AdminPage() {
             >
               ⚙️ 系统运维中心
             </Button>
+            {!setupCompleted && (
+              <Button
+                variant="outline"
+                className="border-amber-500 text-amber-700 hover:bg-amber-50"
+                onClick={() => navigate({ to: "/setup" })}
+              >
+                🧭 继续完成初始化向导
+              </Button>
+            )}
           </div>
         </section>
         )}
