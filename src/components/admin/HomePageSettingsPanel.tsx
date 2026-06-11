@@ -1308,21 +1308,58 @@ function AdminLogoEditor({
 
   async function save() {
     setSaving(true);
+    const nowIso = new Date().toISOString();
     const rows = [
-      { key: "admin_logo_title_zh", value: zh.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_title_zh },
-      { key: "admin_logo_title_en", value: en.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_title_en },
-      { key: "admin_logo_version", value: ver.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_version },
+      { key: "admin_logo_title_zh", value: zh.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_title_zh, updated_at: nowIso },
+      { key: "admin_logo_title_en", value: en.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_title_en, updated_at: nowIso },
+      { key: "admin_logo_version", value: ver.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_version, updated_at: nowIso },
     ];
-    const { error } = await (supabase as any)
-      .from("app_settings")
-      .upsert(rows, { onConflict: "key" });
-    setSaving(false);
-    if (error) {
-      alert("保存失败", error.message, "error");
-      return;
+    console.log("[AdminLogoEditor] saving rows:", rows);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      console.log("[AdminLogoEditor] session user:", sess.session?.user?.id, sess.session?.user?.email);
+      if (!sess.session) {
+        setSaving(false);
+        alert("保存失败", "尚未登录或登录已过期，请重新登录后再保存。", "error");
+        return;
+      }
+      const { data, error } = await (supabase as any)
+        .from("app_settings")
+        .upsert(rows, { onConflict: "key" })
+        .select();
+      console.log("[AdminLogoEditor] upsert result:", { data, error });
+      if (error) {
+        setSaving(false);
+        alert(
+          "保存失败",
+          `${error.message ?? ""}${error.details ? `\n${error.details}` : ""}${error.hint ? `\n${error.hint}` : ""}`,
+          "error",
+        );
+        return;
+      }
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        setSaving(false);
+        alert(
+          "保存失败",
+          "数据库未返回写入结果（可能被 RLS 拦截）。请确认当前账号具有管理员（admin / super_admin）权限。",
+          "error",
+        );
+        return;
+      }
+      // 同步 system_version：使 useAdminLogo() 在没有 admin_logo_version 缓存时也能回退到最新值
+      const verClean = (ver.trim() || ADMIN_LOGO_DEFAULTS.admin_logo_version).replace(/^Version\s+/i, "");
+      await (supabase as any)
+        .from("app_settings")
+        .upsert([{ key: "system_version", value: verClean, updated_at: nowIso }], { onConflict: "key" });
+
+      setSaving(false);
+      emitAdminLogoUpdated();
+      alert("系统提示", "后台 Logo 已保存，左上角已更新。", "success");
+    } catch (e: any) {
+      console.error("[AdminLogoEditor] save exception:", e);
+      setSaving(false);
+      alert("保存失败", e?.message ?? String(e), "error");
     }
-    emitAdminLogoUpdated();
-    alert("系统提示", "后台 Logo 已保存，左上角已更新。", "success");
   }
 
   function restoreDefaults() {
