@@ -20,7 +20,7 @@ function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://forgot-password.lioneapps.com/update-password",
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
 

@@ -155,31 +155,56 @@ function SetupWizard() {
   // ---- 步骤 5：保存（创建管理员 + 写设置 + 写主页二维码地址）----
   async function commitSetup(): Promise<boolean> {
     setSubmitting(true);
-    try {
-      const origin = normalizeOrigin(form.formal_origin);
+    const origin = normalizeOrigin(form.formal_origin);
+    const warnings: string[] = [];
+    let userId: string | null = null;
 
-      // 1) 创建超级管理员
-      const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
-        email: form.admin_email,
-        password: form.password,
-        options: {
-          data: { full_name: form.admin_name },
-          emailRedirectTo: `${origin}/login`,
-        },
-      });
-      if (signUpErr) throw signUpErr;
-      let userId = signUp.user?.id ?? null;
-      if (!userId && signUp.session) userId = signUp.session.user.id;
-      if (!userId) {
-        const { data: signIn } = await supabase.auth.signInWithPassword({
+    try {
+      console.log("[setup] step5 start", { adminEmail: form.admin_email, origin });
+
+      // 1) 创建超级管理员（多路径取 user.id，失败时记录警告而不是中断）
+      try {
+        const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
           email: form.admin_email,
           password: form.password,
+          options: {
+            data: { full_name: form.admin_name },
+            emailRedirectTo: `${origin}/login`,
+          },
         });
-        userId = signIn?.user?.id ?? null;
+        console.log("[setup] signUp result:", { user: signUp?.user?.id, hasSession: !!signUp?.session, err: signUpErr?.message });
+        if (signUpErr && !/already|registered|exists/i.test(signUpErr.message)) {
+          throw signUpErr;
+        }
+        userId = signUp?.user?.id ?? signUp?.session?.user?.id ?? null;
+      } catch (e: any) {
+        console.warn("[setup] signUp threw:", e?.message);
+        warnings.push(`注册：${e?.message ?? e}`);
       }
-      if (!userId) throw new Error("未能获取新管理员账号 ID。");
 
-      // 2) 写入设置 + 设为 super_admin
+      // 2) 若未拿到 userId，尝试用密码登录获取（账号已存在场景）
+      if (!userId) {
+        try {
+          const { data: signIn, error: siErr } = await supabase.auth.signInWithPassword({
+            email: form.admin_email,
+            password: form.password,
+          });
+          console.log("[setup] signIn fallback:", { user: signIn?.user?.id, err: siErr?.message });
+          if (siErr) warnings.push(`登录回退：${siErr.message}`);
+          userId = signIn?.user?.id ?? null;
+        } catch (e: any) {
+          warnings.push(`登录回退异常：${e?.message ?? e}`);
+        }
+      }
+
+      // 3) 再从当前 session 兜底
+      if (!userId) {
+        const { data: u } = await supabase.auth.getUser();
+        userId = u?.user?.id ?? null;
+        console.log("[setup] getUser fallback:", userId);
+      }
+
+      // 4) 写入设置 + 设为 super_admin（拿到 userId 才能调 RPC）
       const settings = {
         church_name_cn: form.church_name_cn,
         church_name_en: form.church_name_en,
@@ -195,29 +220,48 @@ function SetupWizard() {
         admin_logo_title_zh: form.church_name_cn,
         admin_logo_title_en: form.church_name_en || form.email_sender_name,
       };
-      const { error: rpcErr } = await supabase.rpc("complete_initial_setup", {
-        admin_user_id: userId,
-        settings,
-      });
-      if (rpcErr) throw rpcErr;
-      clearPublicAppSettingsCache();
 
-      // 3) 初始化主页二维码地址（步骤 5 核心）
-      const qrPatch = {
-        qr_newcomer_url: `${origin}/register`,
-        qr_retreat_url: `${origin}/retreat-register`,
-      };
-      const { data: rows } = await (supabase as any)
-        .from("home_page_settings").select("id").limit(1);
-      if (rows && rows.length > 0) {
-        await (supabase as any).from("home_page_settings")
-          .update(qrPatch).eq("id", rows[0].id);
+      if (userId) {
+        const { error: rpcErr } = await supabase.rpc("complete_initial_setup", {
+          admin_user_id: userId,
+          settings,
+        });
+        console.log("[setup] complete_initial_setup err:", rpcErr?.message);
+        if (rpcErr) {
+          warnings.push(`系统设置写入失败：${rpcErr.message}`);
+        } else {
+          clearPublicAppSettingsCache();
+        }
       } else {
-        await (supabase as any).from("home_page_settings").insert(qrPatch);
+        warnings.push("未能获取管理员 ID，已跳过 super_admin 授权（请稍后手动登录后再次运行向导补建角色）。");
       }
 
-      toast.success("系统初始化成功，正在扫描旧域名…");
+      // 5) 初始化主页二维码地址（无论 userId 是否拿到都执行）
+      try {
+        const qrPatch = {
+          qr_newcomer_url: `${origin}/register`,
+          qr_retreat_url: `${origin}/retreat-register`,
+        };
+        const { data: rows } = await (supabase as any)
+          .from("home_page_settings").select("id").limit(1);
+        if (rows && rows.length > 0) {
+          await (supabase as any).from("home_page_settings").update(qrPatch).eq("id", rows[0].id);
+        } else {
+          await (supabase as any).from("home_page_settings").insert(qrPatch);
+        }
+        console.log("[setup] qr init done", qrPatch);
+      } catch (e: any) {
+        warnings.push(`二维码初始化失败：${e?.message ?? e}`);
+        console.error("[setup] qr init err:", e);
+      }
+
       setSubmitting(false);
+      if (warnings.length > 0) {
+        toast.warning(`已继续，但有 ${warnings.length} 条警告：${warnings[0]}`);
+        console.warn("[setup] warnings:", warnings);
+      } else {
+        toast.success("系统初始化成功，正在扫描旧域名…");
+      }
       return true;
     } catch (e: any) {
       setSubmitting(false);
