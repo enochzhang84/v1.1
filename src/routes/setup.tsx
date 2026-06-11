@@ -10,6 +10,7 @@ import { clearPublicAppSettingsCache } from "@/lib/auth-base-url";
 import { getPublicOrigin } from "@/lib/public-origin";
 import { scanLegacyUrls, rewriteLegacyUrls, type LegacyHit } from "@/lib/legacy-urls";
 import { qrProbeUrl } from "@/lib/qr-autotest.functions";
+import { BUILTIN_QR_REGISTRY, loadQrRegistry } from "@/lib/qr-registry";
 
 export const Route = createFileRoute("/setup")({
   component: SetupWizard,
@@ -255,6 +256,19 @@ function SetupWizard() {
         console.error("[setup] qr init err:", e);
       }
 
+      // 5b) 防御性补齐 qr_registry 内置项（万一新副本未跑该迁移）
+      try {
+        for (const item of BUILTIN_QR_REGISTRY) {
+          await (supabase as any)
+            .from("qr_registry")
+            .upsert(item, { onConflict: "route_path" });
+        }
+        console.log("[setup] qr_registry seeded", BUILTIN_QR_REGISTRY.length);
+      } catch (e: any) {
+        warnings.push(`二维码注册表种子失败：${e?.message ?? e}`);
+        console.warn("[setup] qr_registry seed err:", e);
+      }
+
       setSubmitting(false);
       if (warnings.length > 0) {
         toast.warning(`已继续，但有 ${warnings.length} 条警告：${warnings[0]}`);
@@ -306,10 +320,22 @@ function SetupWizard() {
   // ---- 步骤 7：二维码健康检查 ----
   async function runHealthCheck() {
     const origin = normalizeOrigin(form.formal_origin);
+    // 从 qr_registry 拉取全部已注册模块；失败则回退到内置清单
+    let entries: Array<{ name: string; route_path: string }>;
+    try {
+      const reg = await loadQrRegistry();
+      entries = reg.length > 0 ? reg : BUILTIN_QR_REGISTRY;
+    } catch {
+      entries = BUILTIN_QR_REGISTRY;
+    }
     const list: ProbeRow[] = [
-      { name: "新人登记", url: `${origin}/register`, status: "pending", message: "" },
-      { name: "退修会登记", url: `${origin}/retreat-register`, status: "pending", message: "" },
       { name: "主页", url: `${origin}/`, status: "pending", message: "" },
+      ...entries.map((e) => ({
+        name: e.name,
+        url: `${origin}${e.route_path}`,
+        status: "pending" as const,
+        message: "",
+      })),
     ];
     setProbeRows(list);
     setProbeBusy(true);
