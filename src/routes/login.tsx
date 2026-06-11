@@ -26,9 +26,17 @@ function LoginPage() {
         return;
       }
       const { data: inited, error } = await supabase.rpc("is_system_initialized");
-      if (!error) {
-        setSystemInitialized(inited !== false);
+      let initialized = !error && inited !== false;
+      // 兜底：即便 setup_completed 未写入，只要已存在 super_admin，也视为已初始化，
+      // 避免登录页继续显示「首次开通系统」入口。
+      if (!initialized) {
+        const { count } = await supabase
+          .from("user_roles")
+          .select("user_id", { count: "exact", head: true })
+          .eq("role", "super_admin");
+        if ((count ?? 0) > 0) initialized = true;
       }
+      setSystemInitialized(initialized);
       setChecking(false);
     })();
   }, [navigate]);
