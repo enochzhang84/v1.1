@@ -89,7 +89,7 @@ async function probeUrl(url: string, currentOrigin: string): Promise<ProbeResult
     try {
       const res = await fetch(url, { method: "GET", redirect: "follow" });
       // 200-399 视为可达；401/403 也视为「页面存在」（公开页本身不应 401，但 fetch 可能携带 cookie 触发跳转）
-      return { reachable: res.status < 500, status: res.status };
+      return { reachable: res.status < 500, status: res.status, restricted: false };
     } catch (e) {
       return { reachable: false, status: null, restricted: false, note: (e as Error).message };
     }
