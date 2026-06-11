@@ -95,11 +95,23 @@ function SetupWizard() {
   const [probeRows, setProbeRows] = useState<ProbeRow[]>([]);
   const [probeBusy, setProbeBusy] = useState(false);
 
+  const [blockedReason, setBlockedReason] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.rpc("is_system_initialized");
-      if (!error && data === true) {
-        navigate({ to: "/login", replace: true });
+      // 双重校验：setup_completed 或 已存在 super_admin，任一满足都禁止再次初始化
+      const { data: inited } = await supabase.rpc("is_system_initialized");
+      let blocked = inited === true;
+      if (!blocked) {
+        const { count } = await supabase
+          .from("user_roles")
+          .select("user_id", { count: "exact", head: true })
+          .eq("role", "super_admin");
+        if ((count ?? 0) > 0) blocked = true;
+      }
+      if (blocked) {
+        setBlockedReason("系统已完成初始化,如需新增管理员,请由超级管理员在后台授权。");
+        setChecking(false);
         return;
       }
       setForm((f) => ({
