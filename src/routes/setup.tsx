@@ -256,6 +256,19 @@ function SetupWizard() {
         console.error("[setup] qr init err:", e);
       }
 
+      // 5b) 防御性补齐 qr_registry 内置项（万一新副本未跑该迁移）
+      try {
+        for (const item of BUILTIN_QR_REGISTRY) {
+          await (supabase as any)
+            .from("qr_registry")
+            .upsert(item, { onConflict: "route_path" });
+        }
+        console.log("[setup] qr_registry seeded", BUILTIN_QR_REGISTRY.length);
+      } catch (e: any) {
+        warnings.push(`二维码注册表种子失败：${e?.message ?? e}`);
+        console.warn("[setup] qr_registry seed err:", e);
+      }
+
       setSubmitting(false);
       if (warnings.length > 0) {
         toast.warning(`已继续，但有 ${warnings.length} 条警告：${warnings[0]}`);
