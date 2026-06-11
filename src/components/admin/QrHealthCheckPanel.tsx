@@ -368,10 +368,22 @@ export function QrHealthCheckPanel() {
                       <span>{q.name}</span>
                       <span className="text-xs text-muted-foreground">[{q.source}]</span>
                     </div>
-                    <span className="text-xs">
-                      {levelLabel(q.level)}
-                      {q.httpStatus != null && <span className="ml-1 text-muted-foreground">HTTP {q.httpStatus}</span>}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">
+                        {levelLabel(q.level)}
+                        {q.httpStatus != null && <span className="ml-1 text-muted-foreground">HTTP {q.httpStatus}</span>}
+                      </span>
+                      {q.url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full h-7 px-3 text-xs"
+                          onClick={() => window.open(q.url, "_blank", "noopener")}
+                        >
+                          打开测试
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground break-all mt-1">{q.url || "(空)"}</div>
                   <div className="text-xs mt-1 grid sm:grid-cols-3 gap-x-3">
