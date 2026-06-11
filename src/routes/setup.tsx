@@ -10,6 +10,7 @@ import { clearPublicAppSettingsCache } from "@/lib/auth-base-url";
 import { getPublicOrigin } from "@/lib/public-origin";
 import { scanLegacyUrls, rewriteLegacyUrls, type LegacyHit } from "@/lib/legacy-urls";
 import { qrProbeUrl } from "@/lib/qr-autotest.functions";
+import { BUILTIN_QR_REGISTRY, loadQrRegistry } from "@/lib/qr-registry";
 
 export const Route = createFileRoute("/setup")({
   component: SetupWizard,
