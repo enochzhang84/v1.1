@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UpdatePasswordRouteImport } from './routes/update-password'
 import { Route as TodayPreviewRouteImport } from './routes/today-preview'
 import { Route as SundayScheduleRouteImport } from './routes/sunday-schedule'
 import { Route as SundayCheckinRouteImport } from './routes/sunday-checkin'
@@ -45,6 +46,11 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 
+const UpdatePasswordRoute = UpdatePasswordRouteImport.update({
+  id: '/update-password',
+  path: '/update-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TodayPreviewRoute = TodayPreviewRouteImport.update({
   id: '/today-preview',
   path: '/today-preview',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/update-password': typeof UpdatePasswordRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/update-password': typeof UpdatePasswordRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/sunday-checkin': typeof SundayCheckinRoute
   '/sunday-schedule': typeof SundayScheduleRoute
   '/today-preview': typeof TodayPreviewRoute
+  '/update-password': typeof UpdatePasswordRoute
   '/adult-checkin/$kind': typeof AdultCheckinKindRoute
   '/display/$slug': typeof DisplaySlugRoute
   '/today-public/$token': typeof TodayPublicTokenRoute
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/update-password'
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
@@ -401,6 +411,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/update-password'
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/sunday-checkin'
     | '/sunday-schedule'
     | '/today-preview'
+    | '/update-password'
     | '/adult-checkin/$kind'
     | '/display/$slug'
     | '/today-public/$token'
@@ -476,6 +488,7 @@ export interface RootRouteChildren {
   SundayCheckinRoute: typeof SundayCheckinRoute
   SundayScheduleRoute: typeof SundayScheduleRoute
   TodayPreviewRoute: typeof TodayPreviewRoute
+  UpdatePasswordRoute: typeof UpdatePasswordRoute
   AdultCheckinKindRoute: typeof AdultCheckinKindRoute
   DisplaySlugRoute: typeof DisplaySlugRoute
   TodayPublicTokenRoute: typeof TodayPublicTokenRoute
@@ -488,6 +501,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/update-password': {
+      id: '/update-password'
+      path: '/update-password'
+      fullPath: '/update-password'
+      preLoaderRoute: typeof UpdatePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/today-preview': {
       id: '/today-preview'
       path: '/today-preview'
@@ -764,6 +784,7 @@ const rootRouteChildren: RootRouteChildren = {
   SundayCheckinRoute: SundayCheckinRoute,
   SundayScheduleRoute: SundayScheduleRoute,
   TodayPreviewRoute: TodayPreviewRoute,
+  UpdatePasswordRoute: UpdatePasswordRoute,
   AdultCheckinKindRoute: AdultCheckinKindRoute,
   DisplaySlugRoute: DisplaySlugRoute,
   TodayPublicTokenRoute: TodayPublicTokenRoute,
