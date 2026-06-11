@@ -2882,6 +2882,15 @@ function AdminPage() {
             >
               ⚙️ 系统运维中心
             </Button>
+            {!setupCompleted && (
+              <Button
+                variant="outline"
+                className="border-amber-500 text-amber-700 hover:bg-amber-50"
+                onClick={() => navigate({ to: "/setup" })}
+              >
+                🧭 继续完成初始化向导
+              </Button>
+            )}
           </div>
         </section>
         )}
