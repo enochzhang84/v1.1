@@ -236,8 +236,9 @@ export function QrHealthCheckPanel() {
           ? "warn"
           : "pass";
       const domainLevel: Level = origin && /^https?:\/\//.test(origin) ? "pass" : "fail";
-      const dbLevel: Level =
-        insertTest.insertOk && insertTest.readOk && insertTest.deleteOk ? "pass" : "fail";
+      const dbLevel: Level = insertTest.skipped
+        ? "warn"
+        : insertTest.insertOk && insertTest.readOk && insertTest.deleteOk ? "pass" : "fail";
       const syncLevel: Level = sync.match ? "pass" : "fail";
       const overall: Level =
         [qrLevel, domainLevel, dbLevel, syncLevel].includes("fail")
