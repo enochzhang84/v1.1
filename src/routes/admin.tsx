@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NotificationBell } from "@/components/admin/NotificationBell";
+import { InitChecklistPanel } from "@/components/admin/InitChecklistPanel";
 
 const APP_VERSION = "v1.0";
 import { Calendar } from "@/components/ui/calendar";
@@ -1707,15 +1708,34 @@ function AdminPage() {
           <div className="container mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
             <div className="flex items-center gap-2">
               <span>⚠️</span>
-              <span>系统尚未完成初始化，请完成初始化向导。</span>
+              <span>系统尚未完成初始化，请检查系统配置并确认完成。</span>
             </div>
-            <Button
-              size="sm"
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-              onClick={() => navigate({ to: "/setup" })}
-            >
-              立即进入初始化向导 →
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    确认初始化完成
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>初始化检查</DialogTitle>
+                    <DialogDescription>
+                      系统会自动检测现有配置，无需重复填写。全部通过后即可确认完成。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <InitChecklistPanel onCompleted={() => { setSetupCompleted(true); }} />
+                </DialogContent>
+              </Dialog>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-400 text-amber-900 hover:bg-amber-100"
+                onClick={() => navigate({ to: "/setup" })}
+              >
+                打开初始化向导 →
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -11,6 +11,7 @@ import { getPublicOrigin } from "@/lib/public-origin";
 import { scanLegacyUrls, rewriteLegacyUrls, type LegacyHit } from "@/lib/legacy-urls";
 import { qrProbeUrl } from "@/lib/qr-autotest.functions";
 import { BUILTIN_QR_REGISTRY, loadQrRegistry } from "@/lib/qr-registry";
+import { InitChecklistPanel } from "@/components/admin/InitChecklistPanel";
 
 export const Route = createFileRoute("/setup")({
   component: SetupWizard,
@@ -96,6 +97,7 @@ function SetupWizard() {
   const [probeBusy, setProbeBusy] = useState(false);
 
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
+  const [checklistMode, setChecklistMode] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -129,6 +131,10 @@ function SetupWizard() {
           setChecking(false);
           return;
         }
+        // 已有 super_admin 登录：跳过表单，进入检查模式（不再要求重复填写）
+        setChecklistMode(true);
+        setChecking(false);
+        return;
       }
       setForm((f) => ({
         ...f,
@@ -411,6 +417,33 @@ function SetupWizard() {
           <Link to="/login" className="inline-block rounded-full px-6 py-2 bg-emerald-600 text-white hover:bg-emerald-700">
             返回登录
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (checklistMode) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] py-10 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-6">
+            <h1 className="font-serif text-3xl text-foreground tracking-tight">初始化检查</h1>
+            <p className="text-muted-foreground text-sm mt-2">
+              系统检测到现有配置，无需重复填写。请确认下列项目，全部通过后点击「确认初始化完成」。
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-white">
+            <InitChecklistPanel
+              onCompleted={() => {
+                window.location.assign("/admin");
+              }}
+            />
+          </div>
+          <div className="text-center mt-4">
+            <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">
+              ← 返回后台
+            </Link>
+          </div>
         </div>
       </div>
     );
