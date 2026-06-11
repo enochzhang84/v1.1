@@ -78,15 +78,31 @@ function classifyUrl(
   return { level: "pass", reasons: [], qrHost: host, currentHost };
 }
 
-async function probeUrl(url: string): Promise<number | null> {
+type ProbeResult = { reachable: boolean; status: number | null; restricted: boolean; note?: string };
+
+async function probeUrl(url: string, currentOrigin: string): Promise<ProbeResult> {
+  if (!url) return { reachable: false, status: null, restricted: false, note: "空链接" };
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return { reachable: false, status: null, restricted: false, note: "URL 无效" }; }
+  const sameOrigin = parsed.origin === currentOrigin;
+  if (sameOrigin) {
+    try {
+      const res = await fetch(url, { method: "GET", redirect: "follow" });
+      // 200-399 视为可达；401/403 也视为「页面存在」（公开页本身不应 401，但 fetch 可能携带 cookie 触发跳转）
+      return { reachable: res.status < 500, status: res.status };
+    } catch (e) {
+      return { reachable: false, status: null, restricted: false, note: (e as Error).message };
+    }
+  }
+  // 跨域：no-cors 拿不到状态码，只能判断「网络层是否通」。
   try {
-    const res = await fetch(url, { method: "GET", mode: "no-cors" });
-    // no-cors 拿不到 status；只要 fetch 不 throw 就视为可达
-    return res.type === "opaque" ? 200 : res.status;
-  } catch {
-    return null;
+    await fetch(url, { method: "GET", mode: "no-cors" });
+    return { reachable: true, status: null, restricted: true, note: "跨域，仅能验证网络可达" };
+  } catch (e) {
+    return { reachable: false, status: null, restricted: true, note: "跨域 + 网络失败：" + (e as Error).message };
   }
 }
+
 
 export function QrHealthCheckPanel() {
   const insertTestFn = useServerFn(runQrInsertTest);
