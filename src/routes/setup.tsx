@@ -95,11 +95,23 @@ function SetupWizard() {
   const [probeRows, setProbeRows] = useState<ProbeRow[]>([]);
   const [probeBusy, setProbeBusy] = useState(false);
 
+  const [blockedReason, setBlockedReason] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase.rpc("is_system_initialized");
-      if (!error && data === true) {
-        navigate({ to: "/login", replace: true });
+      // 双重校验：setup_completed 或 已存在 super_admin，任一满足都禁止再次初始化
+      const { data: inited } = await supabase.rpc("is_system_initialized");
+      let blocked = inited === true;
+      if (!blocked) {
+        const { count } = await supabase
+          .from("user_roles")
+          .select("user_id", { count: "exact", head: true })
+          .eq("role", "super_admin");
+        if ((count ?? 0) > 0) blocked = true;
+      }
+      if (blocked) {
+        setBlockedReason("系统已完成初始化,如需新增管理员,请由超级管理员在后台授权。");
+        setChecking(false);
         return;
       }
       setForm((f) => ({
@@ -370,6 +382,20 @@ function SetupWizard() {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center text-muted-foreground">
         正在检查系统状态...
+      </div>
+    );
+  }
+
+  if (blockedReason) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-sm text-center space-y-4">
+          <h1 className="text-xl font-semibold text-foreground">初始化已完成</h1>
+          <p className="text-muted-foreground text-sm">{blockedReason}</p>
+          <Link to="/login" className="inline-block rounded-full px-6 py-2 bg-emerald-600 text-white hover:bg-emerald-700">
+            返回登录
+          </Link>
+        </div>
       </div>
     );
   }
