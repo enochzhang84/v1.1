@@ -34,28 +34,21 @@ function AdminSettingsPage() {
   const [authorized, setAuthorized] = useState(false);
   const [state, setState] = useState<SettingsState>({});
 
-  useEffect(() => {
-    (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) {
-        navigate({ to: "/login", replace: true });
-        return;
-      }
-      const uid = sess.session.user.id;
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
-      const ok = (roles ?? []).some(
-        (r: any) => r.role === "super_admin" || r.role === "admin",
-      );
-      if (!ok) {
-        toast.error("无权访问系统设置。");
-        navigate({ to: "/admin", replace: true });
-        return;
-      }
-      setAuthorized(true);
+  const guard = useAdminGuard();
 
+  useEffect(() => {
+    if (guard.kind === "loading") return;
+    if (guard.kind === "unauthenticated") {
+      navigate({ to: "/login", replace: true });
+      return;
+    }
+    if (guard.kind === "forbidden") {
+      toast.error("无权访问系统设置。");
+      navigate({ to: "/admin", replace: true });
+      return;
+    }
+    setAuthorized(true);
+    (async () => {
       const keys = [...CHURCH_KEYS, ...AUTH_KEYS];
       const { data: rows } = await supabase
         .from("app_settings")
@@ -69,7 +62,7 @@ function AdminSettingsPage() {
       setState(init);
       setLoading(false);
     })();
-  }, [navigate]);
+  }, [guard.kind, navigate]);
 
   function set(k: string, v: string) {
     setState((s) => ({ ...s, [k]: v }));
