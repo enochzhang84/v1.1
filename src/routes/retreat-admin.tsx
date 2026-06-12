@@ -92,38 +92,7 @@ function RetreatAdminPage() {
   const [editRow, setEditRow] = useState<Row | null>(null);
   const [editGroup, setEditGroup] = useState<GroupMember[] | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function check() {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user.id;
-      if (!uid) {
-        navigate({ to: "/login", search: { redirect: "/retreat-admin" } });
-        return;
-      }
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
-      if (cancelled) return;
-      const ok = (roles ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
-      setIsAdmin(ok);
-      setChecking(false);
-      if (ok) load();
-    }
-    check();
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        setChecking(true);
-        check();
-      }
-    });
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const guard = useAdminGuard();
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -134,7 +103,23 @@ function RetreatAdminPage() {
     setRows((data ?? []) as Row[]);
   }, []);
 
-  if (checking) return <div className="p-10 text-center text-sm text-muted-foreground">加载中…</div>;
+  useEffect(() => {
+    if (guard.kind === "unauthenticated") {
+      navigate({ to: "/login", search: { redirect: "/retreat-admin" } });
+      return;
+    }
+    if (guard.kind === "authorized") {
+      setIsAdmin(true);
+      setChecking(false);
+      void load();
+    } else if (guard.kind === "forbidden") {
+      setIsAdmin(false);
+      setChecking(false);
+    }
+  }, [guard.kind, navigate, load]);
+
+  if (guard.kind === "loading" || checking)
+    return <div className="p-10 text-center text-sm text-muted-foreground">加载中…</div>;
   if (!isAdmin) return (
     <div className="p-10 text-center text-sm space-y-2">
       <p>无权限访问退修会后台，请联系超级管理员。</p>
