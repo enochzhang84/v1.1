@@ -20,47 +20,23 @@ function HomeEditorPage() {
   const navigate = useNavigate();
   const [state, setState] = useState<State>({ kind: "loading", step: "校验登录态…" });
 
+  const guard = useAdminGuard();
+
   useEffect(() => {
-    let cancelled = false;
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
-        setState((s) => s.kind === "loading" ? { kind: "error", message: "加载超时（10 秒）。请检查网络或刷新页面再试。" } : s);
-      }
-    }, 10000);
-
-    (async () => {
-      try {
-        setState({ kind: "loading", step: "校验登录态…" });
-        const { data: sessData, error: sessErr } = await supabase.auth.getSession();
-        if (sessErr) throw new Error("读取登录态失败：" + sessErr.message);
-        const uid = sessData.session?.user?.id;
-        if (!uid) {
-          if (!cancelled) setState({ kind: "denied", reason: "尚未登录。请先登录管理员账号。" });
-          return;
-        }
-
-        setState({ kind: "loading", step: "校验管理员权限…" });
-        const { data: roles, error: roleErr } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", uid);
-        if (roleErr) throw new Error("读取角色失败：" + roleErr.message);
-        const isAdmin = (roles || []).some((r) => r.role === "super_admin" || r.role === "admin");
-        if (!isAdmin) {
-          if (!cancelled) setState({ kind: "denied", reason: "当前账号不是管理员（super_admin / admin），无法编辑主页。" });
-          return;
-        }
-
-        if (!cancelled) setState({ kind: "ok" });
-      } catch (e) {
-        if (!cancelled) setState({ kind: "error", message: (e as Error).message || String(e) });
-      } finally {
-        clearTimeout(timeout);
-      }
-    })();
-
-    return () => { cancelled = true; clearTimeout(timeout); };
-  }, []);
+    if (guard.kind === "loading") {
+      setState({ kind: "loading", step: "校验登录态…" });
+      return;
+    }
+    if (guard.kind === "unauthenticated") {
+      setState({ kind: "denied", reason: "尚未登录。请先登录管理员账号。" });
+      return;
+    }
+    if (guard.kind === "forbidden") {
+      setState({ kind: "denied", reason: "当前账号不是管理员（super_admin / admin），无法编辑主页。" });
+      return;
+    }
+    setState({ kind: "ok" });
+  }, [guard.kind]);
 
   if (state.kind === "loading") {
     return (
