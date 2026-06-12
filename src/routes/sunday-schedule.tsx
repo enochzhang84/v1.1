@@ -44,6 +44,7 @@ function SundaySchedulePage() {
     return { filterCourseId: p.get("courseId"), filterCourseName: p.get("courseName") ?? "" };
   }, []);
 
+  const [authed, setAuthed] = useState(false);
   const guard = useAdminGuard();
 
   useEffect(() => {
