@@ -11,6 +11,7 @@ import * as XLSX from "xlsx";
 import logo from "@/assets/logo.png";
 import { pickVerse } from "./retreat-register";
 import { RetreatGroupEditor, type GroupMember } from "@/components/RetreatGroupEditor";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 
 export const Route = createFileRoute("/retreat-admin")({
   component: RetreatAdminPage,
