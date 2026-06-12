@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { HomeVisualEditor } from "@/components/admin/HomeVisualEditor";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertCircle } from "lucide-react";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 
 export const Route = createFileRoute("/home-editor")({
   component: HomeEditorPage,
