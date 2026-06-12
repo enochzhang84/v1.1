@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -44,24 +45,25 @@ function SundaySchedulePage() {
   }, []);
 
   const [authed, setAuthed] = useState(false);
+  const guard = useAdminGuard();
 
   useEffect(() => {
-    (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user.id;
-      if (!uid) {
-        navigate({ to: "/login", search: { redirect: "/sunday-schedule" } });
-        return;
-      }
+    if (guard.kind === "unauthenticated") {
+      navigate({ to: "/login", search: { redirect: "/sunday-schedule" } });
+      return;
+    }
+    if (guard.kind === "authorized") {
       setAuthed(true);
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-      const ok = (roles ?? []).some((r) => r.role === "admin" || r.role === "super_admin");
-      setIsAdmin(ok);
+      setIsAdmin(true);
       setChecking(false);
-      if (ok) loadAll();
-    })();
+      loadAll();
+    } else if (guard.kind === "forbidden") {
+      setAuthed(true);
+      setIsAdmin(false);
+      setChecking(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [guard.kind, navigate]);
 
   const loadAll = useCallback(async () => {
     let q = (supabase as any).from("sunday_class_schedule").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: true });
