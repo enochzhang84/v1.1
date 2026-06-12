@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { clearPublicAppSettingsCache } from "@/lib/auth-base-url";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 
 export const Route = createFileRoute("/admin-settings")({
   component: AdminSettingsPage,
